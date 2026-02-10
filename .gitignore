@@ -1,0 +1,43 @@
+# Generic
+.DS_Store
+.vscode/
+.idea/
+*.log
+*.tmp
+*.bak
+
+# Backend (Go)
+backend/backend-bin
+backend/vendor/
+backend/coverage.out
+
+# Web (Next.js)
+node_modules/
+apps/web/.next/
+apps/web/out/
+apps/web/build/
+.next/
+
+# Mobile (Flutter)
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+apps/mobile/ios/Flutter/Generated.xcconfig
+apps/mobile/ios/Flutter/flutter_export_environment.sh
+apps/mobile/android/local.properties
+apps/mobile/android/key.properties
+**/*.jks
+**/*.keystore
+**/*.apk
+**/*.aab
+
+# Environment
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local

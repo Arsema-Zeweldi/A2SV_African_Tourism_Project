@@ -1,9 +1,11 @@
 import type { Metadata } from 'next'
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-expect-error
 import './globals.css'
 
 export const metadata: Metadata = {
   title: 'AMÒNÀ',
-  icons: '/favicon.ico',
+  icons: '/images/logo.png',
   description: 'Your Wise African Travel Pathfinder.',
 }
 

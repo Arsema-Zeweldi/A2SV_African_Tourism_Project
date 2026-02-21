@@ -1,9 +1,22 @@
 "use client";
 
+import { useRef } from "react";
 import PackageCard from "@/components/homepage/PackageCard";
 import { topRatedPackages } from "@/lib/homepage-data";
 
 export default function TopRatedPackages() {
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+    const scroll = (direction: "left" | "right") => {
+        if (scrollContainerRef.current) {
+            const scrollAmount = direction === "left" ? -400 : 400;
+            scrollContainerRef.current.scrollBy({
+                left: scrollAmount,
+                behavior: "smooth",
+            });
+        }
+    };
+
     return (
         <section className="mx-auto max-w-7xl px-6 py-16 lg:px-8 lg:py-24">
             {/* Header */}
@@ -20,6 +33,7 @@ export default function TopRatedPackages() {
                 {/* Navigation Arrows */}
                 <div className="hidden gap-2 sm:flex">
                     <button
+                        onClick={() => scroll("left")}
                         className="flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 text-gray-500 transition-colors hover:border-[#ec6d13] hover:text-[#ec6d13]"
                         aria-label="Previous packages"
                     >
@@ -38,6 +52,7 @@ export default function TopRatedPackages() {
                         </svg>
                     </button>
                     <button
+                        onClick={() => scroll("right")}
                         className="flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 text-gray-500 transition-colors hover:border-[#ec6d13] hover:text-[#ec6d13]"
                         aria-label="Next packages"
                     >
@@ -58,10 +73,16 @@ export default function TopRatedPackages() {
                 </div>
             </div>
 
-            {/* Cards Grid */}
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {/* Cards Carousel */}
+            <div
+                ref={scrollContainerRef}
+                className="flex gap-6 overflow-x-auto snap-x snap-mandatory pb-4 scrollbar-hide"
+                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+            >
                 {topRatedPackages.map((pkg) => (
-                    <PackageCard key={pkg.id} package_={pkg} />
+                    <div key={pkg.id} className="min-w-[300px] sm:min-w-[350px] lg:min-w-[calc(33.333%-16px)] snap-start shrink-0">
+                        <PackageCard package_={pkg} />
+                    </div>
                 ))}
             </div>
         </section>

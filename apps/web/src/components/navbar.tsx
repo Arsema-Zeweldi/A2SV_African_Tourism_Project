@@ -21,10 +21,6 @@ const Navbar = () => {
     return (
       <nav
         className="sticky top-0 z-50 w-full border-b border-white/10 bg-white/5 px-5 shadow-[0_4px_30px_rgba(0,0,0,0.1)] backdrop-blur-xs md:px-10"
-      // style={{
-      //   background:
-      //     "linear-gradient(135deg, #8b6914 0%, #b8860b 25%, #c4943d 50%, #a07830 75%, #7a6032 100%)",
-      // }}
       >
         <div className="max-w-[1440px] mx-auto flex items-center justify-between h-[60px] md:h-[72px]">
           {/* Logo */}

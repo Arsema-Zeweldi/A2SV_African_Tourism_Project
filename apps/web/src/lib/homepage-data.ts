@@ -46,40 +46,43 @@ export const communityPosts: CommunityPostData[] = [
     {
         id: "post-1",
         author: {
-            name: "Guetiwidrow",
+            name: "Sarah Jenkins",
             avatar: "/homepage/community3.png",
         },
+        timeAgo: "2 hours ago",
         image: "/homepage/community3.png",
         description:
-            "Unreal experience in spotting this beauty on safari. Got up close to a Leopard&Pella. Tips: Stay quiet and patient.",
-        likes: 456,
-        comments: 174,
+            "Unreal experience spotting this beauty on our morning drive in Chobe National Park. Truly breathtaking!",
+        likes: 1200,
+        comments: 42,
         shares: 45,
     },
     {
         id: "post-2",
         author: {
-            name: "Merous Dires",
+            name: "Marcus Chen",
             avatar: "/homepage/community2.png",
         },
+        timeAgo: "Yesterday",
         image: "/homepage/community2.png",
         description:
-            "Learning about Masai Mara traditions was the highlight of all our adventures. Their hospitality was amazing.",
-        likes: 512,
-        comments: 143,
+            "Learning about Masai traditions was the highlight of our trip. Such a rich and welcoming culture.",
+        likes: 856,
+        comments: 12,
         shares: 67,
     },
     {
         id: "post-3",
         author: {
-            name: "Dinarchstignon",
+            name: "Elena Rodriguez",
             avatar: "/homepage/community1.png",
         },
+        timeAgo: "3 days ago",
         image: "/homepage/community1.png",
         description:
-            "Who's done glamping? I could live the beauty of sleeping in the middle of nature. Book now!",
-        likes: 389,
-        comments: 98,
+            "Who knew glamping could be this luxurious? Waking up to the sounds of the savanna is something I'll never forget. ✨",
+        likes: 2100,
+        comments: 56,
         shares: 34,
     },
 ];

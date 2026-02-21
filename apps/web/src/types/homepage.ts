@@ -18,6 +18,7 @@ export interface CommunityPostData {
         name: string;
         avatar: string;
     };
+    timeAgo: string;
     image: string;
     description: string;
     likes: number;

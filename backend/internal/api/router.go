@@ -3,88 +3,69 @@ package api
 import (
 	"github.com/Arsema-Zeweldi/africa-tourism-platform/backend/internal/api/handlers"
 	"github.com/Arsema-Zeweldi/africa-tourism-platform/backend/internal/api/middleware"
-	"github.com/Arsema-Zeweldi/africa-tourism-platform/backend/internal/config"
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 )
 
-func SetupRouter(db *gorm.DB, cfg *config.Config) *gin.Engine {
+func SetupRouter() *gin.Engine {
 	r := gin.Default()
-	h := handlers.NewAppHandler(db, cfg)
 
-	hub := handlers.NewHub()
-	handlers.GlobalHub = hub
-	go hub.Run()
+	// CORS and basic middleware can be added here
 
-	mh := &handlers.PackagesHandler{DB: db}
-
-	v1 := r.Group("/api/v1")
-	v1.GET("/health", h.HealthCheck)
-
-	auth := v1.Group("/auth")
+	api := r.Group("/api/v1")
 	{
-		auth.POST("/register", h.Register)
-		auth.POST("/login", h.Login)
-	}
-
-	v1.GET("/regions", h.ListRegions)
-	v1.GET("/regions/:id", h.GetRegion)
-	v1.GET("/destinations", h.SearchDestinations)
-	v1.GET("/destinations/:id", h.GetDestinationDetails)
-
-	v1.GET("/packages", mh.GetPackagesFeed)
-	v1.GET("/packages/:id", mh.GetPackage)
-	v1.GET("/packages/:id/reviews", mh.GetPackageReviews)
-	v1.GET("/packages/:id/chat", mh.GetChatHistory)
-
-	protected := v1.Group("")
-	protected.Use(middleware.JWTMiddleware(cfg.JWTSecret))
-	{
-		regions := protected.Group("/regions")
+		// 🔓 UNPROTECTED: Identity & Access Module (IAM)
+		auth := api.Group("/auth")
 		{
-			regions.POST("", h.CreateRegion)
-			regions.PUT("/:id", h.UpdateRegion)
-			regions.DELETE("/:id", h.DeleteRegion)
+			auth.POST("/register", handlers.Register)
+			auth.POST("/login", handlers.Login)
 		}
 
-		user := protected.Group("/user")
-		{
-			user.GET("/preferences", h.GetUserPreferences)
-			user.PUT("/preferences", h.UpdateUserPreferences)
-		}
+		// 🔓 UNPROTECTED: Discovery Module (Browse-only)
+		api.GET("/regions", handlers.ListRegions)
+		api.GET("/destinations", handlers.SearchDestinations)
+		api.GET("/destinations/:id", handlers.GetDestinationDetails)
 
-		planner := protected.Group("/planner")
+		// 🔐 PROTECTED ROUTES
+		protected := api.Group("")
+		protected.Use(middleware.JWTMiddleware())
 		{
-			planner.POST("/interview", h.StartAIInterview)
-		}
-
-		itineraries := protected.Group("/itineraries")
-		{
-			itineraries.POST("", h.SaveItinerary)
-			itineraries.GET("/:id", h.GetItinerary)
-			itineraries.PATCH("/:id/items", h.UpdateItineraryItem)
-		}
-
-		packages := protected.Group("/packages")
-		{
-			packages.POST("", mh.CreatePackage)
-
-			pkg := packages.Group("/:id")
+			// User Profile & Preferences
+			user := protected.Group("/user")
 			{
-				pkg.PATCH("", mh.UpdatePackage)
-				pkg.DELETE("", mh.ArchivePackage)
-				pkg.POST("/publish", mh.PublishPackage)
-				pkg.PATCH("/status", mh.UpdatePackageStatus)
-				pkg.POST("/reviews", mh.SubmitPackageReview)
-				pkg.POST("/chat", mh.PostChatMessage)
-				pkg.GET("/ws", handlers.ServeWS(hub, db))
+				user.GET("/preferences", handlers.GetUserPreferences)
+				user.PUT("/preferences", handlers.UpdateUserPreferences)
 			}
-		}
 
-		intelligence := protected.Group("/intelligence")
-		{
-			intelligence.GET("/visa", h.GetVisaRequirements)
-			intelligence.GET("/safety", h.GetSafetyAlerts)
+			// AI Planning & Itinerary Module
+			planner := protected.Group("/planner")
+			{
+				planner.POST("/interview", handlers.StartAIInterview)
+			}
+			itineraries := protected.Group("/itineraries")
+			{
+				itineraries.POST("", handlers.SaveItinerary)
+				itineraries.GET("/:id", handlers.GetItinerary)
+				itineraries.PATCH("/:id/items", handlers.UpdateItineraryItem)
+			}
+
+			// Community & Marketplace Module
+			marketplace := protected.Group("/marketplace")
+			{
+				marketplace.GET("/packages", handlers.ListPackages)
+			}
+			packages := protected.Group("/packages")
+			{
+				packages.POST("/:id/publish", handlers.PublishPackage)
+				packages.POST("/:id/review", handlers.ReviewPackage)
+				packages.GET("/:id/chat", handlers.GetPackageChat)
+			}
+
+			// Intelligence & Safety Module
+			intelligence := protected.Group("/intelligence")
+			{
+				intelligence.GET("/visa", handlers.GetVisaRequirements)
+				intelligence.GET("/safety", handlers.GetSafetyAlerts)
+			}
 		}
 	}
 

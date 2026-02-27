@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Search } from "lucide-react";
@@ -8,6 +8,30 @@ import { Search } from "lucide-react";
 const Navbar = () => {
   const pathname = usePathname();
   const isLandingPage = pathname === "/landing";
+  const isHomePage = pathname === "/" || pathname === "/home";
+
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  const HOME_TEXT_SWITCH_SCROLL_Y = 400;
+
+  useEffect(() => {
+    if (!isHomePage) {
+      setIsScrolled(false);
+      return;
+    }
+
+    const onScroll = () => {
+      const passed = window.scrollY >= HOME_TEXT_SWITCH_SCROLL_Y;
+      setIsScrolled(passed);
+    };
+
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [isHomePage, isScrolled]);
+
+  const useDarkText = (!isLandingPage && !isHomePage) || (isHomePage && isScrolled);
+  const textColorClass = useDarkText ? "text-gray-800" : "text-white";
 
   const navLinks = [
     { name: "Home", href: "/home" },
@@ -16,6 +40,7 @@ const Navbar = () => {
     { name: "My Trips", href: "/my-trips" },
     { name: "Feed", href: "/feed" },
   ];
+
 
   if (isLandingPage) {
     return (
@@ -77,7 +102,7 @@ const Navbar = () => {
                 href={link.href}
                 className={`text-sm md:text-base font-medium transition-colors ${isActive
                   ? "text-[#ec6d13] border-b-2 border-[#ec6d13] pb-1"
-                  : "text-white hover:text-[#ec6d13] pb-1"
+                  : `${textColorClass} hover:text-[#ec6d13] pb-1`
                   }`}
               >
                 {link.name}
@@ -88,7 +113,7 @@ const Navbar = () => {
 
         {/* Actions */}
         <div className="flex items-center gap-4 md:gap-6">
-          <button className="text-white hover:text-[#ec6d13] transition-colors">
+          <button className={`${textColorClass} hover:text-[#ec6d13] transition-colors`}>
             <Search className="h-5 w-5 md:h-6 md:w-6" />
           </button>
 

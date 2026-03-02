@@ -1,5 +1,5 @@
-import React from "react";
-import Link from "next/link";
+import React from 'react'
+import Link from 'next/link'
 
 const LandingPage = () => {
   return (
@@ -93,16 +93,26 @@ const LandingPage = () => {
                 />
               </div>
               <div className="flex items-center justify-center w-10 h-10 rounded-full bg-[#f0a030]/10 mb-3">
-                <svg className="w-5 h-5 text-[#f0a030]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                <svg
+                  className="w-5 h-5 text-[#f0a030]"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
                 </svg>
               </div>
               <h3 className="text-lg font-bold text-[#1a1008] mb-2">
                 Expert Curation
               </h3>
               <p className="text-sm leading-relaxed text-[#6b5e4b]">
-                Hand-picked destinations and hidden gems curated by local experts
-                who live and breathe the African terrain.
+                Hand-picked destinations and hidden gems curated by local
+                experts who live and breathe the African terrain.
               </p>
             </div>
 
@@ -116,7 +126,11 @@ const LandingPage = () => {
                 />
               </div>
               <div className="flex items-center justify-center w-10 h-10 rounded-full bg-[#f0a030]/10 mb-3">
-                <svg className="w-5 h-5 text-[#f0a030]" fill="currentColor" viewBox="0 0 24 24">
+                <svg
+                  className="w-5 h-5 text-[#f0a030]"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                >
                   <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" />
                 </svg>
               </div>
@@ -139,8 +153,18 @@ const LandingPage = () => {
                 />
               </div>
               <div className="flex items-center justify-center w-10 h-10 rounded-full bg-[#f0a030]/10 mb-3">
-                <svg className="w-5 h-5 text-[#f0a030]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                <svg
+                  className="w-5 h-5 text-[#f0a030]"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                  />
                 </svg>
               </div>
               <h3 className="text-lg font-bold text-[#1a1008] mb-2">
@@ -161,10 +185,10 @@ const LandingPage = () => {
       <section className="bg-primary py-10 md:py-14 px-6">
         <div className="max-w-[1000px] mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
           {[
-            { value: "50+", label: "Countries" },
-            { value: "12k", label: "Experiences" },
-            { value: "85k", label: "Explorers" },
-            { value: "4.9/5", label: "Rating" },
+            { value: '50+', label: 'Countries' },
+            { value: '12k', label: 'Experiences' },
+            { value: '85k', label: 'Explorers' },
+            { value: '4.9/5', label: 'Rating' },
           ].map((stat) => (
             <div key={stat.label} className="flex flex-col items-center">
               <span className="text-4xl md:text-5xl font-bold text-white leading-none mb-2">
@@ -200,8 +224,18 @@ const LandingPage = () => {
             <div className="flex flex-col gap-4 mb-10">
               <div className="flex items-center gap-3">
                 <div className="flex items-center justify-center w-6 h-6 rounded-full bg-primary">
-                  <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  <svg
+                    className="w-3.5 h-3.5 text-white"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={3}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M5 13l4 4L19 7"
+                    />
                   </svg>
                 </div>
                 <span className="text-sm text-[#3a3020] font-medium">
@@ -210,8 +244,18 @@ const LandingPage = () => {
               </div>
               <div className="flex items-center gap-3">
                 <div className="flex items-center justify-center w-6 h-6 rounded-full bg-primary">
-                  <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  <svg
+                    className="w-3.5 h-3.5 text-white"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={3}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M5 13l4 4L19 7"
+                    />
                   </svg>
                 </div>
                 <span className="text-sm text-[#3a3020] font-medium">
@@ -233,9 +277,11 @@ const LandingPage = () => {
           <div className="relative flex items-center justify-center p-12">
             {/* Relative wrapper for absolute positioning of the overlapping card */}
             <div className="relative w-[300px] sm:w-[340px] md:w-[380px]">
-
               {/* Map Card - Straight, with thick white frame */}
-              <div className="bg-white p-3.5 rounded-[32px] shadow-2xl" style={{ transform: "rotate(3deg)" }}>
+              <div
+                className="bg-white p-3.5 rounded-[32px] shadow-2xl"
+                style={{ transform: 'rotate(3deg)' }}
+              >
                 <img
                   src="/images/africa-map.png"
                   alt="Interactive Africa Map"
@@ -244,7 +290,10 @@ const LandingPage = () => {
               </div>
 
               {/* Live Sighting Card Overlay - Bottom Left & Overlapping */}
-              <div className="absolute -bottom-6 -left-8 bg-white rounded-3xl p-5 shadow-xl w-[90%] sm:w-[85%] z-10" style={{ transform: "rotate(3deg)" }}>
+              <div
+                className="absolute -bottom-6 -left-8 bg-white rounded-3xl p-5 shadow-xl w-[90%] sm:w-[85%] z-10"
+                style={{ transform: 'rotate(3deg)' }}
+              >
                 <div className="flex items-center gap-2 mb-2">
                   <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
                   <span className="text-[11px] font-bold tracking-[0.15em] uppercase text-gray-400">
@@ -258,13 +307,12 @@ const LandingPage = () => {
                   2 minutes ago · Serengeti
                 </p>
               </div>
-
             </div>
           </div>
         </div>
       </section>
     </div>
-  );
-};
+  )
+}
 
-export default LandingPage;
+export default LandingPage

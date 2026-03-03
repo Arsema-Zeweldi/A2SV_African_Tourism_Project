@@ -5,12 +5,11 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/Arsema-Zeweldi/africa-tourism-platform/backend/internal/config"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 )
 
-func JWTMiddleware() gin.HandlerFunc {
+func JWTMiddleware(jwtSecret string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
@@ -27,13 +26,12 @@ func JWTMiddleware() gin.HandlerFunc {
 		}
 
 		tokenString := parts[1]
-		cfg := config.LoadConfig()
 
 		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 			}
-			return []byte(cfg.JWTSecret), nil
+			return []byte(jwtSecret), nil
 		})
 
 		if err != nil || !token.Valid {

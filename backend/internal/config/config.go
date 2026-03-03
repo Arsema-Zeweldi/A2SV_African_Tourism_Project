@@ -8,15 +8,10 @@ import (
 )
 
 type Config struct {
-	ServerPort string
-	DBHost     string
-	DBPort     string
-	DBUser     string
-	DBPassword string
-	DBName     string
-	DBSSLMode  string
-	JWTSecret  string
-	GeminiKey  string
+	ServerPort  string
+	DatabaseURL string
+	JWTSecret   string
+	GeminiKey   string
 }
 
 func LoadConfig() *Config {
@@ -26,15 +21,10 @@ func LoadConfig() *Config {
 	}
 
 	return &Config{
-		ServerPort: getEnv("SERVER_PORT", "8080"),
-		DBHost:     getEnv("DB_HOST", "localhost"),
-		DBPort:     getEnv("DB_PORT", "5432"),
-		DBUser:     getEnv("DB_USER", "postgres"),
-		DBPassword: getEnv("DB_PASSWORD", "postgres"),
-		DBName:     getEnv("DB_NAME", "africa_tourism"),
-		DBSSLMode:  getEnv("DB_SSLMODE", "disable"),
-		JWTSecret:  getEnv("JWT_SECRET", "supersecretkey"),
-		GeminiKey:  getEnv("GEMINI_API_KEY", ""),
+		ServerPort:  getEnv("SERVER_PORT", "8080"),
+		DatabaseURL: getEnv("DATABASE_URL", ""),
+		JWTSecret:   getEnv("JWT_SECRET", "supersecretkey"),
+		GeminiKey:   getEnv("GEMINI_API_KEY", ""),
 	}
 }
 

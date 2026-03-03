@@ -92,6 +92,26 @@ type Tag struct {
 	UsageCount int       `gorm:"default:0" json:"usage_count"`
 }
 
+type DestinationTag struct {
+	DestinationID uuid.UUID `gorm:"type:uuid;primaryKey;not null" json:"destination_id"`
+	TagID         uuid.UUID `gorm:"type:uuid;primaryKey;not null" json:"tag_id"`
+	CreatedAt     time.Time `gorm:"not null;default:now()" json:"created_at"`
+}
+
+func (DestinationTag) TableName() string {
+	return "destination_tags"
+}
+
+type UserFavorite struct {
+	UserID        uuid.UUID `gorm:"type:uuid;primaryKey;not null" json:"user_id"`
+	DestinationID uuid.UUID `gorm:"type:uuid;primaryKey;not null" json:"destination_id"`
+	CreatedAt     time.Time `gorm:"not null;default:now()" json:"created_at"`
+}
+
+func (UserFavorite) TableName() string {
+	return "user_favorites"
+}
+
 // ✅ Interactions
 type Review struct {
 	ReviewID      uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"review_id"`

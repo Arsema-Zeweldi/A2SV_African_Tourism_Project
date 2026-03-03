@@ -18,12 +18,15 @@ func main() {
 
 	// 2. Initialize database
 	log.Println("🗄️ Initializing database...")
-	database.InitDB(cfg)
+	db, err := database.InitDB(cfg)
+	if err != nil {
+		log.Fatalf("❌ Failed to initialize database: %v", err)
+	}
 	log.Println("✅ Database initialized")
 
 	// 3. Setup router
 	log.Println("🌐 Setting up router...")
-	r := api.SetupRouter()
+	r := api.SetupRouter(db, cfg)
 	log.Println("✅ Router configured")
 
 	// 4. Start server

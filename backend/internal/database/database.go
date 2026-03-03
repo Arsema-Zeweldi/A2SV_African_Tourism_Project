@@ -1,8 +1,10 @@
 package database
 
 import (
-	"fmt"
+	"errors"
 	"log"
+	"net/url"
+	"strings"
 
 	"github.com/Arsema-Zeweldi/africa-tourism-platform/backend/internal/config"
 	"github.com/Arsema-Zeweldi/africa-tourism-platform/backend/internal/models"
@@ -10,20 +12,22 @@ import (
 	"gorm.io/gorm"
 )
 
-var DB *gorm.DB
+func InitDB(cfg *config.Config) (*gorm.DB, error) {
+	if cfg == nil {
+		return nil, errors.New("config is nil")
+	}
+	if strings.TrimSpace(cfg.DatabaseURL) == "" {
+		return nil, errors.New("DATABASE_URL is required")
+	}
 
-func InitDB(cfg *config.Config) {
-	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=%s connect_timeout=5",
-		cfg.DBHost, cfg.DBUser, cfg.DBPassword, cfg.DBName, cfg.DBPort, cfg.DBSSLMode)
-
-	log.Printf("Connecting to database: host=%s port=%s dbname=%s user=%s", cfg.DBHost, cfg.DBPort, cfg.DBName, cfg.DBUser)
+	dsn := ensureSSLModeRequire(cfg.DatabaseURL)
+	log.Println("Connecting to database using DATABASE_URL")
 
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
-		log.Fatalf("❌ Failed to connect to database: %v", err)
+		return nil, err
 	}
 
-	DB = db
 	log.Println("✅ Database connection established")
 
 	log.Println("🔄 Running auto-migrations...")
@@ -34,6 +38,8 @@ func InitDB(cfg *config.Config) {
 		&models.Country{},
 		&models.Destination{},
 		&models.Tag{},
+		&models.DestinationTag{},
+		&models.UserFavorite{},
 		&models.Review{},
 		&models.UserRecommendation{},
 		&models.AIInsight{},
@@ -52,4 +58,28 @@ func InitDB(cfg *config.Config) {
 	} else {
 		log.Println("✅ Auto-migrations completed")
 	}
+
+	return db, nil
+}
+
+func ensureSSLModeRequire(dsn string) string {
+	parsed, err := url.Parse(dsn)
+	if err != nil {
+		if strings.Contains(strings.ToLower(dsn), "sslmode=") {
+			return dsn
+		}
+		separator := "?"
+		if strings.Contains(dsn, "?") {
+			separator = "&"
+		}
+		return dsn + separator + "sslmode=require"
+	}
+
+	query := parsed.Query()
+	if strings.TrimSpace(query.Get("sslmode")) == "" {
+		query.Set("sslmode", "require")
+		parsed.RawQuery = query.Encode()
+	}
+
+	return parsed.String()
 }

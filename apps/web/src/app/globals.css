@@ -1,5 +1,6 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -148,3 +149,4 @@
 .trip-slider [data-slot="slider-thumb"]:focus-visible {
   @apply ring-4 ring-[#F28A1E]/30;
 }
+

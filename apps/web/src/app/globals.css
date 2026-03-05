@@ -128,3 +128,24 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* ── Trip Wizard Slider (orange theme) ────────────── */
+.trip-slider [data-slot="slider-track"] {
+  @apply h-1.5 bg-[#E5DDD0];
+}
+
+.trip-slider [data-slot="slider-range"] {
+  @apply bg-[#F28A1E];
+}
+
+.trip-slider [data-slot="slider-thumb"] {
+  @apply size-5 border-2 border-[#F28A1E] bg-white shadow-md shadow-[#F28A1E]/20;
+}
+
+.trip-slider [data-slot="slider-thumb"]:hover {
+  @apply ring-4 ring-[#F28A1E]/20;
+}
+
+.trip-slider [data-slot="slider-thumb"]:focus-visible {
+  @apply ring-4 ring-[#F28A1E]/30;
+}

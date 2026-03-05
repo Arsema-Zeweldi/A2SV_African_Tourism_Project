@@ -19,6 +19,7 @@ func SetupRouter(db *gorm.DB, cfg *config.Config) *gin.Engine {
 	mh := &handlers.PackagesHandler{DB: db}
 
 	v1 := r.Group("/api/v1")
+	v1.GET("/health", h.HealthCheck)
 
 	auth := v1.Group("/auth")
 	{

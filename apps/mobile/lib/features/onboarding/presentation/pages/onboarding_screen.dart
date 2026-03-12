@@ -17,19 +17,19 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   final List<Map<String, String>> _pages = [
     {
-      'title': 'Discover the Heart of Africa',
+      'title': 'Discover the\nHeart of Africa',
       'description':
           'Find curated packages and join a vibrant community of travelers exploring the continent\'s hidden gems.',
       'backgroundImage': 'assets/images/onboarding_bg_1.png',
     },
     {
-      'title': 'Connect with the Tribe',
+      'title': 'Connect with the\nTribe',
       'description':
           'Share your journey and get real-time tips from fellow explorers across the continent.',
       'image': 'assets/images/onboarding_img_2.png',
     },
     {
-      'title': 'Your Trip, Your Way',
+      'title': 'Your Trip,\nYour Way',
       'description':
           'Use our smart planner to tailor your dream itinerary based on your vibe, budget, and climate preference.',
       'image': 'assets/images/onboarding_img_3.png',

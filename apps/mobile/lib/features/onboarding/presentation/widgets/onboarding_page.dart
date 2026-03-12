@@ -36,49 +36,51 @@ class OnboardingPage extends StatelessWidget {
             fit: BoxFit.cover,
           ),
         ),
-        Positioned.fill(
-          child: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Colors.black.withOpacity(0.0),
-                  Colors.black.withOpacity(0.4),
-                  Colors.black.withOpacity(1.0),
-                ],
-                stops: const [0.0, 0.3, 0.95],
-              ),
-            ),
-          ),
-        ),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 40.0),
+          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 0.0),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.end,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                title,
-                textAlign: TextAlign.left,
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 40,
-                  fontWeight: FontWeight.w800,
-                  color: Colors.white,
-                  letterSpacing: -1.0,
-                  height: 1.2,
+              SizedBox(
+                width: MediaQuery.of(context).size.width * 0.8,
+                child: Text(
+                  title,
+                  textAlign: TextAlign.left,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 48,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                    letterSpacing: -1.0,
+                    height: 1.1,
+                    shadows: [
+                      Shadow(
+                        color: Colors.white.withOpacity(0.4),
+                        blurRadius: 10,
+                      ),
+                    ],
+                  ),
                 ),
               ),
-              const SizedBox(height: 16),
-              Text(
-                description,
-                textAlign: TextAlign.left,
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w400,
-                  color: Colors.white.withOpacity(0.85),
-                  height: 29.3 / 18.0,
-                  letterSpacing: 0,
+              const SizedBox(height: 18),
+              SizedBox(
+                width: MediaQuery.of(context).size.width * 0.75,
+                child: Text(
+                  description,
+                  textAlign: TextAlign.left,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w400,
+                    color: Colors.white.withOpacity(0.9),
+                    height: 29.3 / 18.0,
+                    letterSpacing: 0,
+                    shadows: [
+                      Shadow(
+                        color: Colors.white.withOpacity(0.4),
+                        blurRadius: 6,
+                      ),
+                    ],
+                  ),
                 ),
               ),
               const SizedBox(height: 160), // Space for indicator and buttons
@@ -111,15 +113,18 @@ class OnboardingPage extends StatelessWidget {
             ),
             const SizedBox(height: 48),
           ],
-          Text(
-            title,
-            textAlign: TextAlign.center,
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 32,
-              fontWeight: FontWeight.w800,
-              color: AppColors.textPrimary,
-              letterSpacing: -1.0,
-              height: 1.2,
+          SizedBox(
+            width: MediaQuery.of(context).size.width * 0.7,
+            child: Text(
+              title,
+              textAlign: TextAlign.center,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 32,
+                fontWeight: FontWeight.w800,
+                color: AppColors.textPrimary,
+                letterSpacing: -1.0,
+                height: 1.2,
+              ),
             ),
           ),
           const SizedBox(height: 16),
@@ -127,10 +132,11 @@ class OnboardingPage extends StatelessWidget {
             description,
             textAlign: TextAlign.center,
             style: GoogleFonts.plusJakartaSans(
-              fontSize: 16,
+              fontSize: 18,
               fontWeight: FontWeight.w400,
               color: AppColors.textSecondary,
-              height: 1.5,
+              height: 29.3 / 18.0,
+              letterSpacing: 0,
             ),
           ),
         ],

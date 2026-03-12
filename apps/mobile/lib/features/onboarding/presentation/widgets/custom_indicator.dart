@@ -26,13 +26,13 @@ class CustomIndicator extends StatelessWidget {
         return AnimatedContainer(
           duration: const Duration(milliseconds: 300),
           margin: const EdgeInsets.only(right: 6),
-          height: 3,
-          width: isActive ? 28 : 20,
+          height: 6,
+          width: isActive ? 40 : 24,
           decoration: BoxDecoration(
             color: isActive
                 ? (activeColor ?? AppColors.primary)
                 : (inactiveColor ?? Colors.white.withOpacity(0.5)),
-            borderRadius: BorderRadius.circular(2),
+            borderRadius: BorderRadius.circular(7),
           ),
         );
       }),

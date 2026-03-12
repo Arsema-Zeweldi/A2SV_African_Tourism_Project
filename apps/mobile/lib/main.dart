@@ -19,6 +19,18 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
+        textButtonTheme: TextButtonThemeData(
+          style: TextButton.styleFrom(enableFeedback: false),
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(enableFeedback: false),
+        ),
+        outlinedButtonTheme: OutlinedButtonThemeData(
+          style: OutlinedButton.styleFrom(enableFeedback: false),
+        ),
+        iconButtonTheme: IconButtonThemeData(
+          style: IconButton.styleFrom(enableFeedback: false),
+        ),
       ),
       home: const OnboardingScreen(),
     );

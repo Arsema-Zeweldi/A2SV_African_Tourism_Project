@@ -1,4 +1,3 @@
-import Navbar from '../../components/navbar'
 import Footer from '../../components/footer'
 
 export default function LandingLayout({
@@ -8,7 +7,6 @@ export default function LandingLayout({
 }) {
   return (
     <div>
-      <Navbar />
       {children}
       <Footer />
     </div>

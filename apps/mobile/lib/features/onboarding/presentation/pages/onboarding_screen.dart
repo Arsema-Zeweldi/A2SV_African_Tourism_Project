@@ -29,7 +29,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       'image': 'assets/images/onboarding_img_2.png',
     },
     {
-      'title': 'Your Trip,\nYour Way',
+      'title': 'Your Trip, Your Way',
       'description':
           'Use our smart planner to tailor your dream itinerary based on your vibe, budget, and climate preference.',
       'image': 'assets/images/onboarding_img_3.png',

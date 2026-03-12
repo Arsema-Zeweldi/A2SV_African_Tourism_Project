@@ -113,8 +113,8 @@ class OnboardingPage extends StatelessWidget {
             ),
             const SizedBox(height: 48),
           ],
-          SizedBox(
-            width: MediaQuery.of(context).size.width * 0.7,
+          FittedBox(
+            fit: BoxFit.scaleDown,
             child: Text(
               title,
               textAlign: TextAlign.center,

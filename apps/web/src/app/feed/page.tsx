@@ -2,7 +2,6 @@ import React from 'react'
 import NewPost from '@/components/feedPage/NewPost'
 import TrendingNow from '@/components/feedPage/TrendingNow'
 import PostCard from '@/components/feedPage/PostCard'
-import Navbar from '@/components/navbar'
 import FooterSimple from '@/components/footerSimple'
 import { getAllPosts } from '@/app/feed/data'
 
@@ -10,7 +9,6 @@ export default async function FeedPage() {
   const posts = await getAllPosts()
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
-      <Navbar />
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 lg:px-10 py-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
         <div className="lg:col-span-8 flex flex-col gap-6">
           <header className="flex flex-col gap-2 mb-2">

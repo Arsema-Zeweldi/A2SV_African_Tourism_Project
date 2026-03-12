@@ -9,16 +9,14 @@ const Navbar = () => {
   const pathname = usePathname();
   const isLandingPage = pathname === "/landing";
   const isHomePage = pathname === "/" || pathname === "/home";
+  const isInteriorPage = !isLandingPage && !isHomePage;
 
   const [isScrolled, setIsScrolled] = useState(false);
 
   const HOME_TEXT_SWITCH_SCROLL_Y = 400;
 
   useEffect(() => {
-    if (!isHomePage) {
-      setIsScrolled(false);
-      return;
-    }
+    if (!isHomePage) return;
 
     const onScroll = () => {
       const passed = window.scrollY >= HOME_TEXT_SWITCH_SCROLL_Y;
@@ -28,10 +26,13 @@ const Navbar = () => {
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
-  }, [isHomePage, isScrolled]);
+  }, [isHomePage]);
 
-  const useDarkText = (!isLandingPage && !isHomePage) || (isHomePage && isScrolled);
+  const useDarkText = isInteriorPage || (isHomePage && isScrolled);
   const textColorClass = useDarkText ? "text-gray-800" : "text-white";
+  const navClassName = isInteriorPage
+    ? "sticky top-0 z-50 w-full border-b border-[#ebe5dc] bg-white/95 px-5 backdrop-blur-sm md:px-10"
+    : "sticky top-0 z-50 w-full border-b border-white/10 bg-white/5 px-5 shadow-[0_4px_30px_rgba(0,0,0,0.1)] backdrop-blur-xs md:px-10";
 
   const navLinks = [
     { name: "Home", href: "/home" },
@@ -78,9 +79,7 @@ const Navbar = () => {
   }
 
   return (
-    <nav
-      className="sticky top-0 z-50 w-full border-b border-white/10 bg-white/5 px-5 shadow-[0_4px_30px_rgba(0,0,0,0.1)] backdrop-blur-xs md:px-10"
-    >
+    <nav className={navClassName}>
       <div className="max-w-[1440px] mx-auto flex items-center justify-between h-[60px] md:h-[72px]">
         {/* Logo */}
         <Link href="/" className="flex items-center">
@@ -117,7 +116,7 @@ const Navbar = () => {
             <Search className="h-5 w-5 md:h-6 md:w-6" />
           </button>
 
-          <div className="h-8 w-8 md:h-10 md:w-10 rounded-full overflow-hidden border-2 border-white cursor-pointer">
+          <div className={`h-8 w-8 md:h-10 md:w-10 rounded-full overflow-hidden cursor-pointer ${isInteriorPage ? "border border-[#f0d8c6]" : "border-2 border-white"}`}>
             <img
               src="/homepage/community-feed.png"
               alt="User"

@@ -9,7 +9,6 @@ import { TripSidebar } from "@/components/my-trips/TripSidebar"
 export function MyTripsPage() {
   return (
     <div className="min-h-screen bg-[#faf8f5] text-slate-900 overflow-x-hidden">
-      <Navbar />
       <div className="mx-auto w-full max-w-[1280px]">
         <div className="flex flex-col lg:flex-row">
           <main className="flex-1 px-4 sm:px-6 lg:px-8 py-10 lg:py-12 lg:pr-12">

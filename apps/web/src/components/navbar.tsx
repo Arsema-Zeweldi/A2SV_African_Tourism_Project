@@ -116,8 +116,10 @@ const Navbar = () => {
             <Search className="h-5 w-5 md:h-6 md:w-6" />
           </button>
 
-          <div
-            className={`h-8 w-8 md:h-10 md:w-10 rounded-full overflow-hidden cursor-pointer ${isInteriorPage ? 'border border-[#f0d8c6]' : 'border-2 border-white'}`}
+          <Link
+            href="/profile"
+            aria-label="Go to profile page"
+            className={`block h-8 w-8 md:h-10 md:w-10 rounded-full overflow-hidden cursor-pointer ${isInteriorPage ? 'border border-[#f0d8c6]' : 'border-2 border-white'}`}
           >
             <img
               src="/homepage/community-feed.png"
@@ -127,7 +129,7 @@ const Navbar = () => {
                 e.currentTarget.src = 'https://github.com/shadcn.png'
               }}
             />
-          </div>
+          </Link>
         </div>
       </div>
     </nav>

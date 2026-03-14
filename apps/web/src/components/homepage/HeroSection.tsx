@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { MapPin, ArrowRight } from "lucide-react";
 
@@ -57,11 +58,14 @@ export default function HeroSection() {
                     <Button
                         size="lg"
                         className="group h-12 min-w-[160px] gap-2.5 rounded-full bg-[#ec6d13] pl-5 pr-7 text-sm font-semibold text-white shadow-xl shadow-orange-900/45 transition-all hover:bg-[#d4600f] hover:translate-y-[-1px] hover:shadow-orange-900/65"
+                        asChild
                     >
-                        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-white/20 group-hover:bg-white/30">
-                            <MapPin className="h-3.5 w-3.5 fill-current" />
-                        </div>
-                        Plan Your Trip
+                        <Link href="/plan-your-trip">
+                            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-white/20 group-hover:bg-white/30">
+                                <MapPin className="h-3.5 w-3.5 fill-current" />
+                            </div>
+                            Plan Your Trip
+                        </Link>
                     </Button>
 
                     <Button

@@ -50,6 +50,30 @@ type ChatRequest struct {
 	Message string `json:"message" binding:"required,min=1,max=4096"`
 }
 
+type DestinationSearchQuery struct {
+	RegionID   string `form:"region_id"`
+	PriceLevel int    `form:"price_level"`
+	Season     string `form:"season"`
+	Tags       string `form:"tags"` // Comma-separated tag slugs
+	Query      string `form:"query"`
+	Page       int    `form:"page"      binding:"omitempty,min=1"`
+	PageSize   int    `form:"page_size" binding:"omitempty,min=1,max=100"`
+}
+
+type DestinationResponse struct {
+	ID               uuid.UUID `json:"id"`
+	Name             string    `json:"name"`
+	Slug             string    `json:"slug"`
+	ShortDescription string    `json:"short_description"`
+	City             string    `json:"city"`
+	CountryName      string    `json:"country_name"`
+	RegionName       string    `json:"region_name"`
+	AverageRating    float64   `json:"average_rating"`
+	PriceLevel       int       `json:"price_level"`
+	BestSeason       string    `json:"best_season"`
+	HeroImageURL     string    `json:"hero_image_url"`
+}
+
 type FeedQuery struct {
 	SortBy   string `form:"sort_by"   binding:"omitempty,oneof=rating_avg price verified"`
 	Order    string `form:"order"     binding:"omitempty,oneof=asc desc"`

@@ -229,10 +229,109 @@ func (h *AppHandler) DeleteRegion(c *gin.Context) {
 
 // Discovery Handlers
 func (h *AppHandler) SearchDestinations(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"message": "Search destinations endpoint"})
+	var query DestinationSearchQuery
+	if err := c.ShouldBindQuery(&query); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if query.Page <= 0 {
+		query.Page = 1
+	}
+	if query.PageSize <= 0 {
+		query.PageSize = 10
+	}
+
+	db := h.DB.Model(&models.Destination{}).
+		Preload("Country").
+		Preload("Country.Region")
+
+	// 1. Filter by Region
+	if query.RegionID != "" {
+		regionID, err := uuid.Parse(query.RegionID)
+		if err == nil {
+			db = db.Where("region_id = ?", regionID)
+		}
+	}
+
+	// 2. Filter by Price Level
+	if query.PriceLevel > 0 {
+		db = db.Where("price_level = ?", query.PriceLevel)
+	}
+
+	// 3. Filter by Season
+	if query.Season != "" {
+		db = db.Where("best_season = ?", query.Season)
+	}
+
+	// 4. Filter by Tags (Many-to-Many)
+	if query.Tags != "" {
+		tagSlugs := strings.Split(query.Tags, ",")
+		db = db.Joins("JOIN destination_tags ON destination_tags.destination_id = destinations.destination_id").
+			Joins("JOIN tags ON tags.tag_id = destination_tags.tag_id").
+			Where("tags.slug IN ?", tagSlugs).
+			Group("destinations.destination_id").
+			Having("COUNT(DISTINCT tags.tag_id) = ?", len(tagSlugs))
+	}
+
+	// 5. Search Query (Name/Description)
+	if query.Query != "" {
+		searchTerm := "%" + query.Query + "%"
+		db = db.Where("name ILIKE ? OR description ILIKE ? OR short_description ILIKE ?", searchTerm, searchTerm, searchTerm)
+	}
+
+	var total int64
+	db.Count(&total)
+
+	var destinations []models.Destination
+	err := db.Offset((query.Page - 1) * query.PageSize).
+		Limit(query.PageSize).
+		Find(&destinations).Error
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to search destinations"})
+		return
+	}
+
+	var response []DestinationResponse
+	for _, d := range destinations {
+		response = append(response, DestinationResponse{
+			ID:               d.DestinationID,
+			Name:             d.Name,
+			Slug:             d.Slug,
+			ShortDescription: d.ShortDescription,
+			City:             d.City,
+			CountryName:      d.Country.Name,
+			RegionName:       d.Country.Region.Name,
+			AverageRating:    d.AverageRating,
+			PriceLevel:       d.PriceLevel,
+			BestSeason:       d.BestSeason,
+			HeroImageURL:     d.HeroImageURL,
+		})
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data":      response,
+		"total":     total,
+		"page":      query.Page,
+		"page_size": query.PageSize,
+	})
 }
+
 func (h *AppHandler) GetDestinationDetails(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"message": "Get destination details endpoint"})
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid destination ID"})
+		return
+	}
+
+	var destination models.Destination
+	if err := h.DB.Preload("Country").Preload("Country.Region").Preload("Tags").First(&destination, "destination_id = ?", id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Destination not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, destination)
 }
 
 // AI Planner Handlers

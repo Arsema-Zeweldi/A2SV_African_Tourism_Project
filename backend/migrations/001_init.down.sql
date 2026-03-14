@@ -1,0 +1,32 @@
+-- 001_init.down.sql
+DROP TABLE IF EXISTS visitor_statistics;
+DROP TABLE IF EXISTS analytics_events;
+DROP TABLE IF EXISTS ai_insights;
+DROP TABLE IF EXISTS user_recommendations;
+DROP TABLE IF EXISTS package_chats;
+DROP TABLE IF EXISTS package_reviews;
+DROP TABLE IF EXISTS packages;
+DROP TABLE IF EXISTS itinerary_items;
+DROP TABLE IF EXISTS itineraries;
+DROP TABLE IF EXISTS safety_alerts;
+DROP TABLE IF EXISTS visa_requirements;
+DROP TABLE IF EXISTS reviews;
+DROP TABLE IF EXISTS user_favorites;
+DROP TABLE IF EXISTS destination_tags;
+DROP TABLE IF EXISTS tags;
+DROP TABLE IF EXISTS destinations;
+DROP TABLE IF EXISTS countries;
+DROP TABLE IF EXISTS regions;
+DROP TABLE IF EXISTS user_preferences;
+DROP TABLE IF EXISTS users;
+
+DROP TYPE IF EXISTS insight_type_enum;
+DROP TYPE IF EXISTS package_status_enum;
+DROP TYPE IF EXISTS visa_type_enum;
+DROP TYPE IF EXISTS trip_duration_enum;
+DROP TYPE IF EXISTS budget_range_enum;
+DROP TYPE IF EXISTS preferred_season_enum;
+DROP TYPE IF EXISTS traveler_type_enum;
+DROP TYPE IF EXISTS best_season_enum;
+DROP TYPE IF EXISTS destination_type_enum;
+DROP TYPE IF EXISTS account_type_enum;

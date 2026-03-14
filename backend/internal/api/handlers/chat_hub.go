@@ -2,23 +2,15 @@ package handlers
 
 import (
 	"encoding/json"
-	"log"
-	"net/http"
+	"log/slog"
 	"sync"
 	"time"
 
 	"github.com/Arsema-Zeweldi/africa-tourism-platform/backend/internal/models"
-	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"gorm.io/gorm"
 )
-
-var upgrader = websocket.Upgrader{
-	ReadBufferSize:  1024,
-	WriteBufferSize: 1024,
-	CheckOrigin:     func(r *http.Request) bool { return true },
-}
 
 const (
 	writeWait      = 10 * time.Second
@@ -59,7 +51,7 @@ func (cl *Client) readPump(db *gorm.DB) {
 		_, rawMsg, err := cl.conn.ReadMessage()
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-				log.Printf("[ChatHub] unexpected close for package %s: %v", cl.packageID, err)
+				slog.Warn("ChatHub unexpected close", "package_id", cl.packageID.String(), "error", err)
 			}
 			break
 		}
@@ -75,7 +67,7 @@ func (cl *Client) readPump(db *gorm.DB) {
 			Message:   req.Message,
 		}
 		if err := db.Create(&record).Error; err != nil {
-			log.Printf("[ChatHub] DB write error: %v", err)
+			slog.Error("ChatHub DB write error", "error", err)
 			continue
 		}
 
@@ -212,43 +204,3 @@ func (h *Hub) BroadcastToPackage(packageID uuid.UUID, chat models.PackageChat) {
 	}
 }
 
-func ServeWS(hub *Hub, db *gorm.DB) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		userID, err := getUserID(c)
-		if err != nil {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-			return
-		}
-
-		packageID, err := uuid.Parse(c.Param("id"))
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid package ID"})
-			return
-		}
-
-		var pkg models.Package
-		if err := db.First(&pkg, "package_id = ?", packageID).Error; err != nil {
-			c.JSON(http.StatusNotFound, gin.H{"error": "Package not found"})
-			return
-		}
-
-		conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
-		if err != nil {
-			log.Printf("[ChatHub] upgrade error: %v", err)
-			return
-		}
-
-		client := &Client{
-			hub:       hub,
-			conn:      conn,
-			send:      make(chan []byte, 256),
-			packageID: packageID,
-			userID:    userID,
-		}
-
-		hub.register <- client
-
-		go client.writePump()
-		go client.readPump(db)
-	}
-}

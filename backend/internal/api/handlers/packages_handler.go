@@ -6,14 +6,66 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/Arsema-Zeweldi/africa-tourism-platform/backend/internal/config"
 	"github.com/Arsema-Zeweldi/africa-tourism-platform/backend/internal/models"
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
 type PackagesHandler struct {
-	DB *gorm.DB
+	DB  *gorm.DB
+	Cfg *config.Config
+}
+
+type packageAuthContext struct {
+	UserID uuid.UUID
+	Role   string
+}
+
+func (h *PackagesHandler) parseAuthHeader(c *gin.Context) (*packageAuthContext, bool) {
+	if h.Cfg == nil {
+		return nil, false
+	}
+	authHeader := c.GetHeader("Authorization")
+	if authHeader == "" {
+		return nil, false
+	}
+	parts := strings.SplitN(authHeader, " ", 2)
+	if len(parts) != 2 || parts[0] != "Bearer" {
+		return nil, false
+	}
+
+	token, err := jwt.Parse(parts[1], func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return []byte(h.Cfg.JWTSecret), nil
+	})
+	if err != nil || !token.Valid {
+		return nil, false
+	}
+
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return nil, false
+	}
+
+	userIDRaw, ok := claims["user_id"].(string)
+	if !ok {
+		return nil, false
+	}
+	userID, err := uuid.Parse(userIDRaw)
+	if err != nil {
+		return nil, false
+	}
+	role := ""
+	if roleRaw, ok := claims["role"].(string); ok {
+		role = roleRaw
+	}
+
+	return &packageAuthContext{UserID: userID, Role: role}, true
 }
 
 func getUserID(c *gin.Context) (uuid.UUID, error) {
@@ -97,6 +149,8 @@ func (h *PackagesHandler) PublishPackage(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
+	role, _ := c.Get("role")
+	roleStr, _ := role.(string)
 
 	packageID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -110,7 +164,7 @@ func (h *PackagesHandler) PublishPackage(c *gin.Context) {
 		return
 	}
 
-	if pkg.CreatorID != userID {
+	if pkg.CreatorID != userID && roleStr != "admin" {
 		c.JSON(http.StatusForbidden, gin.H{"error": "You are not the creator of this package"})
 		return
 	}
@@ -145,6 +199,7 @@ func (h *PackagesHandler) PublishPackage(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to publish package"})
 		return
 	}
+	pkg.Status = StatusPublished
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Package published successfully",
@@ -158,6 +213,8 @@ func (h *PackagesHandler) UpdatePackageStatus(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
+	role, _ := c.Get("role")
+	roleStr, _ := role.(string)
 
 	packageID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -177,7 +234,7 @@ func (h *PackagesHandler) UpdatePackageStatus(c *gin.Context) {
 		return
 	}
 
-	if pkg.CreatorID != userID {
+	if pkg.CreatorID != userID && roleStr != "admin" {
 		c.JSON(http.StatusForbidden, gin.H{"error": "You are not the creator of this package"})
 		return
 	}
@@ -226,6 +283,8 @@ func (h *PackagesHandler) UpdatePackage(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
+	role, _ := c.Get("role")
+	roleStr, _ := role.(string)
 
 	packageID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -250,7 +309,7 @@ func (h *PackagesHandler) UpdatePackage(c *gin.Context) {
 		return
 	}
 
-	if pkg.CreatorID != userID {
+	if pkg.CreatorID != userID && roleStr != "admin" {
 		c.JSON(http.StatusForbidden, gin.H{"error": "You are not the creator of this package"})
 		return
 	}
@@ -295,6 +354,8 @@ func (h *PackagesHandler) ArchivePackage(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
+	role, _ := c.Get("role")
+	roleStr, _ := role.(string)
 
 	packageID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -308,7 +369,7 @@ func (h *PackagesHandler) ArchivePackage(c *gin.Context) {
 		return
 	}
 
-	if pkg.CreatorID != userID {
+	if pkg.CreatorID != userID && roleStr != "admin" {
 		c.JSON(http.StatusForbidden, gin.H{"error": "You are not the creator of this package"})
 		return
 	}
@@ -429,17 +490,20 @@ func (h *PackagesHandler) GetPackageReviews(c *gin.Context) {
 func (h *PackagesHandler) GetPackagesFeed(c *gin.Context) {
 	sortBy := c.DefaultQuery("sort_by", "rating_avg")
 	order := c.DefaultQuery("order", "desc")
+	status := strings.ToLower(strings.TrimSpace(c.DefaultQuery("status", "")))
 	queryText := strings.TrimSpace(c.Query("q"))
 	minPriceStr := c.Query("min_price")
 	maxPriceStr := c.Query("max_price")
 	minRatingStr := c.Query("min_rating")
 	minReviewsStr := c.Query("min_reviews")
 	creatorIDStr := strings.TrimSpace(c.Query("creator_id"))
+	authCtx, authOK := h.parseAuthHeader(c)
 
 	allowedSortColumns := map[string]string{
 		"rating_avg": "rating_avg",
 		"price":      "price",
 		"verified":   "reviews_count",
+		"views":      "view_count",
 	}
 	sortColumn, ok := allowedSortColumns[sortBy]
 	if !ok {
@@ -469,7 +533,49 @@ func (h *PackagesHandler) GetPackagesFeed(c *gin.Context) {
 	var packages []models.Package
 	var total int64
 
-	query := h.DB.Model(&models.Package{}).Where("status = ?", StatusPublished)
+	if status == "" {
+		if authOK && authCtx.Role == "admin" {
+			status = "all"
+		} else {
+			status = StatusPublished
+		}
+	}
+
+	query := h.DB.Model(&models.Package{})
+
+	switch status {
+	case StatusPublished:
+		query = query.Where("status = ?", StatusPublished)
+	case StatusDraft, StatusArchived:
+		if !authOK {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization header is required to view non-published packages"})
+			return
+		}
+		if authCtx.Role == "admin" {
+			query = query.Where("status = ?", status)
+		} else if authCtx.Role == "verified_creator" {
+			query = query.Where("status = ? AND creator_id = ?", status, authCtx.UserID)
+		} else {
+			c.JSON(http.StatusForbidden, gin.H{"error": "Access denied: insufficient permissions"})
+			return
+		}
+	case "all":
+		if !authOK {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization header is required to view all packages"})
+			return
+		}
+		if authCtx.Role == "admin" {
+			// no status filter
+		} else if authCtx.Role == "verified_creator" {
+			query = query.Where("creator_id = ?", authCtx.UserID)
+		} else {
+			c.JSON(http.StatusForbidden, gin.H{"error": "Access denied: insufficient permissions"})
+			return
+		}
+	default:
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid status filter"})
+		return
+	}
 
 	if queryText != "" {
 		like := "%" + queryText + "%"
@@ -550,94 +656,6 @@ func (h *PackagesHandler) GetPackagesFeed(c *gin.Context) {
 	})
 }
 
-func (h *PackagesHandler) PostChatMessage(c *gin.Context) {
-	userID, err := getUserID(c)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-		return
-	}
-
-	packageID, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid package ID"})
-		return
-	}
-
-	var req ChatRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	var pkg models.Package
-	if err := h.DB.First(&pkg, "package_id = ?", packageID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Package not found"})
-		return
-	}
-
-	chatMsg := models.PackageChat{
-		PackageID: packageID,
-		UserID:    userID,
-		Message:   req.Message,
-	}
-
-	if err := h.DB.Create(&chatMsg).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to post message"})
-		return
-	}
-
-	if GlobalHub != nil {
-		GlobalHub.BroadcastToPackage(packageID, chatMsg)
-	}
-
-	c.JSON(http.StatusCreated, chatMsg)
-}
-
-func (h *PackagesHandler) GetChatHistory(c *gin.Context) {
-	packageID, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid package ID"})
-		return
-	}
-
-	page := 1
-	pageSize := 50
-	if p, err := parseInt(c.Query("page")); err == nil && p > 0 {
-		page = p
-	}
-	if ps, err := parseInt(c.Query("page_size")); err == nil && ps > 0 && ps <= 200 {
-		pageSize = ps
-	}
-	offset := (page - 1) * pageSize
-
-	var messages []models.PackageChat
-	var total int64
-
-	if err := h.DB.Model(&models.PackageChat{}).Where("package_id = ?", packageID).Count(&total).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to count chat messages"})
-		return
-	}
-
-	if err := h.DB.
-		Where("package_id = ?", packageID).
-		Order("created_at ASC").
-		Limit(pageSize).
-		Offset(offset).
-		Find(&messages).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch chat history"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"data": messages,
-		"meta": gin.H{
-			"page":      page,
-			"page_size": pageSize,
-			"total":     total,
-		},
-	})
-}
-
 func (h *PackagesHandler) GetPackage(c *gin.Context) {
 	packageID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -650,6 +668,12 @@ func (h *PackagesHandler) GetPackage(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Package not found"})
 		return
 	}
+
+	// Increment view count asynchronously to not block the response
+	go func(id uuid.UUID) {
+		h.DB.Model(&models.Package{}).Where("package_id = ?", id).
+			UpdateColumn("view_count", gorm.Expr("view_count + 1"))
+	}(pkg.PackageID)
 
 	c.JSON(http.StatusOK, pkg)
 }

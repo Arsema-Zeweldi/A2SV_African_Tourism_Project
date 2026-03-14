@@ -1,5 +1,5 @@
 -- ✅ ENUM Types
-CREATE TYPE account_type_enum AS ENUM ('traveler', 'admin', 'business');
+CREATE TYPE account_type_enum AS ENUM ('traveler', 'verified_creator', 'admin');
 CREATE TYPE traveler_type_enum AS ENUM ('solo', 'couple', 'family', 'group');
 CREATE TYPE preferred_season_enum AS ENUM ('spring', 'summer', 'autumn', 'winter', 'any');
 CREATE TYPE budget_range_enum AS ENUM ('low', 'medium', 'high', 'luxury');

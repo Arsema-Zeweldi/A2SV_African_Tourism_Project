@@ -2,12 +2,18 @@ package database
 
 import (
 	"errors"
-	"log"
+	"log/slog"
 	"net/url"
+	"os"
 	"strings"
+	"time"
+
+	"path/filepath"
 
 	"github.com/Arsema-Zeweldi/africa-tourism-platform/backend/internal/config"
-	"github.com/Arsema-Zeweldi/africa-tourism-platform/backend/internal/models"
+	"github.com/golang-migrate/migrate/v4"
+	_ "github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -21,42 +27,51 @@ func InitDB(cfg *config.Config) (*gorm.DB, error) {
 	}
 
 	dsn := ensureSSLModeRequire(cfg.DatabaseURL)
-	log.Println("Connecting to database using DATABASE_URL")
+	slog.Info("Connecting to database using DATABASE_URL")
 
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		return nil, err
 	}
 
-	log.Println("✅ Database connection established")
+	sqlDB, err := db.DB()
+	if err == nil {
+		// Connection pooling settings
+		sqlDB.SetMaxOpenConns(25)
+		sqlDB.SetMaxIdleConns(10)
+		sqlDB.SetConnMaxLifetime(5 * time.Minute)
+	}
 
-	log.Println("🔄 Running auto-migrations...")
-	err = db.AutoMigrate(
-		&models.User{},
-		&models.UserPreference{},
-		&models.Region{},
-		&models.Country{},
-		&models.Destination{},
-		&models.Tag{},
-		&models.DestinationTag{},
-		&models.UserFavorite{},
-		&models.Review{},
-		&models.UserRecommendation{},
-		&models.AIInsight{},
-		&models.AnalyticsEvent{},
-		&models.VisitorStatistic{},
-		&models.VisaRequirement{},
-		&models.SafetyAlert{},
-		&models.Itinerary{},
-		&models.ItineraryItem{},
-		&models.Package{},
-		&models.PackageReview{},
-		&models.PackageChat{},
+	slog.Info("Database connection established")
+
+	// 3. Run migrations using golang-migrate
+	slog.Info("Running versioned migrations")
+	migrationsPath := getEnv("MIGRATIONS_PATH", "file://migrations")
+	slog.Info("Using migrations path", "path", migrationsPath)
+
+	m, err := migrate.New(
+		migrationsPath,
+		dsn,
 	)
 	if err != nil {
-		log.Printf("⚠️ Auto-migration warning: %v", err)
+		slog.Warn("Migration initialization failed", "error", err)
+		// Try to see if migrations folder exists locally if path is relative
+		if strings.HasPrefix(migrationsPath, "file://") {
+			relPath := strings.TrimPrefix(migrationsPath, "file://")
+			if abs, err := filepath.Abs(relPath); err == nil {
+				slog.Info("Absolute path attempted", "path", abs)
+				if _, err := os.Stat(abs); err != nil {
+					slog.Error("Migrations directory not found", "path", abs, "error", err)
+				}
+			}
+		}
 	} else {
-		log.Println("✅ Auto-migrations completed")
+		if err := m.Up(); err != nil && err != migrate.ErrNoChange {
+			slog.Warn("Migration execution failed", "error", err)
+		} else {
+			slog.Info("Migrations completed successfully")
+		}
+		m.Close()
 	}
 
 	return db, nil
@@ -82,4 +97,11 @@ func ensureSSLModeRequire(dsn string) string {
 	}
 
 	return parsed.String()
+}
+
+func getEnv(key, fallback string) string {
+	if value, ok := os.LookupEnv(key); ok {
+		return value
+	}
+	return fallback
 }

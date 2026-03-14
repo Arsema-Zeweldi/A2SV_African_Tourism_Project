@@ -11,16 +11,12 @@ import CostBreakdown from '@/components/package-detail/costBreakdown';
 import VisaCard from '@/components/package-detail/visaCard';
 import Map from '@/components/package-detail/map';
 import Video from '@/components/package-detail/video';
-import Navbar from '@/components/navbar';
 import { packageDetails } from './data';
 
 const PackageDetailsPage = () => {
   const details = packageDetails;
   return (
     <div className="min-h-screen bg-[#FCFCFD] font-sans text-slate-900">
-
-      {/* ── Navbar ── */}
-      <Navbar />
 
       <main className="max-w-[1280px] mx-auto py-7 pb-16">
 

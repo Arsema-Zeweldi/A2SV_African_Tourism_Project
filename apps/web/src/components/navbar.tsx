@@ -16,7 +16,7 @@ const Navbar = () => {
   const HOME_TEXT_SWITCH_SCROLL_Y = 400
 
   useEffect(() => {
-    if (!isHomePage) return
+    if (!isHomePage) return;
 
     const onScroll = () => {
       const passed = window.scrollY >= HOME_TEXT_SWITCH_SCROLL_Y

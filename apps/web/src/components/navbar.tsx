@@ -15,10 +15,7 @@ const Navbar = () => {
   const HOME_TEXT_SWITCH_SCROLL_Y = 400;
 
   useEffect(() => {
-    if (!isHomePage) {
-      setIsScrolled(false);
-      return;
-    }
+    if (!isHomePage) return;
 
     const onScroll = () => {
       const passed = window.scrollY >= HOME_TEXT_SWITCH_SCROLL_Y;
@@ -28,15 +25,16 @@ const Navbar = () => {
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
-  }, [isHomePage, isScrolled]);
+  }, [isHomePage]);
 
-  const useDarkText = (!isLandingPage && !isHomePage) || (isHomePage && isScrolled);
+  const hasScrolledHome = isHomePage ? isScrolled : false;
+  const useDarkText = (!isLandingPage && !isHomePage) || hasScrolledHome;
   const textColorClass = useDarkText ? "text-gray-800" : "text-white";
 
   const navLinks = [
     { name: "Home", href: "/home" },
     { name: "Marketplace", href: "/marketplace" },
-    { name: "My Packages", href: "/package-details" },
+    { name: "My Packages", href: "/my-packages" },
     { name: "My Trips", href: "/my-trips" },
     { name: "Feed", href: "/feed" },
   ];
@@ -94,7 +92,10 @@ const Navbar = () => {
         {/* Navigation Links */}
         <div className="hidden md:flex items-center gap-6 lg:gap-10">
           {navLinks.map((link) => {
-            const isActive = pathname === link.href;
+            const isActive =
+              link.href === "/my-packages"
+                ? pathname === "/my-packages" || pathname === "/package-details"
+                : pathname === link.href;
 
             return (
               <Link

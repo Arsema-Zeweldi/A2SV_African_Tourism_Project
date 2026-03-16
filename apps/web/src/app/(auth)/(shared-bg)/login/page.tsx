@@ -8,6 +8,11 @@ import Link from 'next/link'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
+import { userLoginInfo } from '@/types/auth'
+import { login } from '@/services/authService'
+import { useRouter } from 'next/navigation'
+import { useState } from 'react'
+import { AxiosError } from 'axios'
 
 interface LoginFormData {
   email: string
@@ -15,14 +20,40 @@ interface LoginFormData {
 }
 
 const LoginPage = () => {
+  const router = useRouter()
+  const [apiError, setApiError] = useState<string | null>(null)
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm<LoginFormData>({ mode: 'onTouched' })
   const onSubmit = async (data: LoginFormData) => {
-    await new Promise((r) => setTimeout(r, 900))
-    console.log('submit', data)
+    setApiError(null)
+
+    try {
+      const payload: userLoginInfo = {
+        email: data.email,
+        password: data.password,
+      }
+
+      console.log('Sending Payload:', payload)
+
+      await login(payload)
+
+      router.push('/home')
+    } catch (err) {
+      const error = err as AxiosError<{ error: string }>
+
+      const message =
+        error.response?.data?.error || 'Registration failed. Please try again.'
+      setApiError(message)
+
+      console.error(
+        'Login Error Details:',
+        error.response?.status,
+        error.message
+      )
+    }
   }
 
   return (

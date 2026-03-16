@@ -6,6 +6,11 @@ import { FcGoogle } from 'react-icons/fc'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { userSignupInfo } from '@/types/auth'
+import { signup } from '@/services/authService'
+import { useRouter } from 'next/navigation'
+import { useState } from 'react'
+import { AxiosError } from 'axios'
 
 interface SignUpFormData {
   name: string
@@ -15,6 +20,8 @@ interface SignUpFormData {
 }
 
 const SignUpPage = () => {
+  const router = useRouter()
+  const [apiError, setApiError] = useState<string | null>(null)
   const {
     register,
     handleSubmit,
@@ -22,8 +29,38 @@ const SignUpPage = () => {
   } = useForm<SignUpFormData>({ mode: 'onTouched' })
 
   const onSubmit = async (data: SignUpFormData) => {
-    await new Promise((r) => setTimeout(r, 900))
-    console.log('Form Data:', data)
+    setApiError(null)
+
+    try {
+      const nameParts = data.name.trim().split(/\s+/)
+      const firstName = nameParts[0] || ''
+      const lastName = nameParts.slice(1).join(' ')
+
+      const payload: userSignupInfo = {
+        email: data.email,
+        password: data.password,
+        first_name: firstName,
+        last_name: lastName,
+      }
+
+      console.log('Sending Payload:', payload)
+
+      await signup(payload)
+
+      router.push('/login')
+    } catch (err) {
+      const error = err as AxiosError<{ error: string }>
+
+      const message =
+        error.response?.data?.error || 'Registration failed. Please try again.'
+      setApiError(message)
+
+      console.error(
+        'Signup Error Details:',
+        error.response?.status,
+        error.message
+      )
+    }
   }
 
   return (
@@ -68,6 +105,11 @@ const SignUpPage = () => {
                 Join our community and plan your dream adventure.
               </p>
             </div>
+            {apiError && (
+              <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded-full text-sm text-center mb-4">
+                {apiError}
+              </div>
+            )}
             <form
               className="space-y-5"
               onSubmit={handleSubmit(onSubmit)}

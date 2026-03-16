@@ -4,12 +4,14 @@ import TrendingNow from '@/components/feedPage/TrendingNow'
 import PostCard from '@/components/feedPage/PostCard'
 import FooterSimple from '@/components/footerSimple'
 import { getAllPosts } from '@/app/feed/data'
+import Navbar from '@/components/navbar'
 
 export default async function FeedPage() {
   const posts = await getAllPosts()
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
-      <main className="flex-1 w-full max-w-7xl mx-auto px-4 lg:px-10 py-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <Navbar />
+      <div className="flex-1 w-full max-w-7xl mx-auto px-4 lg:px-10 py-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
         <div className="lg:col-span-8 flex flex-col gap-6">
           <header className="flex flex-col gap-2 mb-2">
             <h1 className="text-3xl font-black tracking-tight text-slate-900">
@@ -46,7 +48,7 @@ export default async function FeedPage() {
             <TrendingNow />
           </div>
         </aside>
-      </main>
+      </div>
 
       <FooterSimple />
     </div>

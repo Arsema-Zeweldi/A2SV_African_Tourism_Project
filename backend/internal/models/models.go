@@ -1,6 +1,7 @@
 package models
 
 import (
+	"encoding/json"
 	"time"
 
 	"github.com/google/uuid"
@@ -11,8 +12,8 @@ type User struct {
 	UserID          uuid.UUID      `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"user_id"`
 	Email           string         `gorm:"size:255;unique;not null" json:"email"`
 	PasswordHash    string         `gorm:"size:255;not null" json:"-"`
-	FirstName       string         `gorm:"size:100" json:"first_name"`
-	LastName        string         `gorm:"size:100" json:"last_name"`
+	FirstName       string         `gorm:"size:100;index" json:"first_name"`
+	LastName        string         `gorm:"size:100;index" json:"last_name"`
 	PhoneNumber     string         `gorm:"size:50" json:"phone_number"`
 	Country         string         `gorm:"size:100" json:"country"`
 	ProfileImageURL string         `gorm:"text" json:"profile_image_url"`
@@ -32,9 +33,9 @@ type UserPreference struct {
 	PreferredSeason     string    `gorm:"type:preferred_season_enum" json:"preferred_season"`
 	BudgetRange         string    `gorm:"type:budget_range_enum" json:"budget_range"`
 	TripDuration        string    `gorm:"type:trip_duration_enum" json:"trip_duration"`
-	PreferredActivities []byte    `gorm:"type:jsonb" json:"preferred_activities"`
-	DietaryRestrictions []byte    `gorm:"type:jsonb" json:"dietary_restrictions"`
-	AccessibilityNeeds  []byte    `gorm:"type:jsonb" json:"accessibility_needs"`
+	PreferredActivities json.RawMessage `gorm:"type:jsonb" json:"preferred_activities"`
+	DietaryRestrictions json.RawMessage `gorm:"type:jsonb" json:"dietary_restrictions"`
+	AccessibilityNeeds  json.RawMessage `gorm:"type:jsonb" json:"accessibility_needs"`
 	CreatedAt           time.Time `gorm:"not null;default:now()" json:"created_at"`
 	UpdatedAt           time.Time `gorm:"not null;default:now()" json:"updated_at"`
 }
@@ -60,8 +61,8 @@ type Country struct {
 
 type Destination struct {
 	DestinationID    uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"destination_id"`
-	Name             string    `gorm:"size:200;not null" json:"name"`
-	Slug             string    `gorm:"size:200;unique;not null" json:"slug"`
+	Name             string    `gorm:"size:200;not null;index" json:"name"`
+	Slug             string    `gorm:"size:200;unique;not null;index" json:"slug"`
 	Description      string    `gorm:"text" json:"description"`
 	ShortDescription string    `gorm:"size:255" json:"short_description"`
 	CountryID        uuid.UUID `gorm:"type:uuid;not null" json:"country_id"`
@@ -71,7 +72,7 @@ type Destination struct {
 	Longitude        float64   `gorm:"type:decimal(10,7)" json:"longitude"`
 	DestinationType  string    `gorm:"type:destination_type_enum" json:"destination_type"`
 	HeroImageURL     string    `gorm:"text" json:"hero_image_url"`
-	AverageRating    float64   `gorm:"type:decimal(3,2);default:0" json:"average_rating"`
+	AverageRating    float64   `gorm:"type:decimal(3,2);default:0;index" json:"average_rating"`
 	TotalReviews     int       `gorm:"default:0" json:"total_reviews"`
 	AnnualVisitors   int       `json:"annual_visitors"`
 	BestSeason       string    `gorm:"type:best_season_enum" json:"best_season"`
@@ -81,7 +82,7 @@ type Destination struct {
 	CreatedAt        time.Time `gorm:"not null;default:now()" json:"created_at"`
 	UpdatedAt        time.Time `gorm:"not null;default:now()" json:"updated_at"`
 	Country          Country   `gorm:"foreignKey:CountryID" json:"country"`
-	Tags             []Tag     `gorm:"many2many:destination_tags" json:"tags"`
+	Tags             []Tag     `gorm:"many2many:destination_tags;joinForeignKey:DestinationID;joinReferences:TagID" json:"tags"`
 }
 
 type Tag struct {
@@ -179,7 +180,7 @@ type VisitorStatistic struct {
 	CreatedAt       time.Time `gorm:"not null;default:now()" json:"created_at"`
 }
 
-// ✅ Missing Modules (Intelligence, AI, Community)
+// ✅ Intelligence
 type VisaRequirement struct {
 	VisaID               uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"visa_id"`
 	SourceCountryID      uuid.UUID `gorm:"type:uuid;not null" json:"source_country_id"`
@@ -195,13 +196,14 @@ type SafetyAlert struct {
 	AlertID       uuid.UUID  `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"alert_id"`
 	CountryID     uuid.UUID  `gorm:"type:uuid;not null" json:"country_id"`
 	DestinationID *uuid.UUID `gorm:"type:uuid" json:"destination_id"`
-	Level         int        `gorm:"check:level BETWEEN 1 AND 5" json:"level"`
+	Level         int        `gorm:"check:level BETWEEN 1 AND 5;index" json:"level"`
 	Message       string     `gorm:"text;not null" json:"message"`
 	SourceURL     string     `gorm:"text" json:"source_url"`
 	CreatedAt     time.Time  `gorm:"default:now()" json:"created_at"`
 	ValidUntil    *time.Time `json:"valid_until"`
 }
 
+// ✅ Itineraries
 type Itinerary struct {
 	ItineraryID   uuid.UUID       `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"itinerary_id"`
 	UserID        uuid.UUID       `gorm:"type:uuid;not null" json:"user_id"`
@@ -216,31 +218,53 @@ type Itinerary struct {
 	Items         []ItineraryItem `gorm:"foreignKey:ItineraryID" json:"items"`
 }
 
+// ActivityType represents the type of activity in an itinerary item (PRD spec)
+type ActivityType = string
+
+const (
+	ActivityFood      ActivityType = "food"
+	ActivityAdventure ActivityType = "adventure"
+	ActivityCulture   ActivityType = "culture"
+	ActivityParty     ActivityType = "party"
+)
+
 type ItineraryItem struct {
 	ItemID              uuid.UUID  `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"item_id"`
 	ItineraryID         uuid.UUID  `gorm:"type:uuid;not null" json:"itinerary_id"`
 	DestinationID       *uuid.UUID `gorm:"type:uuid" json:"destination_id"`
 	DayNumber           int        `gorm:"not null" json:"day_number"`
+	OrderIndex          int        `gorm:"default:0" json:"order_index"`
 	ActivityName        string     `gorm:"size:255;not null" json:"activity_name"`
 	ActivityDescription string     `gorm:"text" json:"activity_description"`
+	ActivityType        string     `gorm:"size:50" json:"activity_type"`
 	CostEst             float64    `gorm:"type:decimal(10,2)" json:"cost_est"`
 	Latitude            float64    `gorm:"type:decimal(10,7)" json:"latitude"`
 	Longitude           float64    `gorm:"type:decimal(10,7)" json:"longitude"`
 	StartTime           string     `gorm:"type:time" json:"start_time"`
 	EndTime             string     `gorm:"type:time" json:"end_time"`
+	Notes               string     `gorm:"text" json:"notes"`
 }
 
+// ✅ Community Packages
 type Package struct {
-	PackageID    uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"package_id"`
-	CreatorID    uuid.UUID `gorm:"type:uuid;not null" json:"creator_id"`
-	ItineraryID  uuid.UUID `gorm:"type:uuid;not null" json:"itinerary_id"`
-	Title        string    `gorm:"size:255;not null" json:"title"`
-	Summary      string    `gorm:"text" json:"summary"`
-	Price        float64   `gorm:"type:decimal(10,2);default:0" json:"price"`
-	Status       string    `gorm:"type:package_status_enum;default:'draft'" json:"status"`
-	RatingAvg    float64   `gorm:"type:decimal(3,2);default:0" json:"rating_avg"`
-	ReviewsCount int       `gorm:"default:0" json:"reviews_count"`
-	CreatedAt    time.Time `gorm:"default:now()" json:"created_at"`
+	PackageID           uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"package_id"`
+	CreatorID           uuid.UUID `gorm:"type:uuid;not null" json:"creator_id"`
+	ItineraryID         uuid.UUID `gorm:"type:uuid;not null" json:"itinerary_id"`
+	Title               string    `gorm:"size:255;not null" json:"title"`
+	Summary             string    `gorm:"text" json:"summary"`
+	Price               float64   `gorm:"type:decimal(10,2);default:0;index" json:"price"`
+	Status              string    `gorm:"type:package_status_enum;default:'draft';index" json:"status"`
+	RatingAvg           float64   `gorm:"type:decimal(3,2);default:0;index" json:"rating_avg"`
+	ReviewsCount        int       `gorm:"default:0;index" json:"reviews_count"`
+	ViewCount           int       `gorm:"default:0;index" json:"view_count"`
+	Country             string    `gorm:"size:150" json:"country"`
+	Currency            string    `gorm:"size:10;default:'USD'" json:"currency"`
+	ClimatePref         string    `gorm:"size:100" json:"climate_pref"`
+	IsMultiCountry      bool      `gorm:"default:false" json:"is_multi_country"`
+	IsStreamerVerified  bool      `gorm:"default:false" json:"is_streamer_verified"`
+	StreamerName        string    `gorm:"size:150" json:"streamer_name"`
+	CreatedViaAI        bool      `gorm:"default:false" json:"created_via_ai"`
+	CreatedAt           time.Time `gorm:"default:now()" json:"created_at"`
 }
 
 type PackageReview struct {

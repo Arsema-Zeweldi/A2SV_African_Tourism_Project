@@ -47,8 +47,15 @@ func JWTMiddleware(jwtSecret string) gin.HandlerFunc {
 			return
 		}
 
-		// Set user_id in context for handlers to use
+		// Set user_id and role in context for handlers to use
 		c.Set("user_id", claims["user_id"])
+		roleClaim, ok := claims["role"]
+		if !ok {
+			roleClaim = claims["account_type"]
+		}
+		if role, ok := roleClaim.(string); ok {
+			c.Set("role", role)
+		}
 		c.Next()
 	}
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/features/profile/presentation/pages/profile_page.dart';
 
 class UserProfileBar extends StatelessWidget {
   const UserProfileBar({super.key});
@@ -15,9 +16,19 @@ class UserProfileBar extends StatelessWidget {
       child: Row(
         children: [
           // USER PROFILE PICTURE
-          const CircleAvatar(
-            radius: 24,
-            // backgroundImage: AssetImage('assets/images/user_profile.png'),
+          GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ProfilePage(),
+                ),
+              );
+            },
+            child: const CircleAvatar(
+              radius: 24,
+              // backgroundImage: AssetImage('assets/images/user_profile.png'),
+            ),
           ),
           const SizedBox(width: 12),
 

@@ -61,6 +61,11 @@ func (c *GoRedisClient) Close() error {
 	return c.rdb.Close()
 }
 
+// GetRawClient returns the underlying *redis.Client.
+func (c *GoRedisClient) GetRawClient() *redis.Client {
+	return c.rdb
+}
+
 // NoopClient is used when Redis is not available. It never caches anything.
 // This allows the app to degrade gracefully without Redis.
 type NoopClient struct{}

@@ -12,6 +12,10 @@ func BuildPrompt(req GenerateRequest) string {
 	if len(req.VibeTags) > 0 {
 		vibes = strings.Join(req.VibeTags, ", ")
 	}
+	budgetAmount := "not specified"
+	if req.Budget > 0 {
+		budgetAmount = fmt.Sprintf("$%.0f", req.Budget)
+	}
 	groupSize := req.GroupSize
 	if groupSize <= 0 {
 		groupSize = 1
@@ -28,6 +32,14 @@ func BuildPrompt(req GenerateRequest) string {
 	if climate == "" {
 		climate = "any"
 	}
+	notes := strings.TrimSpace(req.Notes)
+	if notes == "" {
+		notes = "none"
+	}
+	multiCountry := "no"
+	if req.MultiCountry {
+		multiCountry = "yes"
+	}
 
 	return fmt.Sprintf(`You are an expert African travel guide with deep local knowledge.
 
@@ -37,9 +49,12 @@ USER INPUT:
   Destination:        %s
   Duration:           %d days
   Budget level:       %s (use realistic local prices in %s — NOT inflated tourist prices)
+  Budget (USD):       %s per person
   Vibe / Interests:   %s
+  Multi-country trip: %s
   Group size:         %d people
   Climate preference: %s
+  Extra notes:        %s
 
 HARD CONSTRAINTS:
   1. Output MUST be valid JSON only — no markdown, no code fences, no explanation text.
@@ -47,7 +62,7 @@ HARD CONSTRAINTS:
   3. If you are NOT highly confident a place exists or you do NOT know its exact coordinates, DO NOT include it.
   4. Do NOT invent hotels or restaurants unless they are iconic, widely known, and verifiable.
   5. Include a realistic estimated cost in USD for EVERY activity based on the budget level.
-  6. Activity "type" MUST be one of: food, adventure, culture, party.
+  6. Activity "type" MUST be one of: food, adventure, culture, party, wildlife.
   7. "geo_lat" and "geo_long" MUST be accurate GPS coordinates for the real location.
   8. Each day must have 2–5 activities that match the specified vibe and budget.
   9. If the destination is multi-city or multi-country, distribute days logically.
@@ -63,7 +78,7 @@ REQUIRED JSON SCHEMA (output exactly this structure, no extra fields):
       "activities": [
         {
           "name": "Real place name",
-          "type": "food|adventure|culture|party",
+          "type": "food|adventure|culture|party|wildlife",
           "description": "One practical sentence about what to do and why",
           "est_cost": 25.00,
           "geo_lat": -1.2921,
@@ -72,5 +87,16 @@ REQUIRED JSON SCHEMA (output exactly this structure, no extra fields):
       ]
     }
   ]
-}`, req.Destination, duration, budgetLabel, req.Destination, vibes, groupSize, climate)
+}`,
+		req.Destination,
+		duration,
+		budgetLabel,
+		req.Destination,
+		budgetAmount,
+		vibes,
+		multiCountry,
+		groupSize,
+		climate,
+		notes,
+	)
 }

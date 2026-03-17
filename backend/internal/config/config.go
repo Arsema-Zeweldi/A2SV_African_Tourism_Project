@@ -19,6 +19,7 @@ type Config struct {
 	RedisURL        string
 	AllowedOrigins  []string
 	Environment     string
+	CloudinaryURL   string
 }
 
 // LoadConfig reads configuration from environment variables (and an optional .env file).
@@ -55,6 +56,7 @@ func LoadConfig() (*Config, error) {
 		RedisURL:       getEnv("REDIS_URL", "redis://localhost:6379"),
 		AllowedOrigins: origins,
 		Environment:    getEnv("ENVIRONMENT", "development"),
+		CloudinaryURL:  getEnv("CLOUDINARY_URL", ""),
 	}, nil
 }
 

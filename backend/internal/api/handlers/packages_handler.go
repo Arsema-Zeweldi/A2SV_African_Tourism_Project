@@ -1,95 +1,52 @@
 package handlers
 
 import (
-	"errors"
-	"fmt"
+	"context"
 	"net/http"
 	"strings"
 
 	"github.com/Arsema-Zeweldi/africa-tourism-platform/backend/internal/config"
 	"github.com/Arsema-Zeweldi/africa-tourism-platform/backend/internal/models"
+	"github.com/Arsema-Zeweldi/africa-tourism-platform/backend/internal/service/itinerary"
+	"github.com/Arsema-Zeweldi/africa-tourism-platform/backend/internal/service/packages"
+	"github.com/Arsema-Zeweldi/africa-tourism-platform/backend/internal/service/upload"
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
 type PackagesHandler struct {
-	DB  *gorm.DB
-	Cfg *config.Config
+	DB             *gorm.DB
+	Cfg            *config.Config
+	PackageService packages.PackageService
+	ItinerarySvc   itinerary.ItineraryService
+	UploadSvc      upload.UploadService
 }
 
-type packageAuthContext struct {
-	UserID uuid.UUID
-	Role   string
+// NewPackagesHandler creates a new instance of PackagesHandler.
+func NewPackagesHandler(db *gorm.DB, cfg *config.Config, pkgSvc packages.PackageService, itinSvc itinerary.ItineraryService, uploadSvc upload.UploadService) *PackagesHandler {
+	return &PackagesHandler{
+		DB:             db,
+		Cfg:            cfg,
+		PackageService: pkgSvc,
+		ItinerarySvc:   itinSvc,
+		UploadSvc:      uploadSvc,
+	}
 }
 
-func (h *PackagesHandler) parseAuthHeader(c *gin.Context) (*packageAuthContext, bool) {
-	if h.Cfg == nil {
-		return nil, false
-	}
-	authHeader := c.GetHeader("Authorization")
-	if authHeader == "" {
-		return nil, false
-	}
-	parts := strings.SplitN(authHeader, " ", 2)
-	if len(parts) != 2 || parts[0] != "Bearer" {
-		return nil, false
-	}
 
-	token, err := jwt.Parse(parts[1], func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-		}
-		return []byte(h.Cfg.JWTSecret), nil
-	})
-	if err != nil || !token.Valid {
-		return nil, false
-	}
 
-	claims, ok := token.Claims.(jwt.MapClaims)
-	if !ok {
-		return nil, false
-	}
-
-	userIDRaw, ok := claims["user_id"].(string)
-	if !ok {
-		return nil, false
-	}
-	userID, err := uuid.Parse(userIDRaw)
-	if err != nil {
-		return nil, false
-	}
-	role := ""
-	if roleRaw, ok := claims["role"].(string); ok {
-		role = roleRaw
-	}
-
-	return &packageAuthContext{UserID: userID, Role: role}, true
-}
-
-func getUserID(c *gin.Context) (uuid.UUID, error) {
-	raw, exists := c.Get("user_id")
-	if !exists {
-		return uuid.Nil, errors.New("user_id not found in context")
-	}
-	idStr, ok := raw.(string)
-	if !ok {
-		return uuid.Nil, errors.New("user_id has unexpected type in context")
-	}
-	return uuid.Parse(idStr)
-}
-
+// Constants for package status to keep logic consistent
 const (
-	StatusDraft     = "draft"
-	StatusPublished = "published"
-	StatusArchived  = "archived"
+	StatusPrivate  = "private"
+	StatusPublic   = "public"
+	StatusArchived = "archived"
 )
 
 var validTransitions = map[string][]string{
-	StatusDraft:     {StatusPublished, StatusArchived},
-	StatusPublished: {StatusArchived},
-	StatusArchived:  {},
+	StatusPrivate: {StatusPublic, StatusArchived},
+	StatusPublic:  {StatusArchived},
+	StatusArchived: {},
 }
 
 func isValidTransition(from, to string) bool {
@@ -111,17 +68,35 @@ func (h *PackagesHandler) CreatePackage(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
+	if h.PackageService == nil || h.ItinerarySvc == nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Service not configured"})
+		return
+	}
 
 	var req PackageCreateRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
+	if err := c.ShouldBind(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	var itinerary models.Itinerary
-	if err := h.DB.Preload("Items").
-		First(&itinerary, "itinerary_id = ? AND user_id = ?", req.ItineraryID, userID).
-		Error; err != nil {
+	// ID: 3 - Handle optional image upload
+	imageURL := ""
+	file, err := c.FormFile("image")
+	if err == nil {
+		f, err := file.Open()
+		if err == nil {
+			defer f.Close()
+			if h.UploadSvc != nil {
+				url, err := h.UploadSvc.UploadImage(c.Request.Context(), f, "packages")
+				if err == nil {
+					imageURL = url
+				}
+			}
+		}
+	}
+
+	itinerary, err := h.ItinerarySvc.GetByID(c.Request.Context(), req.ItineraryID)
+	if err != nil || itinerary.UserID != userID {
 		c.JSON(http.StatusForbidden, gin.H{"error": "Itinerary not found or you do not own it"})
 		return
 	}
@@ -131,11 +106,36 @@ func (h *PackagesHandler) CreatePackage(c *gin.Context) {
 		ItineraryID: req.ItineraryID,
 		Title:       req.Title,
 		Summary:     req.Summary,
+		Description: req.Description,
 		Price:       req.Price,
-		Status:      StatusDraft,
+		Status:      StatusPrivate,
+	}
+	if req.Country != "" {
+		newPackage.Country = req.Country
+	}
+	if req.Location != "" {
+		newPackage.Location = req.Location
+	}
+	if req.Currency != "" {
+		newPackage.Currency = req.Currency
+	}
+	if req.ImageURL != "" {
+		newPackage.ImageURL = req.ImageURL
+	}
+	if req.DurationDays > 0 {
+		newPackage.DurationDays = req.DurationDays
+	}
+	if req.Category != "" {
+		newPackage.Category = req.Category
+	}
+	if req.GroupSize != "" {
+		newPackage.GroupSize = req.GroupSize
+	}
+	if req.IsPublic != nil {
+		newPackage.IsPublic = *req.IsPublic
 	}
 
-	if err := h.DB.Create(&newPackage).Error; err != nil {
+	if err := h.PackageService.Create(c.Request.Context(), &newPackage, imageURL); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create package"})
 		return
 	}
@@ -149,8 +149,6 @@ func (h *PackagesHandler) PublishPackage(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
-	role, _ := c.Get("role")
-	roleStr, _ := role.(string)
 
 	packageID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -158,51 +156,54 @@ func (h *PackagesHandler) PublishPackage(c *gin.Context) {
 		return
 	}
 
-	var pkg models.Package
-	if err := h.DB.First(&pkg, "package_id = ?", packageID).Error; err != nil {
+	if h.PackageService == nil || h.ItinerarySvc == nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Service not configured"})
+		return
+	}
+
+	pkg, err := h.PackageService.GetByID(c.Request.Context(), packageID)
+	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Package not found"})
 		return
 	}
 
-	if pkg.CreatorID != userID && roleStr != "admin" {
+	if pkg.CreatorID != userID {
 		c.JSON(http.StatusForbidden, gin.H{"error": "You are not the creator of this package"})
 		return
 	}
 
-	if !isValidTransition(pkg.Status, StatusPublished) {
+	if !isValidTransition(pkg.Status, StatusPublic) {
 		c.JSON(http.StatusConflict, gin.H{
 			"error":          "Invalid status transition",
 			"current_status": pkg.Status,
-			"allowed_from":   "draft",
+			"allowed_from":   "private",
 		})
 		return
 	}
 
-	var itemCount int64
-	if err := h.DB.Model(&models.ItineraryItem{}).
-		Where("itinerary_id = ?", pkg.ItineraryID).
-		Count(&itemCount).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to count itinerary items"})
+	itinerary, err := h.ItinerarySvc.GetByID(c.Request.Context(), pkg.ItineraryID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to load itinerary"})
 		return
 	}
 
-	if itemCount < 3 {
+	if len(itinerary.Items) < 3 {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error":      "Package cannot be published: the linked itinerary must have at least 3 items",
-			"item_count": itemCount,
+			"error":      "Package cannot be set to public: the linked itinerary must have at least 3 items",
+			"item_count": len(itinerary.Items),
 			"required":   3,
 		})
 		return
 	}
 
-	if err := h.DB.Model(&pkg).Update("status", StatusPublished).Error; err != nil {
+	if err := h.PackageService.UpdateStatus(c.Request.Context(), packageID, StatusPublic); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to publish package"})
 		return
 	}
-	pkg.Status = StatusPublished
+	pkg.Status = StatusPublic
 
 	c.JSON(http.StatusOK, gin.H{
-		"message": "Package published successfully",
+		"message": "Package is now public",
 		"package": pkg,
 	})
 }
@@ -213,8 +214,6 @@ func (h *PackagesHandler) UpdatePackageStatus(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
-	role, _ := c.Get("role")
-	roleStr, _ := role.(string)
 
 	packageID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -228,13 +227,18 @@ func (h *PackagesHandler) UpdatePackageStatus(c *gin.Context) {
 		return
 	}
 
-	var pkg models.Package
-	if err := h.DB.First(&pkg, "package_id = ?", packageID).Error; err != nil {
+	if h.PackageService == nil || h.ItinerarySvc == nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Service not configured"})
+		return
+	}
+
+	pkg, err := h.PackageService.GetByID(c.Request.Context(), packageID)
+	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Package not found"})
 		return
 	}
 
-	if pkg.CreatorID != userID && roleStr != "admin" {
+	if pkg.CreatorID != userID {
 		c.JSON(http.StatusForbidden, gin.H{"error": "You are not the creator of this package"})
 		return
 	}
@@ -248,24 +252,22 @@ func (h *PackagesHandler) UpdatePackageStatus(c *gin.Context) {
 		return
 	}
 
-	if req.Status == StatusPublished {
-		var itemCount int64
-		if err := h.DB.Model(&models.ItineraryItem{}).
-			Where("itinerary_id = ?", pkg.ItineraryID).
-			Count(&itemCount).Error; err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to count itinerary items"})
+	if req.Status == StatusPublic {
+		itinerary, err := h.ItinerarySvc.GetByID(c.Request.Context(), pkg.ItineraryID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to load itinerary"})
 			return
 		}
-		if itemCount < 3 {
+		if len(itinerary.Items) < 3 {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"error":      "The linked itinerary must have at least 3 items to publish",
-				"item_count": itemCount,
+				"item_count": len(itinerary.Items),
 			})
 			return
 		}
 	}
 
-	if err := h.DB.Model(&pkg).Update("status", req.Status).Error; err != nil {
+	if err := h.PackageService.UpdateStatus(c.Request.Context(), packageID, req.Status); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update package status"})
 		return
 	}
@@ -283,8 +285,6 @@ func (h *PackagesHandler) UpdatePackage(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
-	role, _ := c.Get("role")
-	roleStr, _ := role.(string)
 
 	packageID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -293,23 +293,46 @@ func (h *PackagesHandler) UpdatePackage(c *gin.Context) {
 	}
 
 	var req PackageUpdateRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
+	if err := c.ShouldBind(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	if req.Title == nil && req.Summary == nil && req.Price == nil {
+	// ID: 4 - Handle optional image update
+	imageURL := ""
+	file, err := c.FormFile("image")
+	if err == nil {
+		f, err := file.Open()
+		if err == nil {
+			defer f.Close()
+			if h.UploadSvc != nil {
+				url, err := h.UploadSvc.UploadImage(c.Request.Context(), f, "packages")
+				if err == nil {
+					imageURL = url
+				}
+			}
+		}
+	}
+
+	if req.Title == nil && req.Summary == nil && req.Description == nil && req.Price == nil &&
+		req.Country == nil && req.Location == nil && req.Currency == nil && req.ImageURL == nil &&
+		req.DurationDays == nil && req.Category == nil && req.GroupSize == nil && req.IsPublic == nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "No fields provided to update"})
 		return
 	}
 
-	var pkg models.Package
-	if err := h.DB.First(&pkg, "package_id = ?", packageID).Error; err != nil {
+	if h.PackageService == nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Service not configured"})
+		return
+	}
+
+	pkg, err := h.PackageService.GetByID(c.Request.Context(), packageID)
+	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Package not found"})
 		return
 	}
 
-	if pkg.CreatorID != userID && roleStr != "admin" {
+	if pkg.CreatorID != userID {
 		c.JSON(http.StatusForbidden, gin.H{"error": "You are not the creator of this package"})
 		return
 	}
@@ -331,21 +354,49 @@ func (h *PackagesHandler) UpdatePackage(c *gin.Context) {
 	if req.Summary != nil {
 		updates["summary"] = strings.TrimSpace(*req.Summary)
 	}
+	if req.Description != nil {
+		updates["description"] = strings.TrimSpace(*req.Description)
+	}
 	if req.Price != nil {
 		updates["price"] = *req.Price
 	}
+	if req.Country != nil {
+		updates["country"] = strings.TrimSpace(*req.Country)
+	}
+	if req.Location != nil {
+		updates["location"] = strings.TrimSpace(*req.Location)
+	}
+	if req.Currency != nil {
+		updates["currency"] = strings.TrimSpace(*req.Currency)
+	}
+	if req.ImageURL != nil {
+		updates["image_url"] = strings.TrimSpace(*req.ImageURL)
+	}
+	if req.DurationDays != nil {
+		updates["duration_days"] = *req.DurationDays
+	}
+	if req.Category != nil {
+		updates["category"] = strings.TrimSpace(*req.Category)
+	}
+	if req.GroupSize != nil {
+		updates["group_size"] = strings.TrimSpace(*req.GroupSize)
+	}
+	if req.IsPublic != nil {
+		updates["is_public"] = *req.IsPublic
+	}
 
-	if err := h.DB.Model(&pkg).Updates(updates).Error; err != nil {
+	if err := h.PackageService.Update(c.Request.Context(), packageID, updates, imageURL); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update package"})
 		return
 	}
 
-	if err := h.DB.First(&pkg, "package_id = ?", packageID).Error; err != nil {
+	updated, err := h.PackageService.GetByID(c.Request.Context(), packageID)
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to load updated package"})
 		return
 	}
 
-	c.JSON(http.StatusOK, pkg)
+	c.JSON(http.StatusOK, updated)
 }
 
 func (h *PackagesHandler) ArchivePackage(c *gin.Context) {
@@ -354,8 +405,6 @@ func (h *PackagesHandler) ArchivePackage(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
-	role, _ := c.Get("role")
-	roleStr, _ := role.(string)
 
 	packageID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -363,13 +412,18 @@ func (h *PackagesHandler) ArchivePackage(c *gin.Context) {
 		return
 	}
 
-	var pkg models.Package
-	if err := h.DB.First(&pkg, "package_id = ?", packageID).Error; err != nil {
+	if h.PackageService == nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Service not configured"})
+		return
+	}
+
+	pkg, err := h.PackageService.GetByID(c.Request.Context(), packageID)
+	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Package not found"})
 		return
 	}
 
-	if pkg.CreatorID != userID && roleStr != "admin" {
+	if pkg.CreatorID != userID {
 		c.JSON(http.StatusForbidden, gin.H{"error": "You are not the creator of this package"})
 		return
 	}
@@ -382,7 +436,7 @@ func (h *PackagesHandler) ArchivePackage(c *gin.Context) {
 		return
 	}
 
-	if err := h.DB.Model(&pkg).Update("status", StatusArchived).Error; err != nil {
+	if err := h.PackageService.UpdateStatus(c.Request.Context(), packageID, StatusArchived); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to archive package"})
 		return
 	}
@@ -413,58 +467,38 @@ func (h *PackagesHandler) SubmitPackageReview(c *gin.Context) {
 		return
 	}
 
-	var pkg models.Package
-	if err := h.DB.First(&pkg, "package_id = ?", packageID).Error; err != nil {
+	if h.PackageService == nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Service not configured"})
+		return
+	}
+
+	pkg, err := h.PackageService.GetByID(c.Request.Context(), packageID)
+	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Package not found"})
 		return
 	}
-	if pkg.Status != StatusPublished {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "You can only review published packages"})
+	if pkg.Status != StatusPublic {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "You can only review public packages"})
 		return
 	}
 
-	var existing models.PackageReview
-	if err := h.DB.First(&existing, "package_id = ? AND user_id = ?", packageID, userID).Error; err == nil {
-		c.JSON(http.StatusConflict, gin.H{"error": "You have already reviewed this package"})
+	review := models.PackageReview{
+		PackageID: packageID,
+		UserID:    userID,
+		Rating:    req.Rating,
+		Comment:   req.Comment,
+	}
+	avg, count, err := h.PackageService.SubmitReview(c.Request.Context(), &review)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	txErr := h.DB.Transaction(func(tx *gorm.DB) error {
-		review := models.PackageReview{
-			PackageID: packageID,
-			UserID:    userID,
-			Rating:    req.Rating,
-			Comment:   req.Comment,
-		}
-		if err := tx.Create(&review).Error; err != nil {
-			return err
-		}
-
-		var stats struct {
-			Avg   float64
-			Count int64
-		}
-		if err := tx.Model(&models.PackageReview{}).
-			Select("ROUND(AVG(rating)::numeric, 2) as avg, COUNT(*) as count").
-			Where("package_id = ?", packageID).
-			Scan(&stats).Error; err != nil {
-			return err
-		}
-
-		return tx.Model(&models.Package{}).
-			Where("package_id = ?", packageID).
-			Updates(map[string]interface{}{
-				"rating_avg":    stats.Avg,
-				"reviews_count": stats.Count,
-			}).Error
+	c.JSON(http.StatusCreated, gin.H{
+		"message":       "Review submitted successfully",
+		"rating_avg":    avg,
+		"reviews_count": count,
 	})
-
-	if txErr != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to submit review"})
-		return
-	}
-
-	c.JSON(http.StatusCreated, gin.H{"message": "Review submitted successfully"})
 }
 
 func (h *PackagesHandler) GetPackageReviews(c *gin.Context) {
@@ -473,13 +507,13 @@ func (h *PackagesHandler) GetPackageReviews(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid package ID"})
 		return
 	}
+	if h.PackageService == nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Service not configured"})
+		return
+	}
 
-	var reviews []models.PackageReview
-	if err := h.DB.
-		Where("package_id = ?", packageID).
-		Order("created_at DESC").
-		Limit(50).
-		Find(&reviews).Error; err != nil {
+	reviews, _, err := h.PackageService.GetReviews(c.Request.Context(), packageID, packages.ReviewParams{Page: 1, PageSize: 50})
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch reviews"})
 		return
 	}
@@ -490,34 +524,27 @@ func (h *PackagesHandler) GetPackageReviews(c *gin.Context) {
 func (h *PackagesHandler) GetPackagesFeed(c *gin.Context) {
 	sortBy := c.DefaultQuery("sort_by", "rating_avg")
 	order := c.DefaultQuery("order", "desc")
-	status := strings.ToLower(strings.TrimSpace(c.DefaultQuery("status", "")))
+	status := strings.ToLower(strings.TrimSpace(c.DefaultQuery("status", StatusPublic)))
 	queryText := strings.TrimSpace(c.Query("q"))
 	minPriceStr := c.Query("min_price")
 	maxPriceStr := c.Query("max_price")
 	minRatingStr := c.Query("min_rating")
 	minReviewsStr := c.Query("min_reviews")
 	creatorIDStr := strings.TrimSpace(c.Query("creator_id"))
-	authCtx, authOK := h.parseAuthHeader(c)
 
 	allowedSortColumns := map[string]string{
 		"rating_avg": "rating_avg",
 		"price":      "price",
-		"verified":   "reviews_count",
-		"views":      "view_count",
+		"verified":   "reviews",
+		"views":      "views",
 	}
-	sortColumn, ok := allowedSortColumns[sortBy]
-	if !ok {
-		sortColumn = "rating_avg"
+	if mapped, ok := allowedSortColumns[sortBy]; ok {
+		sortBy = mapped
+	} else {
+		sortBy = "rating_avg"
 	}
 	if order != "asc" && order != "desc" {
 		order = "desc"
-	}
-	orderClause := sortColumn + " " + order
-
-	if sortColumn != "rating_avg" {
-		orderClause += ", rating_avg DESC"
-	} else {
-		orderClause += ", reviews_count DESC"
 	}
 
 	page := 1
@@ -528,77 +555,38 @@ func (h *PackagesHandler) GetPackagesFeed(c *gin.Context) {
 	if ps, err := parseInt(c.Query("page_size")); err == nil && ps > 0 && ps <= 100 {
 		pageSize = ps
 	}
-	offset := (page - 1) * pageSize
 
-	var packages []models.Package
-	var total int64
 
 	if status == "" {
-		if authOK && authCtx.Role == "admin" {
-			status = "all"
-		} else {
-			status = StatusPublished
+		status = StatusPublic
+	}
+	var creatorID *uuid.UUID
+	if status != StatusPublic { // Fix-ID: 1 - Changed "non-published" to "private"
+		userID, err := getUserID(c)
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization required to view private packages"}) // Fix-ID: 1
+			return
 		}
+		creatorID = &userID
 	}
 
-	query := h.DB.Model(&models.Package{})
-
-	switch status {
-	case StatusPublished:
-		query = query.Where("status = ?", StatusPublished)
-	case StatusDraft, StatusArchived:
-		if !authOK {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization header is required to view non-published packages"})
-			return
-		}
-		if authCtx.Role == "admin" {
-			query = query.Where("status = ?", status)
-		} else if authCtx.Role == "verified_creator" {
-			query = query.Where("status = ? AND creator_id = ?", status, authCtx.UserID)
-		} else {
-			c.JSON(http.StatusForbidden, gin.H{"error": "Access denied: insufficient permissions"})
-			return
-		}
-	case "all":
-		if !authOK {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization header is required to view all packages"})
-			return
-		}
-		if authCtx.Role == "admin" {
-			// no status filter
-		} else if authCtx.Role == "verified_creator" {
-			query = query.Where("creator_id = ?", authCtx.UserID)
-		} else {
-			c.JSON(http.StatusForbidden, gin.H{"error": "Access denied: insufficient permissions"})
-			return
-		}
-	default:
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid status filter"})
-		return
-	}
-
-	if queryText != "" {
-		like := "%" + queryText + "%"
-		query = query.Where("title ILIKE ? OR summary ILIKE ?", like, like)
-	}
 	if creatorIDStr != "" {
-		creatorID, err := uuid.Parse(creatorIDStr)
+		parsedID, err := uuid.Parse(creatorIDStr)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid creator_id"})
 			return
 		}
-		query = query.Where("creator_id = ?", creatorID)
+		creatorID = &parsedID
 	}
 
-	var minPrice, maxPrice float64
+	var minPrice, maxPrice *float64
 	if minPriceStr != "" {
 		v, err := parseFloat(minPriceStr)
 		if err != nil || v < 0 {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid min_price"})
 			return
 		}
-		minPrice = v
-		query = query.Where("price >= ?", minPrice)
+		minPrice = &v
 	}
 	if maxPriceStr != "" {
 		v, err := parseFloat(maxPriceStr)
@@ -606,46 +594,55 @@ func (h *PackagesHandler) GetPackagesFeed(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid max_price"})
 			return
 		}
-		maxPrice = v
-		query = query.Where("price <= ?", maxPrice)
+		maxPrice = &v
 	}
-	if minPriceStr != "" && maxPriceStr != "" && minPrice > maxPrice {
+	if minPrice != nil && maxPrice != nil && *minPrice > *maxPrice {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "min_price cannot be greater than max_price"})
 		return
 	}
+	var minRating *float64
 	if minRatingStr != "" {
 		v, err := parseFloat(minRatingStr)
 		if err != nil || v < 0 || v > 5 {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid min_rating"})
 			return
 		}
-		query = query.Where("rating_avg >= ?", v)
+		minRating = &v
 	}
+	var minReviews *int
 	if minReviewsStr != "" {
 		v, err := parseInt(minReviewsStr)
 		if err != nil || v < 0 {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid min_reviews"})
 			return
 		}
-		query = query.Where("reviews_count >= ?", v)
+		minReviews = &v
 	}
-
-	if err := query.Count(&total).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to count packages"})
+	if h.PackageService == nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Service not configured"})
 		return
 	}
 
-	if err := query.
-		Order(orderClause).
-		Limit(pageSize).
-		Offset(offset).
-		Find(&packages).Error; err != nil {
+	packagesList, total, err := h.PackageService.GetFeed(c.Request.Context(), packages.FeedParams{
+		Page:       page,
+		PageSize:   pageSize,
+		Status:     status,
+		CreatorID:  creatorID,
+		Query:      queryText,
+		MinPrice:   minPrice,
+		MaxPrice:   maxPrice,
+		MinRating:  minRating,
+		MinReviews: minReviews,
+		SortBy:     sortBy,
+		Order:      order,
+	})
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch packages feed"})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"data": packages,
+		"data": packagesList,
 		"meta": gin.H{
 			"page":      page,
 			"page_size": pageSize,
@@ -662,36 +659,23 @@ func (h *PackagesHandler) GetPackage(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid package ID"})
 		return
 	}
+	if h.PackageService == nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Service not configured"})
+		return
+	}
 
-	var pkg models.Package
-	if err := h.DB.First(&pkg, "package_id = ?", packageID).Error; err != nil {
+	pkg, err := h.PackageService.GetByID(c.Request.Context(), packageID)
+	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Package not found"})
 		return
 	}
 
 	// Increment view count asynchronously to not block the response
 	go func(id uuid.UUID) {
-		h.DB.Model(&models.Package{}).Where("package_id = ?", id).
-			UpdateColumn("view_count", gorm.Expr("view_count + 1"))
+		_ = h.PackageService.IncrementViews(context.Background(), id)
 	}(pkg.PackageID)
 
 	c.JSON(http.StatusOK, pkg)
 }
 
-func parseInt(s string) (int, error) {
-	if s == "" {
-		return 0, errors.New("empty string")
-	}
-	var n int
-	_, err := fmt.Sscan(s, &n)
-	return n, err
-}
 
-func parseFloat(s string) (float64, error) {
-	if s == "" {
-		return 0, errors.New("empty string")
-	}
-	var n float64
-	_, err := fmt.Sscan(s, &n)
-	return n, err
-}

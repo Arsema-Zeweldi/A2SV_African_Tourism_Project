@@ -11,7 +11,7 @@ import (
 )
 
 // RateLimiter returns a middleware that limits requests by client IP.
-func RateLimiter(rate string) gin.HandlerFunc {
+func RateLimiter(rate string, store limiter.Store) gin.HandlerFunc {
 	// e.g. "5-M" (5 requests per minute), "10-H" (10 requests per hour)
 	r, err := limiter.NewRateFromFormatted(rate)
 	if err != nil {
@@ -22,7 +22,10 @@ func RateLimiter(rate string) gin.HandlerFunc {
 		}
 	}
 
-	store := memory.NewStore()
+	if store == nil {
+		store = memory.NewStore()
+	}
+
 	instance := limiter.New(store, r, limiter.WithTrustForwardHeader(true))
 
 	middleware := mgin.NewMiddleware(instance,

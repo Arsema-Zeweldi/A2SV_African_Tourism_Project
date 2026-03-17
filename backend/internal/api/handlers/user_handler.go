@@ -16,11 +16,14 @@ func (h *AppHandler) GetUserPreferences(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
+	if h.UserService == nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "User service not configured"})
+		return
+	}
 
-	var prefs models.UserPreference
-	if err := h.DB.Where("user_id = ?", userIdStr).First(&prefs).Error; err != nil {
+	prefs, err := h.UserService.GetPreferences(c.Request.Context(), userIdStr.(string))
+	if err != nil {
 		if err == gorm.ErrRecordNotFound {
-			// Return empty preferences instead of 404
 			c.JSON(http.StatusOK, gin.H{"data": models.UserPreference{}})
 			return
 		}
@@ -44,20 +47,18 @@ func (h *AppHandler) UpdateUserPreferences(c *gin.Context) {
 		return
 	}
 
-	userID := uuid.MustParse(userIdStr.(string))
+	if h.UserService == nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "User service not configured"})
+		return
+	}
+
 	updates := map[string]interface{}{}
 
-	if req.TravelerType != nil {
-		updates["traveler_type"] = *req.TravelerType
-	}
 	if req.PreferredSeason != nil {
 		updates["preferred_season"] = *req.PreferredSeason
 	}
 	if req.BudgetRange != nil {
 		updates["budget_range"] = *req.BudgetRange
-	}
-	if req.TripDuration != nil {
-		updates["trip_duration"] = *req.TripDuration
 	}
 	if req.PreferredActivities != nil {
 		payload, err := json.Marshal(req.PreferredActivities)
@@ -75,13 +76,17 @@ func (h *AppHandler) UpdateUserPreferences(c *gin.Context) {
 		}
 		updates["dietary_restrictions"] = payload
 	}
-	if req.AccessibilityNeeds != nil {
-		payload, err := json.Marshal(req.AccessibilityNeeds)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid accessibility_needs"})
-			return
-		}
-		updates["accessibility_needs"] = payload
+	if req.PreferredClimate != nil {
+		updates["preferred_climate"] = *req.PreferredClimate
+	}
+	if req.PreferredLanguage != nil {
+		updates["preferred_language"] = *req.PreferredLanguage
+	}
+	if req.TravelVibeInterest != nil {
+		updates["travel_vibe_interest"] = *req.TravelVibeInterest
+	}
+	if req.TravelVibes != nil && len(*req.TravelVibes) > 0 {
+		updates["travel_vibe_interest"] = (*req.TravelVibes)[0]
 	}
 
 	if len(updates) == 0 {
@@ -89,29 +94,126 @@ func (h *AppHandler) UpdateUserPreferences(c *gin.Context) {
 		return
 	}
 
-	res := h.DB.Model(&models.UserPreference{}).Where("user_id = ?", userID).Updates(updates)
-	if res.Error != nil {
+	userID := uuid.MustParse(userIdStr.(string))
+	updated, err := h.UserService.UpdatePreferences(c.Request.Context(), userID.String(), updates)
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update preferences"})
 		return
 	}
 
-	if res.RowsAffected == 0 {
-		prefs := models.UserPreference{UserID: userID}
-		if err := h.DB.Create(&prefs).Error; err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create preferences"})
-			return
-		}
-		if err := h.DB.Model(&prefs).Where("user_id = ?", userID).Updates(updates).Error; err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update preferences"})
-			return
-		}
-	}
+	c.JSON(http.StatusOK, gin.H{"message": "Preferences updated", "data": updated})
+}
 
-	var prefs models.UserPreference
-	if err := h.DB.Where("user_id = ?", userID).First(&prefs).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to load updated preferences"})
+func (h *AppHandler) GetProfile(c *gin.Context) {
+	userIdStr, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+	if h.UserService == nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "User service not configured"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Preferences updated", "data": prefs})
+	user, err := h.UserService.GetProfile(c.Request.Context(), userIdStr.(string))
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch profile"})
+		return
+	}
+
+	resp := UserProfileResponse{
+		UserID:          user.UserID,
+		Email:           user.Email,
+		FirstName:       user.FirstName,
+		LastName:        user.LastName,
+		Country:         user.Country,
+		Bio:             user.Bio,
+		ProfileImageURL: user.ProfileImageURL,
+		CreatedAt:       user.CreatedAt.Format("2006-01-02T15:04:05Z"),
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": resp})
+}
+
+func (h *AppHandler) UpdateProfile(c *gin.Context) {
+	userIdStr, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	var req UpdateProfileRequest
+	if err := c.ShouldBind(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// ID: 10 - Handle optional avatar upload
+	imageUrl := ""
+	file, err := c.FormFile("avatar")
+	if err == nil {
+		f, err := file.Open()
+		if err == nil {
+			defer f.Close()
+			if h.UploadSvc != nil {
+				url, err := h.UploadSvc.UploadImage(c.Request.Context(), f, "profiles")
+				if err == nil {
+					imageUrl = url
+				}
+			}
+		}
+	}
+
+	if h.UserService == nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "User service not configured"})
+		return
+	}
+
+	updates := map[string]interface{}{}
+	if req.FirstName != nil {
+		updates["first_name"] = *req.FirstName
+	}
+	if req.LastName != nil {
+		updates["last_name"] = *req.LastName
+	}
+	if req.Country != nil {
+		updates["country"] = *req.Country
+	}
+	if req.Bio != nil {
+		updates["bio"] = *req.Bio
+	}
+	if req.ProfileImageURL != nil {
+		updates["profile_image_url"] = *req.ProfileImageURL
+	}
+	if imageUrl != "" {
+		updates["profile_image_url"] = imageUrl
+	}
+
+	if len(updates) == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "No fields to update"})
+		return
+	}
+
+	user, err := h.UserService.UpdateProfile(c.Request.Context(), userIdStr.(string), updates)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update profile"})
+		return
+	}
+
+	resp := UserProfileResponse{
+		UserID:          user.UserID,
+		Email:           user.Email,
+		FirstName:       user.FirstName,
+		LastName:        user.LastName,
+		Country:         user.Country,
+		Bio:             user.Bio,
+		ProfileImageURL: user.ProfileImageURL,
+		CreatedAt:       user.CreatedAt.Format("2006-01-02T15:04:05Z"),
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Profile updated", "data": resp})
 }

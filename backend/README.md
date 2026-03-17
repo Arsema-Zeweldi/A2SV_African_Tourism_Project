@@ -21,6 +21,7 @@ REDIS_URL=redis://localhost:6379
 ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173
 GEMINI_API_KEY=your_google_ai_key
 GEMINI_MODEL=gemini-2.5-flash
+CLOUDINARY_URL=cloudinary://API_KEY:API_SECRET@CLOUD_NAME
 ```
 
 ### 3. Database Migrations
@@ -61,6 +62,7 @@ docker run --rm -p 8080:8080 \
 	-e ALLOWED_ORIGINS="http://localhost:3000,http://localhost:5173" \
 	-e GEMINI_API_KEY="your_google_ai_key" \
 	-e GEMINI_MODEL="gemini-2.5-flash" \
+	-e CLOUDINARY_URL="cloudinary://API_KEY:API_SECRET@CLOUD_NAME" \
 	africa-tourism-backend
 ```
 
@@ -70,6 +72,8 @@ docker run --rm -p 8080:8080 \
 - **Observability**: Structured JSON logging (`slog`), Request-ID tracking, and `/health` monitoring.
 - **Resilience**: 30s Graceful shutdown and database connection pooling.
 - **Redis**: cache-aside with a Noop fallback if Redis is unavailable.
+- **Media Storage**: Cloudinary integration for secure image (JPEG, PNG, WEBP, GIF) and video (MP4, WEBM) storage with auto-transformation.
+- **CORS Handling**: Secure, origin-validated CORS implementation for frontend-backend communication.
 
 ## 🧪 Testing
 Run all unit tests:
@@ -99,6 +103,8 @@ go test -v ./internal/service/ai_planner/...
 - `internal/service/`: Business logic (AI Planner, Discovery, Intelligence).
 - `internal/repository/`: Data access layer (GORM).
 - `internal/cache/`: Redis abstraction.
+- `internal/service/upload/`: Cloudinary media upload service.
+- `internal/api/middleware/`: Auth, Rate Limiting, CORS, and Upload validation.
 - `migrations/`: Versioned SQL migrations.
 
 ---

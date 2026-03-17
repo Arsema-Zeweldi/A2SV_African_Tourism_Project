@@ -2,78 +2,76 @@
 
 Welcome to the backend repository for the Africa Tourism Platform. This is a production-grade Go backend designed for intra-African travel intelligence, featuring AI-assisted planning, community-driven itineraries, and real-time travel alerts.
 
-## 🚀 Quick Start
+## 🚀 Quick Start (For Frontend & Team)
+
+The easiest way to run the entire backend stack (Go + Redis + PostgreSQL) is using Docker Compose.
+
+### 1. Prerequisites
+- **Docker & Docker Compose** installed.
+
+### 2. Setup
+1.  **Navigate to directory**:
+    ```bash
+    cd backend
+    ```
+2.  **Environment Configuration**:
+    Create a `.env` file by copying the example:
+    ```bash
+    cp .env.example .env
+    ```
+3.  **Add Shared API Keys**:
+    Open the `.env` file and fill in the shared keys for:
+    - `GEMINI_API_KEY` (AI Planning)
+    - `CLOUDINARY_URL` (Image/Video Uploads)
+
+### 3. Launch
+Run the following command to build and start all services:
+```bash
+docker-compose up --build -d
+```
+*Note: The first run will automatically initialize the database and run all migrations.*
+
+### 4. Access API Documentation
+Once the server is running, you can access the interactive Swagger UI here:
+👉 **[http://localhost:8080/docs](http://localhost:8080/docs)**
+
+> [!TIP]
+> **Data Formats**: The API supports both `application/json` and `multipart/form-data`. 
+> - Routes like `POST /packages`, `POST /posts`, and `PATCH /user/profile` accept **Multipart** to support direct image/video uploads.
+> - The documentation indicates supported formats for each endpoint.
+
+---
+
+## 🛠️ Developer Setup (Manual)
+
+If you prefer to run the services individually without Docker:
 
 ### 1. Prerequisites
 - **Go**: 1.23+
-- **PostgreSQL**: 15+
-- **Redis**: 6.x+ (See [REDIS_SETUP.md](REDIS_SETUP.md))
-- **Docker** (optional): for containerized runs
+- **PostgreSQL**: 16+
+- **Redis**: 6.x+
 
-### 2. Environment Configuration
-Create a `.env` file in the `backend/` directory (or copy from `.env.example`):
-
-```env
-SERVER_PORT=8080
-DATABASE_URL=postgres://user:pass@localhost:5432/africa_tourism?sslmode=disable
-JWT_SECRET=your_mandatory_secret_key
-REDIS_URL=redis://localhost:6379
-ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173
-GEMINI_API_KEY=your_google_ai_key
-GEMINI_MODEL=gemini-2.5-flash
-CLOUDINARY_URL=cloudinary://API_KEY:API_SECRET@CLOUD_NAME
-```
-
-### 3. Database Migrations
-We use versioned migrations. Use your migration tool of choice (e.g., `golang-migrate`):
-
+### 2. Database Migrations
+We use versioned migrations. Ensure your `DATABASE_URL` is set in `.env` and run:
 ```bash
-# Manual up
 migrate -path migrations -database "$DATABASE_URL" up
 ```
+*Warning: Running `go run cmd/migrate/main.go` will WIPE the entire database.*
 
-Notes:
-- [migrations/001_init.up.sql](migrations/001_init.up.sql) matches the current models.
-- [migrations/001_init_schema_legacy.sql](migrations/001_init_schema_legacy.sql) is kept only as a legacy snapshot.
-
-Warning:
-- [cmd/migrate/main.go](cmd/migrate/main.go) DROPS the entire `public` schema and wipes all data. Run it only for local/dev resets.
-
-### 4. Running the Project
+### 3. Running Locally
 ```bash
-cd backend
 go mod tidy
 go run cmd/server/main.go
 ```
 
-### 5. Docker
-Build the image:
-```bash
-docker build -t africa-tourism-backend .
-```
-
-Run the container (point to host DB/Redis):
-```bash
-docker run --rm -p 8080:8080 \
-	-e SERVER_PORT=8080 \
-	-e DATABASE_URL="postgres://user:pass@host.docker.internal:5432/africa_tourism?sslmode=disable" \
-	-e REDIS_URL="redis://host.docker.internal:6379" \
-	-e JWT_SECRET="your_mandatory_secret_key" \
-	-e ALLOWED_ORIGINS="http://localhost:3000,http://localhost:5173" \
-	-e GEMINI_API_KEY="your_google_ai_key" \
-	-e GEMINI_MODEL="gemini-2.5-flash" \
-	-e CLOUDINARY_URL="cloudinary://API_KEY:API_SECRET@CLOUD_NAME" \
-	africa-tourism-backend
-```
+---
 
 ## 🏗️ Production Features
-- **AI Planning**: deterministic caching with Redis + Google Gemini integration.
-- **Security**: RBAC middleware, IP-based rate limiting, JWT with role claims, and bcrypt cost 12.
-- **Observability**: Structured JSON logging (`slog`), Request-ID tracking, and `/health` monitoring.
-- **Resilience**: 30s Graceful shutdown and database connection pooling.
-- **Redis**: cache-aside with a Noop fallback if Redis is unavailable.
-- **Media Storage**: Cloudinary integration for secure image (JPEG, PNG, WEBP, GIF) and video (MP4, WEBM) storage with auto-transformation.
-- **CORS Handling**: Secure, origin-validated CORS implementation for frontend-backend communication.
+- **AI Planning**: Deterministic caching with Redis + Google Gemini integration.
+- **Media Storage**: Cloudinary integration for secure image (JPEG, PNG, WEBP, GIF) and video (MP4, WEBM) storage.
+- **Security**: RBAC middleware, Redis-backed rate limiting, JWT authentication, and Bcrypt encryption.
+- **Cross-Origin**: Secure, origin-validated CORS implementation.
+- **Resilience**: 30s Graceful shutdown, database connection pooling, and Redis-Noop fallback.
 
 ## 🧪 Testing
 Run all unit tests:
@@ -81,31 +79,12 @@ Run all unit tests:
 go test ./...
 ```
 
-Integration tests (require DB/Redis):
-```bash
-go test -tags=integration ./tests/...
-```
-
-E2E tests (require a running server + real data):
-```bash
-go test -tags=e2e ./tests/...
-```
-
-Specific service tests:
-```bash
-go test -v ./internal/service/ai_planner/...
-```
-
-## 🏗️ Architecture
-- `cmd/server`: Server entrypoint.
-- `cmd/migrate`: Migration helper entrypoint.
+## 📂 Architecture
 - `internal/api/`: Routing, Handlers, and Middlewares.
-- `internal/service/`: Business logic (AI Planner, Discovery, Intelligence).
+- `internal/service/`: Business logic.
 - `internal/repository/`: Data access layer (GORM).
-- `internal/cache/`: Redis abstraction.
-- `internal/service/upload/`: Cloudinary media upload service.
-- `internal/api/middleware/`: Auth, Rate Limiting, CORS, and Upload validation.
-- `migrations/`: Versioned SQL migrations.
+- `internal/api/openapi.yaml`: OpenAPI 3.0 specification.
+- `docker-compose.yaml`: Full-stack orchestration (App, Redis, DB).
 
 ---
 *Built for the A2SV African Tourism Project. Mobile-First • Africa-First.*

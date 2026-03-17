@@ -12,12 +12,6 @@ tags:
     description: Authentication and JWT issuance
   - name: User
     description: User profile and preferences
-  - name: Regions (Admin)
-    description: Region management (admin only)
-  - name: Destinations
-    description: Public destination discovery
-  - name: Destinations (Admin)
-    description: Destination management (admin only)
   - name: Packages
     description: Community packages and reviews
   - name: Chat
@@ -26,29 +20,26 @@ tags:
     description: Itinerary CRUD and items
   - name: Planner
     description: AI itinerary generation
-  - name: Intelligence
-    description: Visa and safety intelligence
+  - name: Community
+    description: Social feed and interactions
+  - name: Upload
+    description: ⚠️ BACKEND TEST ONLY - Direct file uploads (Frontend should use resource-specific multipart endpoints)
 paths:
-  /health:
+  /api/v1/health:
     get:
-      summary: Health check
+      summary: API V1 health check
       tags: [Health]
       responses:
         '200':
-          description: Service health
+          description: API is healthy
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/HealthResponse'
-              examples:
-                ok:
-                  value:
-                    status: ok
-                degraded:
-                  value:
-                    status: degraded
-                    message: redis ping failed
-                    database: ok
+              example:
+                status: healthy
+                database: connected
+                version: 1.0.0
   /api/v1/auth/register:
     post:
       summary: Register user
@@ -109,383 +100,94 @@ paths:
                   email: user@example.com
         '401':
           description: Unauthorized
+  /api/v1/upload/image:
+    post:
+      summary: 🔒 [INTERNAL] Upload an image (Backend Test Only)
+      description: |
+        **Note to Frontend:** Do not use this endpoint directly for Packages, Posts, or Profile updates. 
+        Instead, use the multipart support on the respective `POST /packages`, `POST /posts`, or `PATCH /profile` endpoints.
+      tags: [Upload]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: folder
+          schema:
+            type: string
+          description: Target folder (e.g., packages, profiles, posts)
+          example: packages
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Image file (max 10MB)
+      responses:
+        '200':
+          description: Upload successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url:
+                    type: string
+                    format: url
+              example:
+                url: https://res.cloudinary.com/demo/image/upload/v12345/africa-tourism/packages/sample.jpg
+        '400':
+          description: Invalid file or too large
+  /api/v1/upload/video:
+    post:
+      summary: 🔒 [INTERNAL] Upload a video (Backend Test Only)
+      description: |
+        **Note to Frontend:** Do not use this endpoint directly for Community posts. 
+        Instead, use the multipart support on the `POST /posts` endpoint.
+      tags: [Upload]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: folder
+          schema:
+            type: string
+          description: Target folder (e.g., posts)
+          example: posts
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Video file (max 100MB)
+      responses:
+        '200':
+          description: Upload successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url:
+                    type: string
+                    format: url
+              example:
+                url: https://res.cloudinary.com/demo/video/upload/v12345/africa-tourism/posts/sample.mp4
+        '400':
+          description: Invalid file or too large
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
               example:
                 error: Invalid email or password
-  /api/v1/regions:
-    get:
-      summary: List regions
-      tags: [Regions (Admin)]
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Region'
-              example:
-                - region_id: 00000000-0000-0000-0000-000000000010
-                  name: East Africa
-                  slug: east-africa
-                  description: The eastern region
-    post:
-      summary: Create region
-      tags: [Regions (Admin)]
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreateRegionRequest'
-            example:
-              name: East Africa
-              slug: east-africa
-              description: The eastern region
-      responses:
-        '201':
-          description: Created
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Region'
-              example:
-                region_id: 00000000-0000-0000-0000-000000000010
-                name: East Africa
-                slug: east-africa
-                description: The eastern region
-        '403':
-          description: Forbidden
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              example:
-                error: 'Access denied: insufficient permissions'
-  /api/v1/regions/{id}:
-    get:
-      summary: Get region by ID
-      tags: [Regions (Admin)]
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Region'
-              example:
-                region_id: 00000000-0000-0000-0000-000000000010
-                name: East Africa
-                slug: east-africa
-                description: The eastern region
-        '404':
-          description: Not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              example:
-                error: Region not found
-    put:
-      summary: Update region
-      tags: [Regions (Admin)]
-      security:
-        - bearerAuth: []
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UpdateRegionRequest'
-            example:
-              name: East Africa Updated
-              description: Updated description
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Region'
-              example:
-                region_id: 00000000-0000-0000-0000-000000000010
-                name: East Africa Updated
-                slug: east-africa
-                description: Updated description
-    delete:
-      summary: Delete region
-      tags: [Regions (Admin)]
-      security:
-        - bearerAuth: []
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/MessageResponse'
-              example:
-                message: Region deleted successfully
-  /api/v1/destinations:
-    get:
-      summary: Search destinations
-      tags: [Destinations]
-      parameters:
-        - in: query
-          name: q
-          schema:
-            type: string
-        - in: query
-          name: region_id
-          schema:
-            type: string
-            format: uuid
-        - in: query
-          name: country_id
-          schema:
-            type: string
-            format: uuid
-        - in: query
-          name: price_level
-          schema:
-            type: integer
-        - in: query
-          name: season
-          schema:
-            type: string
-        - in: query
-          name: tags
-          schema:
-            type: string
-        - in: query
-          name: page
-          schema:
-            type: integer
-        - in: query
-          name: page_size
-          schema:
-            type: integer
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DestinationSearchResponse'
-              example:
-                data:
-                  - destination_id: 00000000-0000-0000-0000-000000000100
-                    name: Nairobi
-                    slug: nairobi
-                    description: Capital city
-                    short_description: A vibrant city
-                    country_id: 00000000-0000-0000-0000-000000000200
-                    region_id: 00000000-0000-0000-0000-000000000010
-                    city: Nairobi
-                    hero_image_url: https://example.com/nairobi.jpg
-                    destination_type: city
-                    average_rating: 4.2
-                    total_reviews: 120
-                    annual_visitors: 1500000
-                    best_season: summer
-                    price_level: 3
-                    is_unesco_site: false
-                    is_active: true
-                total: 1
-                page: 1
-    post:
-      summary: Create destination
-      tags: [Destinations (Admin)]
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreateDestinationRequest'
-            example:
-              name: Nairobi
-              slug: nairobi
-              description: Capital city
-              short_description: A vibrant city
-              country_id: 00000000-0000-0000-0000-000000000200
-              region_id: 00000000-0000-0000-0000-000000000010
-              city: Nairobi
-              latitude: -1.286389
-              longitude: 36.817223
-              destination_type: city
-              hero_image_url: https://example.com/nairobi.jpg
-              annual_visitors: 1500000
-              best_season: summer
-              price_level: 3
-              is_unesco_site: false
-              is_active: true
-      responses:
-        '201':
-          description: Created
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Destination'
-              example:
-                destination_id: 00000000-0000-0000-0000-000000000100
-                name: Nairobi
-                slug: nairobi
-                description: Capital city
-                short_description: A vibrant city
-                country_id: 00000000-0000-0000-0000-000000000200
-                region_id: 00000000-0000-0000-0000-000000000010
-                city: Nairobi
-                hero_image_url: https://example.com/nairobi.jpg
-                destination_type: city
-                average_rating: 0
-                total_reviews: 0
-                annual_visitors: 1500000
-                best_season: summer
-                price_level: 3
-                is_unesco_site: false
-                is_active: true
-  /api/v1/destinations/{id}:
-    get:
-      summary: Get destination details
-      tags: [Destinations]
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Destination'
-              example:
-                destination_id: 00000000-0000-0000-0000-000000000100
-                name: Nairobi
-                slug: nairobi
-                description: Capital city
-                short_description: A vibrant city
-                country_id: 00000000-0000-0000-0000-000000000200
-                region_id: 00000000-0000-0000-0000-000000000010
-                city: Nairobi
-                hero_image_url: https://example.com/nairobi.jpg
-                destination_type: city
-                average_rating: 4.2
-                total_reviews: 120
-                annual_visitors: 1500000
-                best_season: summer
-                price_level: 3
-                is_unesco_site: false
-                is_active: true
-        '404':
-          description: Not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              example:
-                error: Destination not found
-    put:
-      summary: Update destination
-      tags: [Destinations (Admin)]
-      security:
-        - bearerAuth: []
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UpdateDestinationRequest'
-            example:
-              name: Nairobi Updated
-              short_description: Updated description
-              price_level: 4
-              is_active: true
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Destination'
-              example:
-                destination_id: 00000000-0000-0000-0000-000000000100
-                name: Nairobi Updated
-                slug: nairobi
-                description: Capital city
-                short_description: Updated description
-                country_id: 00000000-0000-0000-0000-000000000200
-                region_id: 00000000-0000-0000-0000-000000000010
-                city: Nairobi
-                hero_image_url: https://example.com/nairobi.jpg
-                destination_type: city
-                average_rating: 4.2
-                total_reviews: 120
-                annual_visitors: 1500000
-                best_season: summer
-                price_level: 4
-                is_unesco_site: false
-                is_active: true
-    delete:
-      summary: Delete destination
-      tags: [Destinations (Admin)]
-      security:
-        - bearerAuth: []
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/MessageResponse'
-              example:
-                message: Destination deleted successfully
   /api/v1/packages:
     get:
       summary: Get packages feed
@@ -495,7 +197,7 @@ paths:
           name: status
           schema:
             type: string
-            enum: [published, draft, archived, all]
+            enum: [public, private, archived, all]
         - in: query
           name: sort_by
           schema:
@@ -529,17 +231,18 @@ paths:
                     title: Safari Adventure
                     summary: A 3-day guided safari
                     price: 299.99
-                    status: published
+                    status: public
                     rating_avg: 4.8
                     reviews_count: 10
-                    view_count: 120
+                    views_count: 120
                     country: Kenya
+                    location: Nairobi
                     currency: USD
-                    climate_pref: warm
-                    is_multi_country: false
-                    is_streamer_verified: false
-                    streamer_name: ""
-                    created_via_ai: false
+                    image_url: https://example.com/safari.jpg
+                    duration_days: 3
+                    category: adventure
+                    group_size: small
+                    is_public: true
                     created_at: "2026-03-14T10:00:00Z"
                 meta:
                   page: 1
@@ -558,11 +261,16 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/PackageCreateRequest'
-            example:
-              itinerary_id: 00000000-0000-0000-0000-000000000700
-              title: Safari Adventure
-              summary: A 3-day guided safari
-              price: 299.99
+          multipart/form-data:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/PackageCreateRequest'
+                - type: object
+                  properties:
+                    image:
+                      type: string
+                      format: binary
+                      description: Optional package thumbnail image
       responses:
         '201':
           description: Created
@@ -577,17 +285,17 @@ paths:
                 title: Safari Adventure
                 summary: A 3-day guided safari
                 price: 299.99
-                status: draft
+                status: private
                 rating_avg: 0
                 reviews_count: 0
-                view_count: 0
+                views_count: 0
                 country: Kenya
+                location: Nairobi
                 currency: USD
-                climate_pref: warm
-                is_multi_country: false
-                is_streamer_verified: false
-                streamer_name: ""
-                created_via_ai: false
+                image_url: https://example.com/safari.jpg
+                duration_days: 3
+                category: adventure
+                is_public: false
                 created_at: "2026-03-14T10:00:00Z"
   /api/v1/packages/{id}:
     get:
@@ -614,17 +322,17 @@ paths:
                 title: Safari Adventure
                 summary: A 3-day guided safari
                 price: 299.99
-                status: published
+                status: public
                 rating_avg: 4.8
                 reviews_count: 10
-                view_count: 121
+                views_count: 121
                 country: Kenya
+                location: Nairobi
                 currency: USD
-                climate_pref: warm
-                is_multi_country: false
-                is_streamer_verified: false
-                streamer_name: ""
-                created_via_ai: false
+                image_url: https://example.com/safari.jpg
+                duration_days: 3
+                category: adventure
+                is_public: true
                 created_at: "2026-03-14T10:00:00Z"
     patch:
       summary: Update package
@@ -644,10 +352,16 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/PackageUpdateRequest'
-            example:
-              title: Updated Package Title
-              summary: Updated summary
-              price: 149.5
+          multipart/form-data:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/PackageUpdateRequest'
+                - type: object
+                  properties:
+                    image:
+                      type: string
+                      format: binary
+                      description: Optional new package thumbnail image
       responses:
         '200':
           description: OK
@@ -662,17 +376,17 @@ paths:
                 title: Updated Package Title
                 summary: Updated summary
                 price: 149.5
-                status: draft
+                status: private
                 rating_avg: 0
                 reviews_count: 0
-                view_count: 0
+                views_count: 0
                 country: Kenya
+                location: Nairobi
                 currency: USD
-                climate_pref: warm
-                is_multi_country: false
-                is_streamer_verified: false
-                streamer_name: ""
-                created_via_ai: false
+                image_url: https://example.com/safari.jpg
+                duration_days: 3
+                category: adventure
+                is_public: false
                 created_at: "2026-03-14T10:00:00Z"
     delete:
       summary: Archive package
@@ -716,7 +430,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/MessageResponse'
               example:
-                message: Package published successfully
+                message: Package public successfully
   /api/v1/packages/{id}/status:
     patch:
       summary: Update package status
@@ -737,7 +451,7 @@ paths:
             schema:
               $ref: '#/components/schemas/PackageStatusRequest'
             example:
-              status: published
+              status: public
       responses:
         '200':
           description: OK
@@ -881,6 +595,76 @@ paths:
       responses:
         '101':
           description: Switching protocols
+  /api/v1/user/profile:
+    get:
+      summary: Get user profile
+      tags: [User]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/UserProfileResponse'
+              example:
+                data:
+                  user_id: 00000000-0000-0000-0000-000000000001
+                  email: user@example.com
+                  first_name: Arsema
+                  last_name: Zeweldi
+                  country: Ethiopia
+                  bio: Passionate traveler and developer.
+                  profile_image_url: https://example.com/avatar.jpg
+                  created_at: 2026-03-14T10:00:00Z
+    patch:
+      summary: Update user profile
+      tags: [User]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProfileRequest'
+          multipart/form-data:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/UpdateProfileRequest'
+                - type: object
+                  properties:
+                    avatar:
+                      type: string
+                      format: binary
+                      description: Optional user avatar image
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/UserProfileResponse'
+              example:
+                message: Profile updated
+                data:
+                  user_id: 00000000-0000-0000-0000-000000000001
+                  email: user@example.com
+                  first_name: Arsema
+                  last_name: Zeweldi
+                  country: Ethiopia
+                  bio: Updated bio.
+                  profile_image_url: https://example.com/avatar.jpg
+                  created_at: 2026-03-14T10:00:00Z
   /api/v1/user/preferences:
     get:
       summary: Get user preferences
@@ -898,13 +682,13 @@ paths:
                 data:
                   preference_id: 00000000-0000-0000-0000-000000000300
                   user_id: 00000000-0000-0000-0000-000000000001
-                  traveler_type: solo
                   preferred_season: summer
                   budget_range: medium
-                  trip_duration: short
                   preferred_activities: [hiking, food]
                   dietary_restrictions: [vegetarian]
-                  accessibility_needs: [wheelchair]
+                  preferred_climate: tropical
+                  preferred_language: english
+                  travel_vibe_interest: adventure
     put:
       summary: Update user preferences
       tags: [User]
@@ -916,14 +700,34 @@ paths:
           application/json:
             schema:
               type: object
-              example:
-                traveler_type: solo
-                preferred_season: summer
-                budget_range: medium
-                trip_duration: short
-                preferred_activities: [hiking, food]
-                dietary_restrictions: [vegetarian]
-                accessibility_needs: [wheelchair]
+              properties:
+                preferred_season:
+                  type: string
+                  enum: [spring, summer, autumn, winter, any]
+                budget_range:
+                  type: string
+                  enum: [low, medium, high, luxury]
+                preferred_activities:
+                  type: array
+                  items:
+                    type: string
+                dietary_restrictions:
+                  type: array
+                  items:
+                    type: string
+                preferred_climate:
+                  type: string
+                  enum: [tropical, desert, coastal, highland, temperate, any]
+                preferred_language:
+                  type: string
+                  enum: [english, french, arabic, portuguese, swahili, any]
+                travel_vibe_interest:
+                  type: string
+                  enum: [adventure, relaxed, foodie, history, party, culture, wildlife, any]
+                travel_vibes:
+                  type: array
+                  items:
+                    type: string
       responses:
         '200':
           description: OK
@@ -974,6 +778,20 @@ paths:
                           geo_lat: -1.286389
                           geo_long: 36.817223
   /api/v1/itineraries:
+    get:
+      summary: List user itineraries
+      tags: [Itineraries]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Itinerary'
     post:
       summary: Create itinerary
       tags: [Itineraries]
@@ -988,14 +806,16 @@ paths:
             example:
               title: Test Itinerary
               description: Test itinerary description
-              start_date: 2026-03-20
-              end_date: 2026-03-23
+              days_count: 3
+              nights_count: 2
+              start_date: "2026-03-20"
+              end_date: "2026-03-23"
               items:
                 - day_number: 1
-                  activity_name: Arrival and check-in
-                  activity_description: Check in and rest
-                  start_time: 09:00
-                  end_time: 12:00
+                  title: Arrival and check-in
+                  description: Check in and rest
+                  start_time: "09:00"
+                  end_time: "12:00"
       responses:
         '201':
           description: Created
@@ -1008,6 +828,8 @@ paths:
                 user_id: 00000000-0000-0000-0000-000000000001
                 title: Test Itinerary
                 description: Test itinerary description
+                days_count: 3
+                nights_count: 2
                 items: []
   /api/v1/itineraries/{id}:
     get:
@@ -1034,11 +856,34 @@ paths:
                 user_id: 00000000-0000-0000-0000-000000000001
                 title: Test Itinerary
                 description: Test itinerary description
+                days_count: 3
+                nights_count: 2
                 items:
                   - item_id: 00000000-0000-0000-0000-000000000701
                     itinerary_id: 00000000-0000-0000-0000-000000000700
                     day_number: 1
-                    activity_name: Arrival
+                    title: Arrival
+    delete:
+      summary: Delete itinerary
+      tags: [Itineraries]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+              example:
+                message: Itinerary deleted successfully
   /api/v1/itineraries/{id}/items:
     post:
       summary: Add itinerary item
@@ -1060,10 +905,10 @@ paths:
               $ref: '#/components/schemas/CreateItineraryItem'
             example:
               day_number: 1
-              activity_name: Arrival and check-in
-              activity_description: Check in and rest
-              start_time: 09:00
-              end_time: 12:00
+              title: Arrival and check-in
+              description: Check in and rest
+              start_time: "09:00"
+              end_time: "12:00"
       responses:
         '201':
           description: Created
@@ -1075,7 +920,7 @@ paths:
                 item_id: 00000000-0000-0000-0000-000000000701
                 itinerary_id: 00000000-0000-0000-0000-000000000700
                 day_number: 1
-                activity_name: Arrival and check-in
+                title: Arrival and check-in
         '400':
           description: Bad request
           content:
@@ -1104,7 +949,7 @@ paths:
               $ref: '#/components/schemas/UpdateItineraryItemRequest'
             example:
               item_id: 00000000-0000-0000-0000-000000000701
-              activity_name: Updated activity name
+              title: Updated activity title
       responses:
         '200':
           description: OK
@@ -1116,22 +961,21 @@ paths:
                 item_id: 00000000-0000-0000-0000-000000000701
                 itinerary_id: 00000000-0000-0000-0000-000000000700
                 day_number: 1
-                activity_name: Updated activity name
-  /api/v1/intelligence/visa:
-    get:
-      summary: Get visa requirements
-      tags: [Intelligence]
+                title: Updated activity title
+    delete:
+      summary: Delete itinerary item
+      tags: [Itineraries]
       security:
         - bearerAuth: []
       parameters:
-        - in: query
-          name: source_country_id
+        - in: path
+          name: id
           required: true
           schema:
             type: string
             format: uuid
-        - in: query
-          name: destination_country_id
+        - in: path
+          name: itemId
           required: true
           schema:
             type: string
@@ -1142,58 +986,132 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/VisaRequirement'
+                $ref: '#/components/schemas/MessageResponse'
               example:
-                visa_id: 00000000-0000-0000-0000-000000000800
-                source_country_id: 00000000-0000-0000-0000-000000000200
-                destination_country_id: 00000000-0000-0000-0000-000000000201
-                visa_type: required
-                description: Visa required for travel
-                cost_usd: 50
-                valid_days: 30
-                last_updated: "2026-03-14T10:00:00Z"
-  /api/v1/intelligence/safety:
+                message: Itinerary item deleted successfully
+  /api/v1/posts:
     get:
-      summary: Get safety alerts
-      tags: [Intelligence]
-      security:
-        - bearerAuth: []
-      parameters:
-        - in: query
-          name: country_id
-          schema:
-            type: string
-            format: uuid
-        - in: query
-          name: min_level
-          schema:
-            type: integer
-        - in: query
-          name: max_level
-          schema:
-            type: integer
-        - in: query
-          name: active_only
-          schema:
-            type: boolean
+      summary: List community posts
+      tags: [Community]
       responses:
         '200':
           description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SafetyAlertsResponse'
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PostResponse'
+                  meta:
+                    type: object
+                    properties:
+                      page:
+                        type: integer
+                      page_size:
+                        type: integer
+                      total:
+                        type: integer
+    post:
+      summary: Create community post
+      tags: [Community]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePostRequest'
+          multipart/form-data:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/CreatePostRequest'
+                - type: object
+                  properties:
+                    media:
+                      type: string
+                      format: binary
+                      description: Optional media (image or video) for the post
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostResponse'
               example:
-                data:
-                  - alert_id: 00000000-0000-0000-0000-000000000810
-                    country_id: 00000000-0000-0000-0000-000000000200
-                    destination_id: 00000000-0000-0000-0000-000000000100
-                    level: 2
-                    message: Exercise caution in crowded areas
-                    source_url: https://example.com/advisory
-                    created_at: "2026-03-14T10:00:00Z"
-                    valid_until: "2026-04-14T10:00:00Z"
-                total: 1
+                post_id: 00000000-0000-0000-0000-000000002000
+                user_id: 00000000-0000-0000-0000-000000000001
+                user_name: Arsema Zeweldi
+                user_avatar: https://example.com/avatar.jpg
+                content: My amazing trip to Kenya!
+                media_url: https://example.com/safari_cool.jpg
+                media_type: image
+                location: Nairobi, Kenya
+                package_name: Safari Adventure
+                likes_count: 5
+                comments_count: 1
+                created_at: "2026-03-14T10:00:00Z"
+  /api/v1/posts/{id}/comments:
+    get:
+      summary: List comments for a post
+      tags: [Community]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CommentResponse'
+                  meta:
+                    type: object
+                    properties:
+                      page:
+                        type: integer
+                      page_size:
+                        type: integer
+                      total:
+                        type: integer
+    post:
+      summary: Add comment to a post
+      tags: [Community]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCommentRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommentResponse'
 components:
   securitySchemes:
     bearerAuth:
@@ -1206,9 +1124,9 @@ components:
       properties:
         status:
           type: string
-        message:
-          type: string
         database:
+          type: string
+        version:
           type: string
     ErrorResponse:
       type: object
@@ -1232,10 +1150,8 @@ components:
           example: StrongPass123
         first_name:
           type: string
-          example: Test
         last_name:
           type: string
-          example: User
     RegisterResponse:
       type: object
       properties:
@@ -1266,263 +1182,6 @@ components:
               type: string
             email:
               type: string
-    Region:
-      type: object
-      properties:
-        region_id:
-          type: string
-          format: uuid
-        name:
-          type: string
-        slug:
-          type: string
-        description:
-          type: string
-    CreateRegionRequest:
-      type: object
-      required: [name, slug]
-      properties:
-        name:
-          type: string
-          example: East Africa
-        slug:
-          type: string
-          example: east-africa
-        description:
-          type: string
-          example: Region used for testing.
-    UpdateRegionRequest:
-      type: object
-      properties:
-        name:
-          type: string
-          example: East Africa Updated
-        slug:
-          type: string
-          example: east-africa-updated
-        description:
-          type: string
-          example: Updated description.
-    DestinationSearchResponse:
-      type: object
-      properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/Destination'
-        total:
-          type: integer
-        page:
-          type: integer
-    CreateDestinationRequest:
-      type: object
-      required: [name, slug, country_id, region_id]
-      properties:
-        name:
-          type: string
-          example: Nairobi
-        slug:
-          type: string
-          example: nairobi
-        description:
-          type: string
-          example: Capital city
-        short_description:
-          type: string
-          example: A vibrant city
-        country_id:
-          type: string
-          format: uuid
-          example: 00000000-0000-0000-0000-000000000200
-        region_id:
-          type: string
-          format: uuid
-          example: 00000000-0000-0000-0000-000000000010
-        city:
-          type: string
-          example: Nairobi
-        latitude:
-          type: number
-          example: -1.286389
-        longitude:
-          type: number
-          example: 36.817223
-        destination_type:
-          type: string
-          example: city
-        hero_image_url:
-          type: string
-          example: https://example.com/nairobi.jpg
-        annual_visitors:
-          type: integer
-          example: 1500000
-        best_season:
-          type: string
-          example: summer
-        price_level:
-          type: integer
-          example: 3
-        is_unesco_site:
-          type: boolean
-          example: false
-        is_active:
-          type: boolean
-          example: true
-    UpdateDestinationRequest:
-      type: object
-      properties:
-        name:
-          type: string
-          example: Nairobi Updated
-        slug:
-          type: string
-          example: nairobi
-        description:
-          type: string
-          example: Updated description
-        short_description:
-          type: string
-          example: Updated short description
-        country_id:
-          type: string
-          format: uuid
-          example: 00000000-0000-0000-0000-000000000200
-        region_id:
-          type: string
-          format: uuid
-          example: 00000000-0000-0000-0000-000000000010
-        city:
-          type: string
-          example: Nairobi
-        latitude:
-          type: number
-          example: -1.286389
-        longitude:
-          type: number
-          example: 36.817223
-        destination_type:
-          type: string
-          example: city
-        hero_image_url:
-          type: string
-          example: https://example.com/nairobi.jpg
-        annual_visitors:
-          type: integer
-          example: 1500000
-        best_season:
-          type: string
-          example: summer
-        price_level:
-          type: integer
-          example: 3
-        is_unesco_site:
-          type: boolean
-          example: false
-        is_active:
-          type: boolean
-          example: true
-    Destination:
-      type: object
-      properties:
-        destination_id:
-          type: string
-          format: uuid
-        name:
-          type: string
-        slug:
-          type: string
-        description:
-          type: string
-        short_description:
-          type: string
-        country_id:
-          type: string
-          format: uuid
-        region_id:
-          type: string
-          format: uuid
-        city:
-          type: string
-        latitude:
-          type: number
-        longitude:
-          type: number
-        destination_type:
-          type: string
-        hero_image_url:
-          type: string
-        average_rating:
-          type: number
-        total_reviews:
-          type: integer
-        annual_visitors:
-          type: integer
-        best_season:
-          type: string
-        price_level:
-          type: integer
-        is_unesco_site:
-          type: boolean
-        is_active:
-          type: boolean
-        created_at:
-          type: string
-          format: date-time
-        updated_at:
-          type: string
-          format: date-time
-        tags:
-          type: array
-          items:
-            $ref: '#/components/schemas/Tag'
-        country:
-          $ref: '#/components/schemas/Country'
-    Country:
-      type: object
-      properties:
-        country_id:
-          type: string
-          format: uuid
-        name:
-          type: string
-        iso_code:
-          type: string
-        currency_code:
-          type: string
-        flag_emoji:
-          type: string
-    Tag:
-      type: object
-      properties:
-        tag_id:
-          type: string
-          format: uuid
-        name:
-          type: string
-        slug:
-          type: string
-        category:
-          type: string
-    PackagesFeedResponse:
-      type: object
-      properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/Package'
-        meta:
-          type: object
-          properties:
-            page:
-              type: integer
-            page_size:
-              type: integer
-            total:
-              type: integer
-            sort_by:
-              type: string
-            order:
-              type: string
     Package:
       type: object
       properties:
@@ -1539,31 +1198,39 @@ components:
           type: string
         summary:
           type: string
+        description:
+          type: string
         price:
           type: number
         status:
           type: string
+          enum: [private, public, archived]
         rating_avg:
           type: number
         reviews_count:
           type: integer
-        view_count:
+        views_count:
           type: integer
         country:
           type: string
+        location:
+          type: string
         currency:
           type: string
-        climate_pref:
+        image_url:
           type: string
-        is_multi_country:
-          type: boolean
-        is_streamer_verified:
-          type: boolean
-        streamer_name:
+        duration_days:
+          type: integer
+        category:
           type: string
-        created_via_ai:
+        group_size:
+          type: string
+        is_public:
           type: boolean
         created_at:
+          type: string
+          format: date-time
+        updated_at:
           type: string
           format: date-time
     PackageCreateRequest:
@@ -1573,46 +1240,403 @@ components:
         itinerary_id:
           type: string
           format: uuid
-          example: 00000000-0000-0000-0000-000000000999
         title:
           type: string
-          example: Route Test Package
         summary:
           type: string
-          example: A test package summary.
         price:
           type: number
-          example: 199.99
+        country:
+          type: string
+        location:
+          type: string
+        currency:
+          type: string
+        image_url:
+          type: string
+        duration_days:
+          type: integer
+        category:
+          type: string
+        group_size:
+          type: string
+        is_public:
+          type: boolean
     PackageUpdateRequest:
       type: object
       properties:
         title:
           type: string
-          example: Updated Package Title
         summary:
           type: string
-          example: Updated summary.
+        description:
+          type: string
         price:
           type: number
-          example: 149.5
+        country:
+          type: string
+        location:
+          type: string
+        currency:
+          type: string
+        image_url:
+          type: string
+        duration_days:
+          type: integer
+        category:
+          type: string
+        group_size:
+          type: string
+        is_public:
+          type: boolean
     PackageStatusRequest:
       type: object
       required: [status]
       properties:
         status:
           type: string
-          enum: [draft, published, archived]
-          example: published
-    ReviewRequest:
+          enum: [private, public, archived]
+    PackagesFeedResponse:
       type: object
-      required: [rating]
       properties:
-        rating:
-          type: integer
-          example: 5
-        comment:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Package'
+        meta:
+          type: object
+          properties:
+            page:
+              type: integer
+            page_size:
+              type: integer
+            total:
+              type: integer
+    Itinerary:
+      type: object
+      properties:
+        itinerary_id:
           type: string
-          example: Great trip.
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+        days_count:
+          type: integer
+        nights_count:
+          type: integer
+        start_date:
+          type: string
+          format: date-time
+        end_date:
+          type: string
+          format: date-time
+        total_cost_est:
+          type: number
+        is_ai_generated:
+          type: boolean
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ItineraryItem'
+    ItineraryItem:
+      type: object
+      properties:
+        item_id:
+          type: string
+          format: uuid
+        itinerary_id:
+          type: string
+          format: uuid
+        day_number:
+          type: integer
+        order_index:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        time_label:
+          type: string
+        duration_label:
+          type: string
+        cost_label:
+          type: string
+        location:
+          type: string
+        activity_type:
+          type: string
+        image_url:
+          type: string
+        ai_pick:
+          type: boolean
+        requirement:
+          type: string
+        latitude:
+          type: number
+        longitude:
+          type: number
+        start_time:
+          type: string
+        end_time:
+          type: string
+    CreateItineraryRequest:
+      type: object
+      required: [title]
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        days_count:
+          type: integer
+        nights_count:
+          type: integer
+        start_date:
+          type: string
+        end_date:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CreateItineraryItem'
+    CreateItineraryItem:
+      type: object
+      required: [day_number, title]
+      properties:
+        day_number:
+          type: integer
+        order_index:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        time_label:
+          type: string
+        duration_label:
+          type: string
+        cost_label:
+          type: string
+        location:
+          type: string
+        activity_type:
+          type: string
+        image_url:
+          type: string
+        ai_pick:
+          type: boolean
+        requirement:
+          type: string
+        latitude:
+          type: number
+        longitude:
+          type: number
+        start_time:
+          type: string
+        end_time:
+          type: string
+    UserPreference:
+      type: object
+      properties:
+        preference_id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        preferred_season:
+          type: string
+        budget_range:
+          type: string
+        preferred_activities:
+          type: array
+          items:
+            type: string
+        dietary_restrictions:
+          type: array
+          items:
+            type: string
+        preferred_climate:
+          type: string
+        preferred_language:
+          type: string
+        travel_vibe_interest:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    UpdateProfileRequest:
+      type: object
+      properties:
+        first_name:
+          type: string
+        last_name:
+          type: string
+        country:
+          type: string
+        bio:
+          type: string
+        profile_image_url:
+          type: string
+          format: url
+    UserProfileResponse:
+      type: object
+      properties:
+        user_id:
+          type: string
+          format: uuid
+        email:
+          type: string
+        first_name:
+          type: string
+        last_name:
+          type: string
+        country:
+          type: string
+        bio:
+          type: string
+        profile_image_url:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+    PostResponse:
+      type: object
+      properties:
+        post_id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        user_name:
+          type: string
+        user_avatar:
+          type: string
+        content:
+          type: string
+        media_url:
+          type: string
+        media_type:
+          type: string
+        location:
+          type: string
+        package_name:
+          type: string
+        likes_count:
+          type: integer
+        comments_count:
+          type: integer
+        created_at:
+          type: string
+    CreatePostRequest:
+      type: object
+      required: [content]
+      properties:
+        content:
+          type: string
+        media_url:
+          type: string
+        media_type:
+          type: string
+        location:
+          type: string
+        package_name:
+          type: string
+    CommentResponse:
+      type: object
+      properties:
+        comment_id:
+          type: string
+          format: uuid
+        post_id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        user_name:
+          type: string
+        user_avatar:
+          type: string
+        text:
+          type: string
+        created_at:
+          type: string
+    CreateCommentRequest:
+      type: object
+      required: [text]
+      properties:
+        text:
+          type: string
+    GeneratePlanRequest:
+      type: object
+      required: [destination, duration_days]
+      properties:
+        destination:
+          type: string
+        duration_days:
+          type: integer
+        budget:
+          type: number
+        budget_level:
+          type: string
+        vibe_tags:
+          type: array
+          items:
+            type: string
+        group_size:
+          type: integer
+        climate_pref:
+          type: string
+        multi_country:
+          type: boolean
+        notes:
+          type: string
+    GeneratePlanResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        data:
+          type: object
+          properties:
+            title:
+              type: string
+            currency:
+              type: string
+            days:
+              type: array
+              items:
+                type: object
+                properties:
+                  day_num:
+                    type: integer
+                  activities:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                        type:
+                          type: string
+                        description:
+                          type: string
+                        est_cost:
+                          type: number
+                        geo_lat:
+                          type: number
+                        geo_long:
+                          type: number
     PackageReview:
       type: object
       properties:
@@ -1632,6 +1656,14 @@ components:
         created_at:
           type: string
           format: date-time
+    ReviewRequest:
+      type: object
+      required: [rating]
+      properties:
+        rating:
+          type: integer
+        comment:
+          type: string
     PackageChat:
       type: object
       properties:
@@ -1655,7 +1687,6 @@ components:
       properties:
         message:
           type: string
-          example: Hello from Swagger UI.
     ChatHistoryResponse:
       type: object
       properties:
@@ -1668,295 +1699,5 @@ components:
           properties:
             page:
               type: integer
-            page_size:
-              type: integer
             total:
               type: integer
-    GeneratePlanRequest:
-      type: object
-      required: [destination, duration_days]
-      properties:
-        destination:
-          type: string
-          example: Nairobi, Kenya
-        duration_days:
-          type: integer
-          example: 3
-        budget_level:
-          type: string
-          example: medium
-        vibe_tags:
-          type: array
-          items:
-            type: string
-          example: [culture, food]
-        group_size:
-          type: integer
-          example: 2
-        climate_pref:
-          type: string
-          example: any
-    GeneratePlanResponse:
-      type: object
-      properties:
-        message:
-          type: string
-        data:
-          $ref: '#/components/schemas/ItineraryResponse'
-    ItineraryResponse:
-      type: object
-      properties:
-        title:
-          type: string
-        currency:
-          type: string
-        days:
-          type: array
-          items:
-            $ref: '#/components/schemas/DayPlan'
-    DayPlan:
-      type: object
-      properties:
-        day_num:
-          type: integer
-        activities:
-          type: array
-          items:
-            $ref: '#/components/schemas/Activity'
-    Activity:
-      type: object
-      properties:
-        name:
-          type: string
-        type:
-          type: string
-        description:
-          type: string
-        est_cost:
-          type: number
-        geo_lat:
-          type: number
-        geo_long:
-          type: number
-    CreateItineraryRequest:
-      type: object
-      required: [title]
-      properties:
-        title:
-          type: string
-          example: Test Itinerary
-        description:
-          type: string
-          example: Test itinerary description.
-        start_date:
-          type: string
-          example: 2026-03-20
-        end_date:
-          type: string
-          example: 2026-03-23
-        items:
-          type: array
-          items:
-            $ref: '#/components/schemas/CreateItineraryItem'
-    CreateItineraryItem:
-      type: object
-      required: [day_number, activity_name]
-      properties:
-        day_number:
-          type: integer
-          example: 1
-        activity_name:
-          type: string
-          example: Arrival and check-in
-        activity_description:
-          type: string
-          example: Check in and rest.
-        destination_id:
-          type: string
-          example: 00000000-0000-0000-0000-000000000100
-        cost_est:
-          type: number
-          example: 50
-        latitude:
-          type: number
-          example: 9.005401
-        longitude:
-          type: number
-          example: 38.763611
-        start_time:
-          type: string
-          example: 09:00
-        end_time:
-          type: string
-          example: 12:00
-    UpdateItineraryItemRequest:
-      type: object
-      required: [item_id]
-      properties:
-        item_id:
-          type: string
-          example: 00000000-0000-0000-0000-000000000555
-        activity_name:
-          type: string
-          example: Updated activity name
-        activity_description:
-          type: string
-          example: Updated description.
-        cost_est:
-          type: number
-          example: 75
-        start_time:
-          type: string
-          example: 10:00
-        end_time:
-          type: string
-          example: 14:00
-    Itinerary:
-      type: object
-      properties:
-        itinerary_id:
-          type: string
-          format: uuid
-        user_id:
-          type: string
-          format: uuid
-        title:
-          type: string
-        description:
-          type: string
-        start_date:
-          type: string
-        end_date:
-          type: string
-        total_cost_est:
-          type: number
-        is_ai_generated:
-          type: boolean
-        items:
-          type: array
-          items:
-            $ref: '#/components/schemas/ItineraryItem'
-    ItineraryItem:
-      type: object
-      properties:
-        item_id:
-          type: string
-          format: uuid
-        itinerary_id:
-          type: string
-          format: uuid
-        destination_id:
-          type: string
-          format: uuid
-        day_number:
-          type: integer
-        order_index:
-          type: integer
-        activity_name:
-          type: string
-        activity_description:
-          type: string
-        activity_type:
-          type: string
-        cost_est:
-          type: number
-        latitude:
-          type: number
-        longitude:
-          type: number
-        start_time:
-          type: string
-        end_time:
-          type: string
-        notes:
-          type: string
-    VisaRequirement:
-      type: object
-      properties:
-        visa_id:
-          type: string
-          format: uuid
-        source_country_id:
-          type: string
-          format: uuid
-        destination_country_id:
-          type: string
-          format: uuid
-        visa_type:
-          type: string
-        description:
-          type: string
-        cost_usd:
-          type: number
-        valid_days:
-          type: integer
-        last_updated:
-          type: string
-          format: date-time
-    SafetyAlert:
-      type: object
-      properties:
-        alert_id:
-          type: string
-          format: uuid
-        country_id:
-          type: string
-          format: uuid
-        destination_id:
-          type: string
-          format: uuid
-        level:
-          type: integer
-        message:
-          type: string
-        source_url:
-          type: string
-        created_at:
-          type: string
-          format: date-time
-        valid_until:
-          type: string
-          format: date-time
-    SafetyAlertsResponse:
-      type: object
-      properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/SafetyAlert'
-        total:
-          type: integer
-    UserPreferencesResponse:
-      type: object
-      properties:
-        data:
-          $ref: '#/components/schemas/UserPreference'
-    UserPreference:
-      type: object
-      properties:
-        preference_id:
-          type: string
-          format: uuid
-        user_id:
-          type: string
-          format: uuid
-        traveler_type:
-          type: string
-        preferred_season:
-          type: string
-        budget_range:
-          type: string
-        trip_duration:
-          type: string
-        preferred_activities:
-          type: string
-        dietary_restrictions:
-          type: string
-        accessibility_needs:
-          type: string
-        created_at:
-          type: string
-          format: date-time
-        updated_at:
-          type: string
-          format: date-time

@@ -13,6 +13,7 @@ import (
 	"github.com/Arsema-Zeweldi/africa-tourism-platform/backend/internal/api"
 	"github.com/Arsema-Zeweldi/africa-tourism-platform/backend/internal/config"
 	"github.com/Arsema-Zeweldi/africa-tourism-platform/backend/internal/database"
+	"github.com/Arsema-Zeweldi/africa-tourism-platform/backend/internal/service/upload"
 )
 
 func main() {
@@ -29,6 +30,12 @@ func main() {
 		os.Exit(1)
 	}
 
+	// 1.1 Initialize Upload Service
+	uploadSvc, err := upload.NewUploadService(cfg)
+	if err != nil {
+		slog.Warn("Upload service not initialized", "error", err)
+	}
+
 	// 2. Initialize database
 	slog.Info("Initializing database...")
 	db, err := database.InitDB(cfg)
@@ -39,7 +46,7 @@ func main() {
 
 	// 3. Setup router
 	slog.Info("Setting up router...")
-	r := api.SetupRouter(db, cfg)
+	r := api.SetupRouter(db, cfg, uploadSvc)
 
 	// 4. Start server with graceful shutdown
 	srv := &http.Server{

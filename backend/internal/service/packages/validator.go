@@ -1,8 +1,8 @@
-package community
+package packages
 
 import "errors"
 
-// PackageValidator handles business logic validation for community packages
+// PackageValidator handles business logic validation for packages.
 type PackageValidator struct{}
 
 func (v *PackageValidator) ValidateForPublish(itemCount int, title string) error {

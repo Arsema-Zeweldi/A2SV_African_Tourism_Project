@@ -11,13 +11,18 @@ import (
 	"github.com/Arsema-Zeweldi/africa-tourism-platform/backend/internal/config"
 	"github.com/Arsema-Zeweldi/africa-tourism-platform/backend/internal/repository"
 	"github.com/Arsema-Zeweldi/africa-tourism-platform/backend/internal/service/ai_planner"
-	"github.com/Arsema-Zeweldi/africa-tourism-platform/backend/internal/service/discovery"
-	"github.com/Arsema-Zeweldi/africa-tourism-platform/backend/internal/service/intelligence"
+	"github.com/Arsema-Zeweldi/africa-tourism-platform/backend/internal/service/community"
+	"github.com/Arsema-Zeweldi/africa-tourism-platform/backend/internal/service/itinerary"
+	"github.com/Arsema-Zeweldi/africa-tourism-platform/backend/internal/service/packages"
+	"github.com/Arsema-Zeweldi/africa-tourism-platform/backend/internal/service/upload"
+	"github.com/Arsema-Zeweldi/africa-tourism-platform/backend/internal/service/user"
 	"github.com/gin-gonic/gin"
+	"github.com/ulule/limiter/v3"
+	"github.com/ulule/limiter/v3/drivers/store/redis"
 	"gorm.io/gorm"
 )
 
-func SetupRouter(db *gorm.DB, cfg *config.Config) *gin.Engine {
+func SetupRouter(db *gorm.DB, cfg *config.Config, uploadService upload.UploadService) *gin.Engine {
 	// Set Gin to release mode if not development
 	if cfg.Environment == "production" {
 		gin.SetMode(gin.ReleaseMode)
@@ -34,16 +39,26 @@ func SetupRouter(db *gorm.DB, cfg *config.Config) *gin.Engine {
 	}
 
 	// 2. Initialize Repositories
-	destRepo := repository.NewGormDestinationRepository(db)
-	visaRepo := repository.NewGormVisaRequirementRepository(db)
-	safetyRepo := repository.NewGormSafetyAlertRepository(db)
+	userRepo := repository.NewGormUserRepository(db)
+	packageRepo := repository.NewGormPackageRepository(db)
+	itineraryRepo := repository.NewGormItineraryRepository(db)
+	communityRepo := repository.NewGormCommunityRepository(db)
+
+	// Distributed Rate Limiter Store
+	var limiterStore limiter.Store
+	if redisImpl, ok := redisClient.(*cache.GoRedisClient); ok {
+		s, err := redis.NewStore(redisImpl.GetRawClient())
+		if err == nil {
+			limiterStore = s
+		}
+	}
 
 	// 3. Initialize Services
-	searchService := discovery.NewDestinationSearchService(destRepo)
-	visaService := intelligence.NewVisaService(visaRepo)
-	safetyService := intelligence.NewSafetyService(safetyRepo)
-
 	var plannerService ai_planner.PlannerService
+	userService := user.NewService(userRepo, cfg.JWTSecret)
+	packageService := packages.NewPackageService(packageRepo)
+	itineraryService := itinerary.NewService(itineraryRepo)
+	communityService := community.NewCommunityService(communityRepo)
 	geminiClient, err := ai_planner.NewGeminiClientImpl(context.Background(), cfg.GeminiAPIKey, cfg.GeminiModel)
 	if err == nil {
 		// We use new GenerateItinerary interface, so InterviewService wrapping is fine
@@ -59,10 +74,10 @@ func SetupRouter(db *gorm.DB, cfg *config.Config) *gin.Engine {
 	registerDocs(r)
 
 	// Global Middlewares
+	r.Use(middleware.CORSMiddleware(cfg.AllowedOrigins))
 	r.Use(gin.Recovery())
 	r.Use(middleware.RequestIDMiddleware())
 	r.Use(middleware.LoggerMiddleware())
-	r.Use(middleware.MaxBodySize(1 << 20)) // 1 MB limit
 
 	// Health Check
 	r.GET("/health", func(c *gin.Context) {
@@ -78,76 +93,60 @@ func SetupRouter(db *gorm.DB, cfg *config.Config) *gin.Engine {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
 
-	h := handlers.NewAppHandler(db, cfg, plannerService, searchService, visaService, safetyService)
+	h := handlers.NewAppHandler(db, cfg, plannerService, userService, itineraryService, communityService, uploadService)
 
 	hub := handlers.NewHub()
 	handlers.GlobalHub = hub
 	go hub.Run()
 
-	mh := &handlers.PackagesHandler{DB: db, Cfg: cfg}
+	mh := &handlers.PackagesHandler{DB: db, Cfg: cfg, PackageService: packageService, ItinerarySvc: itineraryService, UploadSvc: uploadService}
 
 	v1 := r.Group("/api/v1")
 	v1.GET("/health", h.HealthCheck)
 
 	// Auth group
 	auth := v1.Group("/auth")
-	auth.Use(middleware.RateLimiter("10-M")) // 10 requests per minute
+	auth.Use(middleware.RateLimiter("10-M", limiterStore)) // 10 requests per minute
 	{
 		auth.POST("/register", h.Register)
 		auth.POST("/login", h.Login)
 	}
 
-	// Public discovery
-	v1.GET("/regions", h.ListRegions)
-	v1.GET("/regions/:id", h.GetRegion)
-	v1.GET("/destinations", h.SearchDestinations)
-	v1.GET("/destinations/:id", h.GetDestinationDetails)
-
 	v1.GET("/packages", mh.GetPackagesFeed)
 	v1.GET("/packages/:id", mh.GetPackage)
 	v1.GET("/packages/:id/reviews", mh.GetPackageReviews)
 	v1.GET("/packages/:id/chat", mh.GetChatHistory)
+	v1.GET("/posts", h.ListPosts)
+	v1.GET("/posts/:id/comments", h.ListComments)
 
 	// Protected routes
 	protected := v1.Group("")
 	protected.Use(middleware.JWTMiddleware(cfg.JWTSecret))
 	{
-		// Admin only
-		regions := protected.Group("/regions")
-		regions.Use(middleware.RequireRole("admin"))
-		{
-			regions.POST("", h.CreateRegion)
-			regions.PUT("/:id", h.UpdateRegion)
-			regions.DELETE("/:id", h.DeleteRegion)
-		}
-
-		destinations := protected.Group("/destinations")
-		destinations.Use(middleware.RequireRole("admin"))
-		{
-			destinations.POST("", h.CreateDestination)
-			destinations.PUT("/:id", h.UpdateDestination)
-			destinations.DELETE("/:id", h.DeleteDestination)
-		}
-
 		user := protected.Group("/user")
 		{
+			user.GET("/profile", h.GetProfile)
+			user.PATCH("/profile", h.UpdateProfile)
 			user.GET("/preferences", h.GetUserPreferences)
 			user.PUT("/preferences", h.UpdateUserPreferences)
 		}
 
 		// AI target limit
 		planner := protected.Group("/planner")
-		planner.Use(middleware.RateLimiter("5-M"))
+		planner.Use(middleware.RateLimiter("5-M", limiterStore))
 		{
 			planner.POST("/generate", h.GenerateItinerary)
 		}
 
 		itineraries := protected.Group("/itineraries")
 		{
+			itineraries.GET("", h.ListUserItineraries)
 			itineraries.POST("", h.SaveItinerary)
 			itineraries.GET("/:id", h.GetItinerary)
+			itineraries.DELETE("/:id", h.DeleteItinerary)
 			itineraries.POST("/:id/items", h.AddItineraryItem)
 			itineraries.PATCH("/:id/items", h.UpdateItineraryItem)
+			itineraries.DELETE("/:id/items/:itemId", h.DeleteItineraryItem)
 		}
 
 		packages := protected.Group("/packages")
@@ -158,8 +157,8 @@ func SetupRouter(db *gorm.DB, cfg *config.Config) *gin.Engine {
 			{
 				pkg.PATCH("", mh.UpdatePackage)
 				pkg.DELETE("", mh.ArchivePackage)
-				pkg.POST("/publish", middleware.RequireRole("admin", "verified_creator"), mh.PublishPackage)
-				pkg.PATCH("/status", middleware.RequireRole("admin", "verified_creator"), mh.UpdatePackageStatus)
+				pkg.POST("/publish", mh.PublishPackage)
+				pkg.PATCH("/status", mh.UpdatePackageStatus)
 				pkg.POST("/reviews", mh.SubmitPackageReview)
 				pkg.POST("/chat", mh.PostChatMessage)
 
@@ -168,10 +167,17 @@ func SetupRouter(db *gorm.DB, cfg *config.Config) *gin.Engine {
 			}
 		}
 
-		intelligence := protected.Group("/intelligence")
+		posts := protected.Group("/posts")
 		{
-			intelligence.GET("/visa", h.GetVisaRequirements)
-			intelligence.GET("/safety", h.GetSafetyAlerts)
+			posts.POST("", h.CreatePost)
+			posts.POST("/:id/comments", h.AddComment)
+		}
+
+		upload := protected.Group("/upload")
+		{
+			uploadH := handlers.NewUploadHandler(uploadService)
+			upload.POST("/image", middleware.ImageUploadMiddleware(), uploadH.UploadImage)
+			upload.POST("/video", middleware.VideoUploadMiddleware(), uploadH.UploadVideo)
 		}
 	}
 

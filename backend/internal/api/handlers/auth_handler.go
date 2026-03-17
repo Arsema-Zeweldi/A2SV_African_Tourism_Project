@@ -2,17 +2,15 @@ package handlers
 
 import (
 	"net/http"
-	"time"
+	"strings"
 
 	"github.com/Arsema-Zeweldi/africa-tourism-platform/backend/internal/config"
-	"github.com/Arsema-Zeweldi/africa-tourism-platform/backend/internal/models"
 	"github.com/Arsema-Zeweldi/africa-tourism-platform/backend/internal/service/ai_planner"
-	"github.com/Arsema-Zeweldi/africa-tourism-platform/backend/internal/service/discovery"
-	"github.com/Arsema-Zeweldi/africa-tourism-platform/backend/internal/service/intelligence"
+	"github.com/Arsema-Zeweldi/africa-tourism-platform/backend/internal/service/community"
+	"github.com/Arsema-Zeweldi/africa-tourism-platform/backend/internal/service/itinerary"
+	"github.com/Arsema-Zeweldi/africa-tourism-platform/backend/internal/service/upload"
+	"github.com/Arsema-Zeweldi/africa-tourism-platform/backend/internal/service/user"
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v5"
-	"github.com/google/uuid"
-	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
@@ -20,26 +18,29 @@ type AppHandler struct {
 	DB             *gorm.DB
 	Cfg            *config.Config
 	PlannerService ai_planner.PlannerService
-	SearchService  discovery.SearchService
-	VisaService    intelligence.VisaService
-	SafetyService  intelligence.SafetyService
+	UserService    user.UserService
+	ItinerarySvc   itinerary.ItineraryService
+	CommunitySvc   community.CommunityService
+	UploadSvc      upload.UploadService
 }
 
 func NewAppHandler(
 	db *gorm.DB,
 	cfg *config.Config,
 	planner ai_planner.PlannerService,
-	search discovery.SearchService,
-	visa intelligence.VisaService,
-	safety intelligence.SafetyService,
+	userSvc user.UserService,
+	itinerarySvc itinerary.ItineraryService,
+	communitySvc community.CommunityService,
+	uploadSvc upload.UploadService,
 ) *AppHandler {
 	return &AppHandler{
 		DB:             db,
 		Cfg:            cfg,
 		PlannerService: planner,
-		SearchService:  search,
-		VisaService:    visa,
-		SafetyService:  safety,
+		UserService:    userSvc,
+		ItinerarySvc:   itinerarySvc,
+		CommunitySvc:   communitySvc,
+		UploadSvc:      uploadSvc,
 	}
 }
 
@@ -51,31 +52,37 @@ func (h *AppHandler) Register(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-
-	// 1. Hash password with PRD-required cost
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), 12)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
+	if h.UserService == nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "User service not configured"})
 		return
 	}
 
 	// 2. Create user (explicitly default to traveler)
-	user := models.User{
-		UserID:       uuid.New(),
-		Email:        req.Email,
-		PasswordHash: string(hashedPassword),
-		FirstName:    req.FirstName,
-		LastName:     req.LastName,
-		AccountType:  "traveler",
+	firstName := req.FirstName
+	lastName := req.LastName
+	if firstName == "" && lastName == "" && req.Name != "" {
+		parts := strings.Fields(req.Name)
+		if len(parts) > 0 {
+			firstName = parts[0]
+		}
+		if len(parts) > 1 {
+			lastName = strings.Join(parts[1:], " ")
+		}
 	}
 
-	// 3. Save to database
-	if err := h.DB.Create(&user).Error; err != nil {
-		c.JSON(http.StatusConflict, gin.H{"error": "User already exists or database error"})
+	userReq := user.RegisterRequest{
+		Email:     req.Email,
+		Password:  req.Password,
+		FirstName: firstName,
+		LastName:  lastName,
+	}
+	created, err := h.UserService.Register(c.Request.Context(), userReq)
+	if err != nil {
+		c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"message": "User registered successfully", "user_id": user.UserID})
+	c.JSON(http.StatusCreated, gin.H{"message": "User registered successfully", "user_id": created.UserID})
 }
 
 func (h *AppHandler) Login(c *gin.Context) {
@@ -84,30 +91,15 @@ func (h *AppHandler) Login(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-
-	// 1. Find user
-	var user models.User
-	if err := h.DB.Where("email = ?", req.Email).First(&user).Error; err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid email or password"})
+	if h.UserService == nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "User service not configured"})
 		return
 	}
 
-	// 2. Compare password
-	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.Password)); err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid email or password"})
-		return
-	}
-
-	// 3. Generate JWT with explicit string types to avoid runtime panics, and include role
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"user_id": user.UserID.String(),
-		"role":    user.AccountType,
-		"exp":     time.Now().Add(time.Hour * 24).Unix(),
-	})
-
-	tokenString, err := token.SignedString([]byte(h.Cfg.JWTSecret))
+	loginReq := user.LoginRequest{Email: req.Email, Password: req.Password}
+	tokenString, loggedIn, err := h.UserService.Login(c.Request.Context(), loginReq)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -117,8 +109,8 @@ func (h *AppHandler) Login(c *gin.Context) {
 			ID    string `json:"id"`
 			Email string `json:"email"`
 		}{
-			ID:    user.UserID.String(),
-			Email: user.Email,
+			ID:    loggedIn.UserID.String(),
+			Email: loggedIn.Email,
 		},
 	})
 }

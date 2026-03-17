@@ -2,6 +2,8 @@ package ai_planner
 
 import (
 	"fmt"
+	"hash/fnv"
+	"strconv"
 	"strings"
 )
 
@@ -26,6 +28,18 @@ func BuildCacheKey(req GenerateRequest) string {
 	if climate == "" {
 		climate = "any"
 	}
+	multi := "single"
+	if req.MultiCountry {
+		multi = "multi"
+	}
+	budgetBucket := 0
+	if req.Budget > 0 {
+		budgetBucket = int(req.Budget/100) * 100
+	}
+	noteHash := "none"
+	if strings.TrimSpace(req.Notes) != "" {
+		noteHash = hashString(req.Notes)
+	}
 	size := req.GroupSize
 	if size <= 0 {
 		size = 1
@@ -35,8 +49,17 @@ func BuildCacheKey(req GenerateRequest) string {
 		duration = 3
 	}
 
-	return fmt.Sprintf("planner:%s:%dd:%s:%s:%s:g%d",
-		dest, duration, budget, vibes, climate, size)
+	return fmt.Sprintf("planner:%s:%dd:%s:%s:%s:%s:b%s:g%d:n%s",
+		dest,
+		duration,
+		budget,
+		vibes,
+		climate,
+		multi,
+		strconv.Itoa(budgetBucket),
+		size,
+		noteHash,
+	)
 }
 
 // normalise converts a string to lowercase and replaces spaces/commas with underscores.
@@ -46,4 +69,10 @@ func normalise(s string) string {
 	s = strings.ReplaceAll(s, ",", "")
 	s = strings.ReplaceAll(s, "-", "_")
 	return s
+}
+
+func hashString(value string) string {
+	h := fnv.New32a()
+	_, _ = h.Write([]byte(strings.ToLower(strings.TrimSpace(value))))
+	return fmt.Sprintf("%x", h.Sum32())
 }

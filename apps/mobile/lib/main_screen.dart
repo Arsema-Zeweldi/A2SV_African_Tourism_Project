@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:mobile/core/constants/app_colors.dart';
 import 'package:mobile/features/feed/presentation/pages/feed_page.dart';
 import 'package:mobile/features/home/presentation/pages/home_page.dart';
-import 'package:mobile/features/marketPlace/presentation/pages/market_page.dart';
+import 'package:mobile/features/market_place/presentation/pages/market_page.dart';
+import 'package:mobile/features/my_packages/presentation/pages/my_packages_page.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -20,12 +21,12 @@ class _MainScreenState extends State<MainScreen> {
   @override
   void initState() {
     super.initState();
-
     _pages = [
       HomePage(onFeedClick: goToFeed),
       FeedPage(onPackagesTap: () => _onItemTapped(0),),
+      const MyPackages(),
       const MarketPage(),
-      const Center(child: Text("Market page")),
+      
     ];
   }
   

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/core/constants/app_colors.dart';
+import 'package:mobile/features/generated_itinerary/presentation/pages/itinerary_result_screen.dart';
+import 'package:mobile/features/post/presentation/pages/new_post_screen.dart';
 import 'package:mobile/main_screen.dart';
 
 void main() {
@@ -12,6 +14,10 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      routes: {
+        '/new-post': (context) => const NewPostScreen(),
+        '/itinerary-result-screen': (context) => const ItineraryResultScreen(),
+      },
       theme: ThemeData(
         // scaffoldBackgroundColor: const Color(0xFFF8F7F5),
         scaffoldBackgroundColor: AppColors.scaffoldBackground,

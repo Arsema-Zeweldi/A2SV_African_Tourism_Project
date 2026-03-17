@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/widgets/logo_header.dart';
 import 'package:mobile/core/widgets/user_profile_bar.dart';
 
 class Header extends StatelessWidget {
@@ -11,13 +12,7 @@ class Header extends StatelessWidget {
         child: Column(
           children: [
             // LOGO OF THE APP
-            Center(
-              child: Image(
-                image: AssetImage('assets/images/logo&name.png'),
-                height: 35,
-                fit: BoxFit.cover,
-              ),
-            ),
+            LogoHeader(),
 
             SizedBox(
               height: 2,

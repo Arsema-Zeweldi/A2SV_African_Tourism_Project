@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/core/constants/app_colors.dart';
-import 'package:mobile/features/marketPlace/presentation/widgets/category_filter.dart';
-import 'package:mobile/features/marketPlace/presentation/widgets/market_package_card.dart';
-import 'package:mobile/features/marketPlace/presentation/widgets/market_place_header.dart';
+import 'package:mobile/features/market_place/presentation/widgets/category_filter.dart';
+import 'package:mobile/features/market_place/presentation/widgets/market_package_card.dart';
+import 'package:mobile/features/market_place/presentation/widgets/market_place_header.dart';
 
 class MarketPage extends StatelessWidget {
   const MarketPage({super.key});

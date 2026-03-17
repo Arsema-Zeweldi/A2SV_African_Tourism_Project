@@ -10,7 +10,7 @@ RUN go mod download
 
 COPY . .
 
-RUN CGO_ENABLED=0 GOOS=linux go build -o /app/main ./cmd/main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -o /app/main ./cmd/server/main.go
 
 # Run stage
 FROM gcr.io/distroless/static-debian12:nonroot

@@ -37,8 +37,24 @@ func (s *CommunityServiceImpl) CreatePost(ctx context.Context, post *models.Comm
 	return s.repo.CreatePost(ctx, post)
 }
 
+func (s *CommunityServiceImpl) GetPost(ctx context.Context, postID uuid.UUID) (*models.CommunityPost, error) {
+	if postID == uuid.Nil {
+		return nil, errors.New("post_id is required")
+	}
+	return s.repo.GetPost(ctx, postID)
+}
+
 func (s *CommunityServiceImpl) ListPosts(ctx context.Context, params ListPostsParams) ([]models.CommunityPost, int64, error) {
-	return s.repo.ListPosts(ctx, repository.Pagination{Page: params.Page, PageSize: params.PageSize})
+	filters := make(map[string]interface{})
+	if params.UserID != nil {
+		filters["user_id"] = *params.UserID
+	}
+	filters["status"] = params.Status
+	filters["q"] = params.Query
+	filters["sort"] = params.SortBy
+	filters["order"] = params.Order
+
+	return s.repo.ListPosts(ctx, repository.Pagination{Page: params.Page, PageSize: params.PageSize}, filters)
 }
 
 func (s *CommunityServiceImpl) AddComment(ctx context.Context, comment *models.CommunityPostComment) error {
@@ -63,4 +79,11 @@ func (s *CommunityServiceImpl) ListComments(ctx context.Context, postID uuid.UUI
 		return nil, 0, errors.New("post_id is required")
 	}
 	return s.repo.ListComments(ctx, postID, repository.Pagination{Page: params.Page, PageSize: params.PageSize})
+}
+
+func (s *CommunityServiceImpl) ToggleLike(ctx context.Context, postID, userID uuid.UUID) (bool, error) {
+	if postID == uuid.Nil || userID == uuid.Nil {
+		return false, errors.New("post_id and user_id are required")
+	}
+	return s.repo.ToggleLike(ctx, postID, userID)
 }

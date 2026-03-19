@@ -187,11 +187,11 @@ func (h *PackagesHandler) PublishPackage(c *gin.Context) {
 		return
 	}
 
-	if len(itinerary.Items) < 3 {
+	if len(itinerary.Activities) < 3 {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error":      "Package cannot be set to public: the linked itinerary must have at least 3 items",
-			"item_count": len(itinerary.Items),
-			"required":   3,
+			"error":          "Package cannot be set to public: the linked itinerary must have at least 3 activities",
+			"activity_count": len(itinerary.Activities),
+			"required":       3,
 		})
 		return
 	}
@@ -258,10 +258,10 @@ func (h *PackagesHandler) UpdatePackageStatus(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to load itinerary"})
 			return
 		}
-		if len(itinerary.Items) < 3 {
+		if len(itinerary.Activities) < 3 {
 			c.JSON(http.StatusBadRequest, gin.H{
-				"error":      "The linked itinerary must have at least 3 items to publish",
-				"item_count": len(itinerary.Items),
+				"error":          "The linked itinerary must have at least 3 activities to publish",
+				"activity_count": len(itinerary.Activities),
 			})
 			return
 		}

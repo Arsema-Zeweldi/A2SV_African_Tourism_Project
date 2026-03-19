@@ -25,21 +25,8 @@ func ParseAIResponse(raw []byte) (*ItineraryResponse, error) {
 		return nil, errors.New("AI response is not valid JSON: " + err.Error())
 	}
 
-	if len(result.Days) == 0 {
-		return nil, errors.New("AI response has no itinerary days")
-	}
-
-	// Validate each day has at least one activity
-	for i, day := range result.Days {
-		if len(day.Activities) == 0 {
-			return nil, errors.New(
-				"AI response day " + itoa(i+1) + " has no activities",
-			)
-		}
-	}
-
-	if result.Currency == "" {
-		result.Currency = "USD"
+	if len(result.Activities) == 0 {
+		return nil, errors.New("AI response has no itinerary activities")
 	}
 
 	return &result, nil

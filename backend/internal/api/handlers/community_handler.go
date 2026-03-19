@@ -29,9 +29,12 @@ func (h *AppHandler) CreatePost(c *gin.Context) {
 		return
 	}
 
-	// ID: 5 - Handle optional media upload
+	// Handle optional media upload
 	mediaURL := req.MediaURL
 	mediaType := req.MediaType
+	if mediaType == "" && mediaURL != "" {
+		mediaType = "image" // default if URL provided without type
+	}
 
 	file, err := c.FormFile("media")
 	if err == nil {
@@ -69,7 +72,34 @@ func (h *AppHandler) CreatePost(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, post)
+	// Fetch author data for response
+	fullPost, err := h.CommunitySvc.GetPost(c.Request.Context(), post.PostID)
+	if err == nil {
+		post = *fullPost
+	}
+
+	c.JSON(http.StatusCreated, mapPostToResponse(post))
+}
+
+func (h *AppHandler) GetPost(c *gin.Context) {
+	if h.CommunitySvc == nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Community service not configured"})
+		return
+	}
+
+	postID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid post ID"})
+		return
+	}
+
+	post, err := h.CommunitySvc.GetPost(c.Request.Context(), postID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Post not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, mapPostToResponse(*post))
 }
 
 func (h *AppHandler) ListPosts(c *gin.Context) {
@@ -87,18 +117,34 @@ func (h *AppHandler) ListPosts(c *gin.Context) {
 		pageSize = ps
 	}
 
+	var userIDPtr *uuid.UUID
+	if uidStr := c.Query("user_id"); uidStr != "" {
+		if uid, err := uuid.Parse(uidStr); err == nil {
+			userIDPtr = &uid
+		}
+	}
+
 	posts, total, err := h.CommunitySvc.ListPosts(c.Request.Context(), community.ListPostsParams{
 		Page:     page,
 		PageSize: pageSize,
+		Status:   c.Query("status"),
+		UserID:   userIDPtr,
+		Query:    c.Query("q"),
+		SortBy:   c.Query("sort_by"),
+		Order:    c.Query("order"),
 	})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch posts"})
 		return
 	}
 
-	// Map to response DTO if needed, but for now using models + meta
+	resp := make([]PostResponse, len(posts))
+	for i, p := range posts {
+		resp[i] = mapPostToResponse(p)
+	}
+
 	c.JSON(http.StatusOK, gin.H{
-		"data": posts,
+		"data": resp,
 		"meta": gin.H{
 			"page":      page,
 			"page_size": pageSize,
@@ -142,7 +188,48 @@ func (h *AppHandler) AddComment(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, comment)
+	// Fetch minimal author info for the response
+	resp := mapCommentToResponse(comment)
+	if h.UserService != nil {
+		if profile, err := h.UserService.GetProfile(c.Request.Context(), userID.String()); err == nil {
+			resp.UserName = profile.FirstName + " " + profile.LastName
+			resp.UserAvatar = profile.ProfileImageURL
+		}
+	}
+
+	c.JSON(http.StatusCreated, resp)
+}
+
+func (h *AppHandler) ToggleLikePost(c *gin.Context) {
+	userID, err := getUserID(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	if h.CommunitySvc == nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Community service not configured"})
+		return
+	}
+
+	postID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid post ID"})
+		return
+	}
+
+	liked, err := h.CommunitySvc.ToggleLike(c.Request.Context(), postID, userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to toggle like"})
+		return
+	}
+
+	status := "unliked"
+	if liked {
+		status = "liked"
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Post " + status, "liked": liked})
 }
 
 func (h *AppHandler) ListComments(c *gin.Context) {
@@ -175,14 +262,49 @@ func (h *AppHandler) ListComments(c *gin.Context) {
 		return
 	}
 
+	resp := make([]CommentResponse, len(comments))
+	for i, com := range comments {
+		resp[i] = mapCommentToResponse(com)
+	}
+
 	c.JSON(http.StatusOK, gin.H{
-		"data": comments,
+		"data": resp,
 		"meta": gin.H{
 			"page":      page,
 			"page_size": pageSize,
 			"total":     total,
 		},
 	})
+}
+
+func mapPostToResponse(p models.CommunityPost) PostResponse {
+	return PostResponse{
+		PostID:        p.PostID,
+		UserID:        p.UserID,
+		UserName:      p.User.FirstName + " " + p.User.LastName,
+		UserAvatar:    p.User.ProfileImageURL,
+		Content:       p.Content,
+		MediaURL:      p.MediaURL,
+		MediaType:     p.MediaType,
+		Location:      p.Location,
+		PackageName:   p.PackageName,
+		LikesCount:    p.LikesCount,
+		CommentsCount: p.CommentsCount,
+		CreatedAt:     p.CreatedAt.Format(time.RFC3339),
+		Status:        p.Status,
+	}
+}
+
+func mapCommentToResponse(c models.CommunityPostComment) CommentResponse {
+	return CommentResponse{
+		CommentID:  c.CommentID,
+		PostID:     c.PostID,
+		UserID:     c.UserID,
+		UserName:   c.User.FirstName + " " + c.User.LastName,
+		UserAvatar: c.User.ProfileImageURL,
+		Text:       c.Text,
+		CreatedAt:  c.CreatedAt.Format(time.RFC3339),
+	}
 }
 
 // Helper to keep time strings consistent with frontend "timeAgo" logic

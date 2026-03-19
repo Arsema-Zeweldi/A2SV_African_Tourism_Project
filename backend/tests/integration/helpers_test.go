@@ -122,18 +122,18 @@ func setupTestEnv(t *testing.T) *testEnv {
 		Title:       "Test Safari Itinerary",
 	})
 	for i := 1; i <= 3; i++ {
-		db.Create(&models.ItineraryItem{
-			ItemID:              uuid.New(),
-			ItineraryID:         itineraryID,
-			DayNumber:           i,
-			ActivityName:        fmt.Sprintf("Day %d Activity", i),
-			ActivityDescription: "Seeing the big 5.",
-			StartTime:           "09:00:00",
-			EndTime:             "17:00:00",
+		db.Create(&models.ItineraryActivity{
+			ActivityID:  uuid.New(),
+			ItineraryID: itineraryID,
+			DayNumber:   i,
+			Title:       fmt.Sprintf("Day %d Activity", i),
+			Description: "Seeing the big 5.",
+			StartTime:   "09:00:00",
+			EndTime:     "17:00:00",
 		})
 	}
 
-	router := api.SetupRouter(db, cfg)
+	router := api.SetupRouter(db, cfg, nil)
 	env := &testEnv{
 		router:        router,
 		db:            db,
@@ -151,7 +151,7 @@ func setupTestEnv(t *testing.T) *testEnv {
 		db.Exec("DELETE FROM package_chats WHERE package_id IN (SELECT package_id FROM packages WHERE creator_id = ?)", userID)
 		db.Exec("DELETE FROM package_reviews WHERE package_id IN (SELECT package_id FROM packages WHERE creator_id = ?)", userID)
 		db.Exec("DELETE FROM packages WHERE creator_id = ?", userID)
-		db.Exec("DELETE FROM itinerary_items WHERE itinerary_id = ?", itineraryID)
+		db.Exec("DELETE FROM itinerary_activities WHERE itinerary_id = ?", itineraryID)
 		db.Exec("DELETE FROM itineraries WHERE itinerary_id = ?", itineraryID)
 		db.Exec("DELETE FROM safety_alerts WHERE destination_id = ?", destID)
 		db.Exec("DELETE FROM visa_requirements WHERE source_country_id = ? OR destination_country_id = ?", sourceCountryID, destCountryID)
@@ -196,13 +196,6 @@ func doRequest(t *testing.T, router http.Handler, method, path string, body inte
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
 	return w
-}
-
-func mustDecode(t *testing.T, w *httptest.ResponseRecorder, v interface{}) {
-	t.Helper()
-	if err := json.NewDecoder(w.Body).Decode(v); err != nil {
-		t.Fatalf("failed to decode response body (%s): %v", w.Body.String(), err)
-	}
 }
 
 func mustDecode(t *testing.T, w *httptest.ResponseRecorder, v interface{}) {

@@ -43,22 +43,22 @@ func TestPackagesE2E(t *testing.T) {
 	}
 	db.Create(&itinerary)
 
-	// A package needs at least 3 attached itinerary items to be "Published"
+	// A package needs at least 3 attached itinerary activities to be "Published"
 	for i := 1; i <= 3; i++ {
-		err := db.Create(&models.ItineraryItem{
-			ItemID:              uuid.New(),
-			ItineraryID:         itineraryID,
-			DayNumber:           i,
-			ActivityName:        fmt.Sprintf("Day %d: Amazing Safari", i),
-			ActivityDescription: "Seeing the big 5.",
-			StartTime:           "09:00:00",
-			EndTime:             "17:00:00",
+		err := db.Create(&models.ItineraryActivity{
+			ActivityID:  uuid.New(),
+			ItineraryID: itineraryID,
+			DayNumber:   i,
+			Title:       fmt.Sprintf("Day %d: Amazing Safari", i),
+			Description: "Seeing the big 5.",
+			StartTime:   "09:00:00",
+			EndTime:     "17:00:00",
 		}).Error
 		if err != nil {
-			log.Printf("Failed to insert item: %v", err)
+			log.Printf("Failed to insert activity: %v", err)
 		}
 	}
-	log.Println("Mock Itinerary and Items created in DB")
+	log.Println("Mock Itinerary and Activities created in DB")
 
 	time.Sleep(1 * time.Second)
 

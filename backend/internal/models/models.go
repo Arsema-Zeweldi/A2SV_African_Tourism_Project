@@ -58,10 +58,10 @@ type Itinerary struct {
 	NightsCount   int             `gorm:"default:0" json:"nights_count"`
 	StartDate     *time.Time      `json:"start_date"`
 	EndDate       *time.Time      `json:"end_date"`
-	TotalCostEst  float64         `gorm:"type:decimal(12,2)" json:"total_cost_est"`
-	CreatedAt     time.Time       `gorm:"default:now()" json:"created_at"`
-	UpdatedAt     time.Time       `gorm:"default:now()" json:"updated_at"`
-	Items         []ItineraryItem `gorm:"foreignKey:ItineraryID" json:"items"`
+	TotalCostEst  float64             `gorm:"type:decimal(12,2)" json:"total_cost_est"`
+	CreatedAt     time.Time           `gorm:"default:now()" json:"created_at"`
+	UpdatedAt     time.Time           `gorm:"default:now()" json:"updated_at"`
+	Activities    []ItineraryActivity `gorm:"foreignKey:ItineraryID" json:"activities"`
 }
 
 // ActivityType represents the type of activity in an itinerary item (PRD spec)
@@ -76,8 +76,8 @@ const (
 )
 
 
-type ItineraryItem struct {
-	ItemID              uuid.UUID  `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"item_id"`
+type ItineraryActivity struct {
+	ActivityID          uuid.UUID  `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"activity_id"`
 	ItineraryID         uuid.UUID  `gorm:"type:uuid;not null" json:"itinerary_id"`
 	DayNumber           int        `gorm:"not null" json:"day_number"`
 	OrderIndex          int        `gorm:"default:0" json:"order_index"`
@@ -151,6 +151,8 @@ type CommunityPost struct {
 	LikesCount    int       `gorm:"default:0" json:"likes_count"`
 	CommentsCount int       `gorm:"default:0" json:"comments_count"`
 	CreatedAt     time.Time `gorm:"default:now()" json:"created_at"`
+	Status        string    `gorm:"type:package_status_enum;default:'public';index" json:"status"`
+	User          User      `gorm:"foreignKey:UserID" json:"user,omitempty"`
 }
 
 type CommunityPostComment struct {
@@ -158,5 +160,12 @@ type CommunityPostComment struct {
 	PostID    uuid.UUID `gorm:"type:uuid;not null" json:"post_id"`
 	UserID    uuid.UUID `gorm:"type:uuid;not null" json:"user_id"`
 	Text      string    `gorm:"text;not null" json:"text"`
+	CreatedAt time.Time `gorm:"default:now()" json:"created_at"`
+	User      User      `gorm:"foreignKey:UserID" json:"user,omitempty"`
+}
+
+type CommunityPostLike struct {
+	PostID    uuid.UUID `gorm:"type:uuid;primaryKey" json:"post_id"`
+	UserID    uuid.UUID `gorm:"type:uuid;primaryKey" json:"user_id"`
 	CreatedAt time.Time `gorm:"default:now()" json:"created_at"`
 }

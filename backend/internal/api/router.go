@@ -117,6 +117,7 @@ func SetupRouter(db *gorm.DB, cfg *config.Config, uploadService upload.UploadSer
 	v1.GET("/packages/:id/reviews", mh.GetPackageReviews)
 	v1.GET("/packages/:id/chat", mh.GetChatHistory)
 	v1.GET("/posts", h.ListPosts)
+	v1.GET("/posts/:id", h.GetPost)
 	v1.GET("/posts/:id/comments", h.ListComments)
 
 	// Protected routes
@@ -144,9 +145,9 @@ func SetupRouter(db *gorm.DB, cfg *config.Config, uploadService upload.UploadSer
 			itineraries.POST("", h.SaveItinerary)
 			itineraries.GET("/:id", h.GetItinerary)
 			itineraries.DELETE("/:id", h.DeleteItinerary)
-			itineraries.POST("/:id/items", h.AddItineraryItem)
-			itineraries.PATCH("/:id/items", h.UpdateItineraryItem)
-			itineraries.DELETE("/:id/items/:itemId", h.DeleteItineraryItem)
+			itineraries.POST("/:id/activities", h.AddItineraryActivity)
+			itineraries.PATCH("/:id/activities", h.UpdateItineraryActivity)
+			itineraries.DELETE("/:id/activities/:activityId", h.DeleteItineraryActivity)
 		}
 
 		packages := protected.Group("/packages")
@@ -171,6 +172,7 @@ func SetupRouter(db *gorm.DB, cfg *config.Config, uploadService upload.UploadSer
 		{
 			posts.POST("", h.CreatePost)
 			posts.POST("/:id/comments", h.AddComment)
+			posts.POST("/:id/like", h.ToggleLikePost)
 		}
 
 		upload := protected.Group("/upload")

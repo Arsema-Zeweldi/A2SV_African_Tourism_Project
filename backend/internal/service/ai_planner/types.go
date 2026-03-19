@@ -13,25 +13,24 @@ type GenerateRequest struct {
 	Notes        string   `json:"notes"`         // additional user notes
 }
 
-// Activity is one item within a day's plan — reflects the PRD JSON schema.
+// Activity is one activity within a trip — mirrors CreateItineraryActivity DTO.
 type Activity struct {
-	Name        string  `json:"name"`
-	Type        string  `json:"type"` // food | adventure | culture | party | wildlife
-	Description string  `json:"description"`
-	EstCost     float64 `json:"est_cost"`
-	GeoLat      float64 `json:"geo_lat"`
-	GeoLong     float64 `json:"geo_long"`
+	DayNumber     int     `json:"day_number"`
+	OrderIndex    int     `json:"order_index"`
+	Title         string  `json:"title"`
+	Description   string  `json:"description"`
+	CostLabel     string  `json:"cost_label"`    // e.g. "30 USD"
+	ActivityType  string  `json:"activity_type"` // food | adventure | culture | party | wildlife
+	Latitude      float64 `json:"latitude"`
+	Longitude     float64 `json:"longitude"`
+	AIPick        bool    `json:"ai_pick"`
 }
 
-// DayPlan holds all activities for one day of the trip.
-type DayPlan struct {
-	DayNum     int        `json:"day_num"`
-	Activities []Activity `json:"activities"`
-}
-
-// ItineraryResponse is the structured output from the AI model.
+// ItineraryResponse is the structured output from the AI model — mirrors CreateItineraryRequest DTO.
 type ItineraryResponse struct {
-	Title    string    `json:"title"`
-	Currency string    `json:"currency"`
-	Days     []DayPlan `json:"days"`
+	Title       string     `json:"title"`
+	Description string     `json:"description"`
+	DaysCount   int        `json:"days_count"`
+	NightsCount int        `json:"nights_count"`
+	Activities  []Activity `json:"activities"`
 }

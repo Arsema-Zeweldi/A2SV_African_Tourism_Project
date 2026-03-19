@@ -47,9 +47,9 @@ func (h *AppHandler) SaveItinerary(c *gin.Context) {
 		EndDate:     endDate,
 	}
 
-	items := make([]models.ItineraryItem, 0, len(req.Items))
-	for _, item := range req.Items {
-		items = append(items, models.ItineraryItem{
+	activities := make([]models.ItineraryActivity, 0, len(req.Activities))
+	for _, item := range req.Activities {
+		activities = append(activities, models.ItineraryActivity{
 			DayNumber:     item.DayNumber,
 			OrderIndex:    item.OrderIndex,
 			Title:         strings.TrimSpace(item.Title),
@@ -68,7 +68,7 @@ func (h *AppHandler) SaveItinerary(c *gin.Context) {
 			EndTime:       strings.TrimSpace(item.EndTime),
 		})
 	}
-	itinerary.Items = items
+	itinerary.Activities = activities
 
 	if err := h.ItinerarySvc.Save(c.Request.Context(), &itinerary); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create itinerary: " + err.Error()})
@@ -95,7 +95,12 @@ func (h *AppHandler) ListUserItineraries(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, itineraries)
+	c.JSON(http.StatusOK, gin.H{
+		"data": itineraries,
+		"meta": gin.H{
+			"total": len(itineraries),
+		},
+	})
 }
 
 func (h *AppHandler) GetItinerary(c *gin.Context) {
@@ -128,7 +133,7 @@ func (h *AppHandler) GetItinerary(c *gin.Context) {
 	c.JSON(http.StatusOK, itinerary)
 }
 
-func (h *AppHandler) AddItineraryItem(c *gin.Context) {
+func (h *AppHandler) AddItineraryActivity(c *gin.Context) {
 	userID, err := getUserID(c)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
@@ -145,7 +150,7 @@ func (h *AppHandler) AddItineraryItem(c *gin.Context) {
 		return
 	}
 
-	var req CreateItineraryItem
+	var req CreateItineraryActivity
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -157,7 +162,7 @@ func (h *AppHandler) AddItineraryItem(c *gin.Context) {
 		return
 	}
 
-	item := models.ItineraryItem{
+	activity := models.ItineraryActivity{
 		ItineraryID:   itinerary.ItineraryID,
 		DayNumber:     req.DayNumber,
 		OrderIndex:    req.OrderIndex,
@@ -177,15 +182,15 @@ func (h *AppHandler) AddItineraryItem(c *gin.Context) {
 		EndTime:       strings.TrimSpace(req.EndTime),
 	}
 
-	if err := h.ItinerarySvc.AddItem(c.Request.Context(), itineraryID, &item); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to add itinerary item"})
+	if err := h.ItinerarySvc.AddActivity(c.Request.Context(), itineraryID, &activity); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to add itinerary activity"})
 		return
 	}
 
-	c.JSON(http.StatusCreated, item)
+	c.JSON(http.StatusCreated, activity)
 }
 
-func (h *AppHandler) UpdateItineraryItem(c *gin.Context) {
+func (h *AppHandler) UpdateItineraryActivity(c *gin.Context) {
 	userID, err := getUserID(c)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
@@ -202,15 +207,15 @@ func (h *AppHandler) UpdateItineraryItem(c *gin.Context) {
 		return
 	}
 
-	var req UpdateItineraryItemRequest
+	var req UpdateItineraryActivityRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	itemID, err := uuid.Parse(req.ItemID)
+	activityID, err := uuid.Parse(req.ActivityID)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid item_id"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid activity_id"})
 		return
 	}
 
@@ -280,8 +285,8 @@ func (h *AppHandler) UpdateItineraryItem(c *gin.Context) {
 		return
 	}
 
-	if err := h.ItinerarySvc.UpdateItem(c.Request.Context(), itineraryID, itemID, updates); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update itinerary item"})
+	if err := h.ItinerarySvc.UpdateActivity(c.Request.Context(), itineraryID, activityID, updates); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update itinerary activity"})
 		return
 	}
 
@@ -291,14 +296,14 @@ func (h *AppHandler) UpdateItineraryItem(c *gin.Context) {
 		return
 	}
 
-	for _, item := range updated.Items {
-		if item.ItemID == itemID {
-			c.JSON(http.StatusOK, item)
+	for _, activity := range updated.Activities {
+		if activity.ActivityID == activityID {
+			c.JSON(http.StatusOK, activity)
 			return
 		}
 	}
 
-	c.JSON(http.StatusNotFound, gin.H{"error": "Itinerary item not found for this itinerary"})
+	c.JSON(http.StatusNotFound, gin.H{"error": "Itinerary activity not found for this itinerary"})
 }
 
 func (h *AppHandler) DeleteItinerary(c *gin.Context) {
@@ -336,7 +341,7 @@ func (h *AppHandler) DeleteItinerary(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Itinerary deleted successfully"})
 }
 
-func (h *AppHandler) DeleteItineraryItem(c *gin.Context) {
+func (h *AppHandler) DeleteItineraryActivity(c *gin.Context) {
 	userID, err := getUserID(c)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
@@ -353,9 +358,9 @@ func (h *AppHandler) DeleteItineraryItem(c *gin.Context) {
 		return
 	}
 
-	itemID, err := uuid.Parse(c.Param("itemId"))
+	activityID, err := uuid.Parse(c.Param("activityId"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid item_id"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid activity_id"})
 		return
 	}
 
@@ -365,16 +370,16 @@ func (h *AppHandler) DeleteItineraryItem(c *gin.Context) {
 		return
 	}
 
-	if err := h.ItinerarySvc.DeleteItem(c.Request.Context(), itineraryID, itemID); err != nil {
-		if err.Error() == "item not found" {
-			c.JSON(http.StatusNotFound, gin.H{"error": "Itinerary item not found"})
+	if err := h.ItinerarySvc.DeleteActivity(c.Request.Context(), itineraryID, activityID); err != nil {
+		if err.Error() == "activity not found" {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Itinerary activity not found"})
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete itinerary item"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete itinerary activity"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Itinerary item deleted successfully"})
+	c.JSON(http.StatusOK, gin.H{"message": "Itinerary activity deleted successfully"})
 }
 
 

@@ -5,6 +5,7 @@ import 'package:mobile/core/widgets/plan_trip_button.dart';
 import 'package:mobile/features/feed/presentation/widgets/feed_post_item.dart';
 import 'package:mobile/core/widgets/headers_widget.dart';
 import 'package:mobile/features/feed/presentation/widgets/post_action_button.dart';
+import 'package:mobile/features/post/presentation/pages/new_post_screen.dart';
 
 class FeedPage extends StatelessWidget {
   final VoidCallback onPackagesTap;
@@ -19,7 +20,9 @@ class FeedPage extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           PostActionButton(
-            onTap: () {},
+            onTap: () {
+              Navigator.pushNamed(context, NewPostScreen.routeName);
+            },
           ),
           const SizedBox(
             height: 16,

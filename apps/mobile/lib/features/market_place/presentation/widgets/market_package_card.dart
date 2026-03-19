@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mobile/features/marketPlace/presentation/pages/package_detail_page.dart';
+import 'package:mobile/features/market_place/presentation/pages/package_detail_page.dart';
 
 class MarketPackageCard extends StatelessWidget {
   final String title, price, image, rating, duration;

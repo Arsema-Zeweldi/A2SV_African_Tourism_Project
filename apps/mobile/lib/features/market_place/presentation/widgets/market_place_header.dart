@@ -27,6 +27,7 @@ class MarketPlaceHeader extends StatelessWidget {
               child: TextField(
                 decoration: InputDecoration(
                   hintText: "Where to next?",
+                  hintStyle: const TextStyle(color: Colors.grey),
                   prefixIcon: const Icon(Icons.search, color: Colors.grey),
                   filled: true,
                   fillColor: Colors.white,

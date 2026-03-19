@@ -12,8 +12,8 @@ type ItineraryService interface {
 	Save(ctx context.Context, itinerary *models.Itinerary) error
 	GetByID(ctx context.Context, id uuid.UUID) (*models.Itinerary, error)
 	ListByUserID(ctx context.Context, userID uuid.UUID) ([]models.Itinerary, error)
-	AddItem(ctx context.Context, itineraryID uuid.UUID, item *models.ItineraryItem) error
-	UpdateItem(ctx context.Context, itineraryID uuid.UUID, itemID uuid.UUID, updates map[string]interface{}) error
+	AddActivity(ctx context.Context, itineraryID uuid.UUID, activity *models.ItineraryActivity) error
+	UpdateActivity(ctx context.Context, itineraryID uuid.UUID, activityID uuid.UUID, updates map[string]interface{}) error
 	Delete(ctx context.Context, id uuid.UUID) error
-	DeleteItem(ctx context.Context, itineraryID uuid.UUID, itemID uuid.UUID) error
+	DeleteActivity(ctx context.Context, itineraryID uuid.UUID, activityID uuid.UUID) error
 }

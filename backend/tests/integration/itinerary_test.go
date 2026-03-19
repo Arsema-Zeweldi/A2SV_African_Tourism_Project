@@ -9,36 +9,36 @@ import (
 )
 
 type itineraryResponse struct {
-	ItineraryID string                  `json:"itinerary_id"`
-	Items       []itineraryItemResponse `json:"items"`
+	ItineraryID string                      `json:"itinerary_id"`
+	Activities  []itineraryActivityResponse `json:"activities"`
 }
 
-type itineraryItemResponse struct {
-	ItemID       string `json:"item_id"`
-	ActivityName string `json:"activity_name"`
+type itineraryActivityResponse struct {
+	ActivityID string `json:"activity_id"`
+	Title      string `json:"title"`
 }
 
 func TestItineraryFlow(t *testing.T) {
 	env := setupTestEnv(t)
 
-	// Create itinerary with items
+	// Create itinerary with activities
 	w := doRequest(t, env.router, http.MethodPost, "/api/v1/itineraries", map[string]interface{}{
 		"title":       "Test Itinerary",
 		"description": "Testing itinerary handler",
-		"items": []map[string]interface{}{
+		"activities": []map[string]interface{}{
 			{
-				"day_number":           1,
-				"activity_name":        "Arrival",
-				"start_time":           "09:00",
-				"end_time":             "12:00",
-				"activity_description": "Check-in",
+				"day_number":  1,
+				"title":       "Arrival",
+				"start_time":  "09:00",
+				"end_time":    "12:00",
+				"description": "Check-in",
 			},
 			{
-				"day_number":           2,
-				"activity_name":        "Safari",
-				"start_time":           "08:00",
-				"end_time":             "18:00",
-				"activity_description": "Game drive",
+				"day_number":  2,
+				"title":       "Safari",
+				"start_time":  "08:00",
+				"end_time":    "18:00",
+				"description": "Game drive",
 			},
 		},
 	}, env.token)
@@ -51,8 +51,8 @@ func TestItineraryFlow(t *testing.T) {
 	if created.ItineraryID == "" {
 		t.Fatalf("SaveItinerary: missing itinerary_id")
 	}
-	if len(created.Items) == 0 {
-		t.Fatalf("SaveItinerary: expected items in response")
+	if len(created.Activities) == 0 {
+		t.Fatalf("SaveItinerary: expected activities in response")
 	}
 
 	// Get itinerary
@@ -61,13 +61,13 @@ func TestItineraryFlow(t *testing.T) {
 		t.Fatalf("GetItinerary: want 200, got %d - body: %s", w.Code, w.Body.String())
 	}
 
-	// Update first item
-	itemID := created.Items[0].ItemID
-	w = doRequest(t, env.router, http.MethodPatch, "/api/v1/itineraries/"+created.ItineraryID+"/items", map[string]interface{}{
-		"item_id":       itemID,
-		"activity_name": "Updated Arrival",
+	// Update first activity
+	activityID := created.Activities[0].ActivityID
+	w = doRequest(t, env.router, http.MethodPatch, "/api/v1/itineraries/"+created.ItineraryID+"/activities", map[string]interface{}{
+		"activity_id": activityID,
+		"title":       "Updated Arrival",
 	}, env.token)
 	if w.Code != http.StatusOK {
-		t.Fatalf("UpdateItineraryItem: want 200, got %d - body: %s", w.Code, w.Body.String())
+		t.Fatalf("UpdateItineraryActivity: want 200, got %d - body: %s", w.Code, w.Body.String())
 	}
 }

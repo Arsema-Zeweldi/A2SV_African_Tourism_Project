@@ -18,6 +18,7 @@ FROM gcr.io/distroless/static-debian12:nonroot
 WORKDIR /app
 
 COPY --from=builder /app/main ./main
+COPY --from=builder /app/migrations ./migrations
 
 EXPOSE 8080
 

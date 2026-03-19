@@ -61,9 +61,9 @@ HARD CONSTRAINTS:
   2. Do NOT invent places. Use only real, well-known, publicly verifiable landmarks.
   3. If you are NOT highly confident a place exists or you do NOT know its exact coordinates, DO NOT include it.
   4. Do NOT invent hotels or restaurants unless they are iconic, widely known, and verifiable.
-  5. Include a realistic estimated cost in USD for EVERY activity based on the budget level.
-  6. Activity "type" MUST be one of: food, adventure, culture, party, wildlife.
-  7. "geo_lat" and "geo_long" MUST be accurate GPS coordinates for the real location.
+  5. Include a realistic "cost_label" for EVERY activity (e.g. "$25 USD").
+  6. "activity_type" MUST be one of: food, adventure, culture, party, wildlife.
+  7. "latitude" and "longitude" MUST be accurate GPS coordinates for the real location.
   8. Each day must have 2–5 activities that match the specified vibe and budget.
   9. If the destination is multi-city or multi-country, distribute days logically.
  10. Prefer fewer, correct activities over more, uncertain ones.
@@ -71,20 +71,20 @@ HARD CONSTRAINTS:
 REQUIRED JSON SCHEMA (output exactly this structure, no extra fields):
 {
   "title": "Trip name — creative but descriptive",
-  "currency": "USD",
-  "days": [
+  "description": "One summary paragraph of the whole trip",
+  "days_count": %d,
+  "nights_count": %d,
+  "activities": [
     {
-      "day_num": 1,
-      "activities": [
-        {
-          "name": "Real place name",
-          "type": "food|adventure|culture|party|wildlife",
-          "description": "One practical sentence about what to do and why",
-          "est_cost": 25.00,
-          "geo_lat": -1.2921,
-          "geo_long": 36.8219
-        }
-      ]
+      "day_number": 1,
+      "order_index": 1,
+      "title": "Real place name",
+      "activity_type": "food|adventure|culture|party|wildlife",
+      "description": "One practical sentence about what to do and why",
+      "cost_label": "$25 USD",
+      "latitude": -1.2921,
+      "longitude": 36.8219,
+      "ai_pick": true
     }
   ]
 }`,
@@ -98,5 +98,7 @@ REQUIRED JSON SCHEMA (output exactly this structure, no extra fields):
 		groupSize,
 		climate,
 		notes,
+		duration,
+		duration-1,
 	)
 }

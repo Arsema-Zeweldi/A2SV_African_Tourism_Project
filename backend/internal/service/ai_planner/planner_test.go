@@ -34,20 +34,17 @@ func TestParseAIResponse(t *testing.T) {
 	// Happy path
 	raw := []byte(`{
 		"title": "Epic Serengeti",
-		"currency": "USD",
-		"days": [
-			{
-				"day_num": 1,
-				"activities": [
-					{"name": "Safari", "type": "adventure", "est_cost": 100.0, "geo_lat": -2.3, "geo_long": 34.8}
-				]
-			}
+		"description": "A wonderful safari trip",
+		"days_count": 1,
+		"nights_count": 0,
+		"activities": [
+			{"day_number": 1, "order_index": 1, "title": "Safari", "activity_type": "adventure", "cost_label": "$100 USD", "latitude": -2.3, "longitude": 34.8, "ai_pick": true}
 		]
 	}`)
 	resp, err := ParseAIResponse(raw)
 	assert.NoError(t, err)
 	assert.Equal(t, "Epic Serengeti", resp.Title)
-	assert.Len(t, resp.Days, 1)
+	assert.Len(t, resp.Activities, 1)
 
 	// With markdown fences
 	rawFenced := []byte("```json\n" + string(raw) + "\n```")
@@ -60,7 +57,7 @@ func TestParseAIResponse(t *testing.T) {
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "valid JSON")
 
-	// Empty days
-	_, err = ParseAIResponse([]byte(`{"days": []}`))
+	// Empty activities
+	_, err = ParseAIResponse([]byte(`{"activities": []}`))
 	assert.Error(t, err)
 }

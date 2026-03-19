@@ -31,8 +31,8 @@ func (s *Service) Save(ctx context.Context, itinerary *models.Itinerary) error {
 		return errors.New("title is required")
 	}
 	itinerary.Description = strings.TrimSpace(itinerary.Description)
-	for i := range itinerary.Items {
-		if err := validateItem(&itinerary.Items[i]); err != nil {
+	for i := range itinerary.Activities {
+		if err := validateActivity(&itinerary.Activities[i]); err != nil {
 			return err
 		}
 	}
@@ -50,25 +50,25 @@ func (s *Service) ListByUserID(ctx context.Context, userID uuid.UUID) ([]models.
 	return s.repo.ListByUserID(ctx, userID)
 }
 
-func (s *Service) AddItem(ctx context.Context, itineraryID uuid.UUID, item *models.ItineraryItem) error {
-	if item == nil {
-		return errors.New("item is nil")
+func (s *Service) AddActivity(ctx context.Context, itineraryID uuid.UUID, activity *models.ItineraryActivity) error {
+	if activity == nil {
+		return errors.New("activity is nil")
 	}
 	if itineraryID == uuid.Nil {
 		return errors.New("itinerary_id is required")
 	}
-	if err := validateItem(item); err != nil {
+	if err := validateActivity(activity); err != nil {
 		return err
 	}
-	return s.repo.AddItem(ctx, itineraryID, item)
+	return s.repo.AddActivity(ctx, itineraryID, activity)
 }
 
-func (s *Service) UpdateItem(ctx context.Context, itineraryID uuid.UUID, itemID uuid.UUID, updates map[string]interface{}) error {
+func (s *Service) UpdateActivity(ctx context.Context, itineraryID uuid.UUID, activityID uuid.UUID, updates map[string]interface{}) error {
 	if itineraryID == uuid.Nil {
 		return errors.New("itinerary_id is required")
 	}
-	if itemID == uuid.Nil {
-		return errors.New("item_id is required")
+	if activityID == uuid.Nil {
+		return errors.New("activity_id is required")
 	}
 	if len(updates) == 0 {
 		return errors.New("no updates provided")
@@ -83,7 +83,7 @@ func (s *Service) UpdateItem(ctx context.Context, itineraryID uuid.UUID, itemID 
 	if activityType, ok := updates["activity_type"].(string); ok && activityType != "" && !isValidActivityType(activityType) {
 		return errors.New("activity_type is invalid")
 	}
-	return s.repo.UpdateItem(ctx, itineraryID, itemID, updates)
+	return s.repo.UpdateActivity(ctx, itineraryID, activityID, updates)
 }
 
 func (s *Service) Delete(ctx context.Context, id uuid.UUID) error {
@@ -93,17 +93,17 @@ func (s *Service) Delete(ctx context.Context, id uuid.UUID) error {
 	return s.repo.Delete(ctx, id)
 }
 
-func (s *Service) DeleteItem(ctx context.Context, itineraryID uuid.UUID, itemID uuid.UUID) error {
+func (s *Service) DeleteActivity(ctx context.Context, itineraryID uuid.UUID, activityID uuid.UUID) error {
 	if itineraryID == uuid.Nil {
 		return errors.New("itinerary_id is required")
 	}
-	if itemID == uuid.Nil {
-		return errors.New("item_id is required")
+	if activityID == uuid.Nil {
+		return errors.New("activity_id is required")
 	}
-	return s.repo.DeleteItem(ctx, itineraryID, itemID)
+	return s.repo.DeleteActivity(ctx, itineraryID, activityID)
 }
 
-func validateItem(item *models.ItineraryItem) error {
+func validateActivity(item *models.ItineraryActivity) error {
 	item.Title = strings.TrimSpace(item.Title)
 	item.Description = strings.TrimSpace(item.Description)
 	item.TimeLabel = strings.TrimSpace(item.TimeLabel)

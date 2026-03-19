@@ -830,7 +830,7 @@ paths:
                 description: Test itinerary description
                 days_count: 3
                 nights_count: 2
-                items: []
+                activities: []
   /api/v1/itineraries/{id}:
     get:
       summary: Get itinerary by ID
@@ -858,8 +858,8 @@ paths:
                 description: Test itinerary description
                 days_count: 3
                 nights_count: 2
-                items:
-                  - item_id: 00000000-0000-0000-0000-000000000701
+                activities:
+                  - activity_id: 00000000-0000-0000-0000-000000000701
                     itinerary_id: 00000000-0000-0000-0000-000000000700
                     day_number: 1
                     title: Arrival
@@ -884,9 +884,9 @@ paths:
                 $ref: '#/components/schemas/MessageResponse'
               example:
                 message: Itinerary deleted successfully
-  /api/v1/itineraries/{id}/items:
+  /api/v1/itineraries/{id}/activities:
     post:
-      summary: Add itinerary item
+      summary: Add itinerary activity
       tags: [Itineraries]
       security:
         - bearerAuth: []
@@ -928,9 +928,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
               example:
-                error: Invalid itinerary item
+                error: Invalid itinerary activity
     patch:
-      summary: Update itinerary item
+      summary: Update itinerary activity
       tags: [Itineraries]
       security:
         - bearerAuth: []
@@ -963,7 +963,7 @@ paths:
                 day_number: 1
                 title: Updated activity title
     delete:
-      summary: Delete itinerary item
+      summary: Delete itinerary activity
       tags: [Itineraries]
       security:
         - bearerAuth: []
@@ -975,7 +975,7 @@ paths:
             type: string
             format: uuid
         - in: path
-          name: itemId
+          name: activityId
           required: true
           schema:
             type: string
@@ -988,11 +988,51 @@ paths:
               schema:
                 $ref: '#/components/schemas/MessageResponse'
               example:
-                message: Itinerary item deleted successfully
+                message: Itinerary activity deleted successfully
   /api/v1/posts:
     get:
       summary: List community posts
       tags: [Community]
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [public, private, archived, all]
+          description: Filter posts by status
+        - in: query
+          name: user_id
+          schema:
+            type: string
+            format: uuid
+          description: Filter posts by a specific user ID
+        - in: query
+          name: q
+          schema:
+            type: string
+          description: Search posts by content, location, or package name
+        - in: query
+          name: sort_by
+          schema:
+            type: string
+            enum: [created_at, likes_count, comments_count]
+          description: Field to sort by
+        - in: query
+          name: order
+          schema:
+            type: string
+            enum: [asc, desc]
+          description: Sort order
+        - in: query
+          name: page
+          schema:
+            type: integer
+          description: Page number
+        - in: query
+          name: page_size
+          schema:
+            type: integer
+          description: Number of items per page
       responses:
         '200':
           description: OK
@@ -1037,24 +1077,77 @@ paths:
                       description: Optional media (image or video) for the post
       responses:
         '201':
-          description: Created
+          description: Created successfully. Returns the full post object with author details.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/PostResponse'
               example:
-                post_id: 00000000-0000-0000-0000-000000002000
-                user_id: 00000000-0000-0000-0000-000000000001
-                user_name: Arsema Zeweldi
-                user_avatar: https://example.com/avatar.jpg
-                content: My amazing trip to Kenya!
-                media_url: https://example.com/safari_cool.jpg
-                media_type: image
-                location: Nairobi, Kenya
-                package_name: Safari Adventure
-                likes_count: 5
-                comments_count: 1
+                post_id: "00000000-0000-0000-0000-000000002000"
+                user_id: "00000000-0000-0000-0000-000000000001"
+                user_name: "Arsema Zeweldi"
+                user_avatar: "https://example.com/avatar.jpg"
+                content: "My amazing trip to Kenya!"
+                media_url: "https://res.cloudinary.com/demo/image/upload/v1/posts/safari.jpg"
+                media_type: "image"
+                location: "Nairobi, Kenya"
+                package_name: "Safari Adventure"
+                likes_count: 0
+                comments_count: 0
                 created_at: "2026-03-14T10:00:00Z"
+  /api/v1/posts/{id}:
+    get:
+      summary: Get a single community post
+      description: Returns a single post by ID, including populated author names and avatars.
+      tags: [Community]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostResponse'
+        '404':
+          description: Post not found
+  /api/v1/posts/{id}/like:
+    post:
+      summary: 🔒 Toggle like on a post
+      description: |
+        Toggles a like for the authenticated user. 
+        - If the user hasn't liked the post: Creates a like and increments `likes_count`.
+        - If the user has already liked the post: Removes the like and decrements `likes_count`.
+      tags: [Community]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  liked:
+                    type: boolean
+              example:
+                message: "Post liked"
+                liked: true
   /api/v1/posts/{id}/comments:
     get:
       summary: List comments for a post
@@ -1339,14 +1432,14 @@ components:
           type: number
         is_ai_generated:
           type: boolean
-        items:
+        activities:
           type: array
           items:
-            $ref: '#/components/schemas/ItineraryItem'
-    ItineraryItem:
+            $ref: '#/components/schemas/Activity'
+    Activity:
       type: object
       properties:
-        item_id:
+        activity_id:
           type: string
           format: uuid
         itinerary_id:
@@ -1400,11 +1493,11 @@ components:
           type: string
         end_date:
           type: string
-        items:
+        activities:
           type: array
           items:
-            $ref: '#/components/schemas/CreateItineraryItem'
-    CreateItineraryItem:
+            $ref: '#/components/schemas/CreateActivityRequest'
+    CreateActivityRequest:
       type: object
       required: [day_number, title]
       properties:
@@ -1543,14 +1636,25 @@ components:
       properties:
         content:
           type: string
+          description: The text content of the post.
+          example: "Enjoying the sunset in Cape Town!"
         media_url:
           type: string
+          description: |
+            Optional direct link to an image/video. 
+            Note: If you use the multipart form to upload a 'media' file, this field will be ignored and replaced by the uploaded file's URL.
         media_type:
           type: string
+          description: "Optional type hint. Use 'image' or 'video'. If not specified, the server will try to detect it from the file extension or URL."
+          example: "image"
         location:
           type: string
+          description: "Optional location tag."
+          example: "Cape Town, South Africa"
         package_name:
           type: string
+          description: "Optional reference to a tourism package."
+          example: "South Africa Coastal Tour"
     CommentResponse:
       type: object
       properties:
@@ -1611,32 +1715,35 @@ components:
           properties:
             title:
               type: string
-            currency:
+            description:
               type: string
-            days:
+            days_count:
+              type: integer
+            nights_count:
+              type: integer
+            activities:
               type: array
               items:
                 type: object
                 properties:
-                  day_num:
+                  day_number:
                     type: integer
-                  activities:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        name:
-                          type: string
-                        type:
-                          type: string
-                        description:
-                          type: string
-                        est_cost:
-                          type: number
-                        geo_lat:
-                          type: number
-                        geo_long:
-                          type: number
+                  order_index:
+                    type: integer
+                  title:
+                    type: string
+                  activity_type:
+                    type: string
+                  description:
+                    type: string
+                  cost_label:
+                    type: string
+                  latitude:
+                    type: number
+                  longitude:
+                    type: number
+                  ai_pick:
+                    type: boolean
     PackageReview:
       type: object
       properties:

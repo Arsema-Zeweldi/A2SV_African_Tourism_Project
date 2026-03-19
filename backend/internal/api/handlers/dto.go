@@ -135,10 +135,10 @@ type CreateItineraryRequest struct {
 	NightsCount int                   `json:"nights_count" binding:"omitempty,min=0"`
 	StartDate   string                `json:"start_date"`
 	EndDate     string                `json:"end_date"`
-	Items       []CreateItineraryItem `json:"items"`
+	Activities  []CreateItineraryActivity `json:"activities"`
 }
 
-type CreateItineraryItem struct {
+type CreateItineraryActivity struct {
 	DayNumber     int     `json:"day_number" binding:"required,min=1"`
 	OrderIndex    int     `json:"order_index" binding:"omitempty,min=0"`
 	Title         string  `json:"title" binding:"required,min=2,max=255"`
@@ -157,8 +157,8 @@ type CreateItineraryItem struct {
 	EndTime       string  `json:"end_time"`
 }
 
-type UpdateItineraryItemRequest struct {
-	ItemID        string   `json:"item_id" binding:"required"`
+type UpdateItineraryActivityRequest struct {
+	ActivityID    string   `json:"activity_id" binding:"required"`
 	DayNumber     *int     `json:"day_number"`
 	OrderIndex    *int     `json:"order_index"`
 	Title         *string  `json:"title"`
@@ -181,7 +181,7 @@ type UpdateItineraryItemRequest struct {
 type CreatePostRequest struct {
 	Content     string `json:"content"      form:"content"      binding:"required"`
 	MediaURL    string `json:"media_url"     form:"media_url"`
-	MediaType   string `json:"media_type"    form:"media_type"   binding:"omitempty,oneof=image video"`
+	MediaType   string `json:"media_type"    form:"media_type"`
 	Location    string `json:"location"      form:"location"`
 	PackageName string `json:"package_name"  form:"package_name"`
 }
@@ -199,6 +199,7 @@ type PostResponse struct {
 	LikesCount    int       `json:"likes_count"`
 	CommentsCount int       `json:"comments_count"`
 	CreatedAt     string    `json:"created_at"`
+	Status        string    `json:"status"`
 }
 
 type CreateCommentRequest struct {

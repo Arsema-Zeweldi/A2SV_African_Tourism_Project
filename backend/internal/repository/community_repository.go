@@ -59,7 +59,8 @@ func (r *GormCommunityRepository) ListPosts(ctx context.Context, params Paginati
 	}
 
 	var total int64
-	if err := q.Count(&total).Error; err != nil {
+	// Use Session() to avoid query pollution between Count and Find
+	if err := q.Session(&gorm.Session{}).Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
 
@@ -111,7 +112,7 @@ func (r *GormCommunityRepository) ListComments(ctx context.Context, postID uuid.
 		Where("post_id = ?", postID)
 
 	var total int64
-	if err := q.Count(&total).Error; err != nil {
+	if err := q.Session(&gorm.Session{}).Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
 

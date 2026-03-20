@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mobile/core/widgets/logo_header.dart';
 
 class EditProfileScreen extends StatefulWidget {
@@ -77,7 +78,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           IconButton(
             icon: const Icon(Icons.arrow_back_ios_new,
                 color: Colors.black, size: 20),
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => context.pop(),
           ),
           const Text(
             "Edit Profile",

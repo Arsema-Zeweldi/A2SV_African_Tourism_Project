@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mobile/features/profile/presentation/pages/profile_page.dart';
+import 'package:go_router/go_router.dart';
 
 class UserProfileBar extends StatelessWidget {
   const UserProfileBar({super.key});
@@ -18,12 +18,7 @@ class UserProfileBar extends StatelessWidget {
           // USER PROFILE PICTURE
           GestureDetector(
             onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const ProfilePage(),
-                ),
-              );
+              context.push('/profile');
             },
             child: const CircleAvatar(
               radius: 24,

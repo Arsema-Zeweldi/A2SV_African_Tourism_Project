@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mobile/core/constants/app_colors.dart';
 import 'package:mobile/core/widgets/logo_header.dart';
 import 'package:mobile/core/widgets/plan_trip_button.dart';
-import 'package:mobile/features/generated_itinerary/presentation/pages/itinerary_result_screen.dart';
 import 'package:mobile/features/my_packages/presentation/widgets/my_package_list.dart';
 import 'package:mobile/features/my_packages/presentation/widgets/my_package_search_bar.dart';
 import 'package:mobile/features/my_packages/presentation/widgets/toggle_switch.dart';
@@ -22,7 +22,7 @@ class _MyPackagesState extends State<MyPackages> {
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackground,
       floatingActionButton: PlanTripButton(onPressed: () {
-        Navigator.pushNamed(context, ItineraryResultScreen.routeName);
+        context.push('/plan-trip');
       }),
       body: SafeArea(
           child: Column(

@@ -30,4 +30,5 @@ type CommunityService interface {
 	AddComment(ctx context.Context, comment *models.CommunityPostComment) error
 	ListComments(ctx context.Context, postID uuid.UUID, params ListCommentsParams) ([]models.CommunityPostComment, int64, error)
 	ToggleLike(ctx context.Context, postID, userID uuid.UUID) (bool, error)
+	DeleteComment(ctx context.Context, commentID, userID uuid.UUID) error
 }

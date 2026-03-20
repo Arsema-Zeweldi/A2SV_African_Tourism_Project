@@ -23,6 +23,7 @@ type PackageRepository interface {
 	ReviewExists(ctx context.Context, packageID uuid.UUID, userID uuid.UUID) (bool, error)
 	UpdateReviewStats(ctx context.Context, packageID uuid.UUID) (float64, int64, error)
 	GetReviews(ctx context.Context, packageID uuid.UUID, params Pagination) ([]models.PackageReview, int64, error)
+	DeleteReview(ctx context.Context, reviewID uuid.UUID, packageID uuid.UUID, userID uuid.UUID) error
 	SaveChatMessage(ctx context.Context, msg *models.PackageChat) error
 	GetChatHistory(ctx context.Context, packageID uuid.UUID, params Pagination) ([]models.PackageChat, int64, error)
 	IncrementViews(ctx context.Context, packageID uuid.UUID) error
@@ -49,10 +50,12 @@ func (r *GormPackageRepository) GetFeed(ctx context.Context, params Pagination, 
 	if query, ok := filters["q"].(string); ok && strings.TrimSpace(query) != "" {
 		trimmed := strings.TrimSpace(query)
 		if useRegex, ok := filters["use_regex"].(bool); ok && useRegex {
-			q = q.Where("title ~* ? OR summary ~* ? OR description ~* ?", trimmed, trimmed, trimmed)
+			q = q.Where("title ~* ? OR summary ~* ? OR description ~* ? OR country ~* ? OR location ~* ? OR category ~* ?", 
+				trimmed, trimmed, trimmed, trimmed, trimmed, trimmed)
 		} else {
 			like := "%" + trimmed + "%"
-			q = q.Where("title ILIKE ? OR summary ILIKE ? OR description ILIKE ?", like, like, like)
+			q = q.Where("title ILIKE ? OR summary ILIKE ? OR description ILIKE ? OR country ILIKE ? OR location ILIKE ? OR category ILIKE ?", 
+				like, like, like, like, like, like)
 		}
 	}
 	if minPrice, ok := filters["min_price"].(float64); ok {
@@ -108,6 +111,8 @@ func (r *GormPackageRepository) GetFeed(ctx context.Context, params Pagination, 
 func (r *GormPackageRepository) GetByID(ctx context.Context, id uuid.UUID) (*models.Package, error) {
 	var pkg models.Package
 	if err := r.db.WithContext(ctx).
+		Preload("Itinerary").
+		Preload("Itinerary.Activities").
 		First(&pkg, "package_id = ?", id).Error; err != nil {
 		return nil, err
 	}
@@ -162,7 +167,7 @@ func (r *GormPackageRepository) UpdateReviewStats(ctx context.Context, packageID
 	}
 	if err := r.db.WithContext(ctx).
 		Model(&models.PackageReview{}).
-		Select("ROUND(AVG(rating)::numeric, 2) as avg, COUNT(*) as count").
+		Select("COALESCE(ROUND(AVG(rating)::numeric, 2), 0) as avg, COUNT(*) as count").
 		Where("package_id = ?", packageID).
 		Scan(&stats).Error; err != nil {
 		return 0, 0, err
@@ -202,6 +207,19 @@ func (r *GormPackageRepository) GetReviews(ctx context.Context, packageID uuid.U
 	}
 
 	return reviews, total, nil
+}
+
+func (r *GormPackageRepository) DeleteReview(ctx context.Context, reviewID uuid.UUID, packageID uuid.UUID, userID uuid.UUID) error {
+	result := r.db.WithContext(ctx).
+		Where("review_id = ? AND package_id = ? AND user_id = ?", reviewID, packageID, userID).
+		Delete(&models.PackageReview{})
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return fmt.Errorf("review not found or you are not the author")
+	}
+	return nil
 }
 
 func (r *GormPackageRepository) SaveChatMessage(ctx context.Context, msg *models.PackageChat) error {

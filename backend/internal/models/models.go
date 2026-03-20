@@ -16,7 +16,7 @@ type User struct {
 	LastName        string         `gorm:"size:100;index" json:"last_name"`
 	Country         string         `gorm:"size:100" json:"country"`
 	Bio             string         `gorm:"text" json:"bio"`
-	ProfileImageURL string         `gorm:"text" json:"profile_image_url"`
+	AvatarURL       string         `gorm:"text" json:"avatar_url"`
 	EmailVerified   bool           `gorm:"default:false" json:"email_verified"`
 	IsActive        bool           `gorm:"default:true" json:"is_active"`
 	CreatedAt       time.Time      `gorm:"not null;default:now()" json:"created_at"`
@@ -28,13 +28,13 @@ type User struct {
 type UserPreference struct {
 	PreferenceID        uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"preference_id"`
 	UserID              uuid.UUID `gorm:"type:uuid;not null" json:"user_id"`
-	PreferredSeason     string    `gorm:"type:preferred_season_enum" json:"preferred_season"`
-	BudgetRange         string    `gorm:"type:budget_range_enum" json:"budget_range"`
+	PreferredSeason     *string    `gorm:"type:preferred_season_enum" json:"preferred_season"`
+	BudgetRange         *string    `gorm:"type:budget_range_enum" json:"budget_range"`
 	PreferredActivities json.RawMessage `gorm:"type:jsonb" json:"preferred_activities"`
 	DietaryRestrictions json.RawMessage `gorm:"type:jsonb" json:"dietary_restrictions"`
-	PreferredClimate    string    `gorm:"type:preferred_climate_enum" json:"preferred_climate"`
-	PreferredLanguage   string    `gorm:"type:preferred_language_enum" json:"preferred_language"`
-	TravelVibeInterest  string    `gorm:"type:travel_vibe_interest_enum" json:"travel_vibe_interest"`
+	PreferredClimate    *string    `gorm:"type:preferred_climate_enum" json:"preferred_climate"`
+	PreferredLanguage   *string    `gorm:"type:preferred_language_enum" json:"preferred_language"`
+	TravelVibeInterest  *string    `gorm:"type:travel_vibe_interest_enum" json:"travel_vibe_interest"`
 	CreatedAt           time.Time `gorm:"not null;default:now()" json:"created_at"`
 	UpdatedAt           time.Time `gorm:"not null;default:now()" json:"updated_at"`
 }
@@ -89,12 +89,12 @@ type ItineraryActivity struct {
 	Location            string     `gorm:"size:255" json:"location"`
 	ActivityType        string     `gorm:"size:50" json:"activity_type"`
 	ImageURL            string     `gorm:"text" json:"image_url"`
-	AIPick              bool       `gorm:"default:false" json:"ai_pick"`
+	AIPick              bool       `gorm:"column:ai_pick;default:false" json:"ai_pick"`
 	Requirement         string     `gorm:"text" json:"requirement"`
 	Latitude            float64    `gorm:"type:decimal(10,7)" json:"latitude"`
 	Longitude           float64    `gorm:"type:decimal(10,7)" json:"longitude"`
-	StartTime           string     `gorm:"type:time" json:"start_time"`
-	EndTime             string     `gorm:"type:time" json:"end_time"`
+	StartTime           *string    `gorm:"type:time" json:"start_time"`
+	EndTime             *string    `gorm:"type:time" json:"end_time"`
 }
 
 // ✅ Community Packages
@@ -117,16 +117,17 @@ type Package struct {
 	DurationDays        int       `gorm:"default:0" json:"duration_days"`
 	Category            string    `gorm:"size:100" json:"category"`
 	GroupSize           string    `gorm:"size:50" json:"group_size"`
-	IsPublic            bool      `gorm:"default:true" json:"is_public"`
 	CreatedAt           time.Time `gorm:"default:now()" json:"created_at"`
 	UpdatedAt           time.Time `gorm:"default:now()" json:"updated_at"`
+
+	Itinerary *Itinerary `gorm:"foreignKey:ItineraryID;references:ItineraryID" json:"itinerary,omitempty"`
 }
 
 type PackageReview struct {
 	ReviewID  uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"review_id"`
 	PackageID uuid.UUID `gorm:"type:uuid;not null" json:"package_id"`
 	UserID    uuid.UUID `gorm:"type:uuid;not null" json:"user_id"`
-	Rating    int       `gorm:"check:rating BETWEEN 1 AND 5" json:"rating"`
+	Rating    float64   `gorm:"type:numeric(2,1);check:rating >= 1 AND rating <= 5" json:"rating"`
 	Comment   string    `gorm:"text" json:"comment"`
 	CreatedAt time.Time `gorm:"default:now()" json:"created_at"`
 }
@@ -149,9 +150,10 @@ type CommunityPost struct {
 	Location      string    `gorm:"size:255" json:"location"`
 	PackageName   string    `gorm:"size:255" json:"package_name"`
 	LikesCount    int       `gorm:"default:0" json:"likes_count"`
-	CommentsCount int       `gorm:"default:0" json:"comments_count"`
-	CreatedAt     time.Time `gorm:"default:now()" json:"created_at"`
-	Status        string    `gorm:"type:package_status_enum;default:'public';index" json:"status"`
+	CommentsCount int             `gorm:"default:0" json:"comments_count"`
+	Tags          json.RawMessage `gorm:"type:jsonb" json:"tags"`
+	CreatedAt     time.Time       `gorm:"default:now()" json:"created_at"`
+	Status        string          `gorm:"type:package_status_enum;default:'public';index" json:"status"`
 	User          User      `gorm:"foreignKey:UserID" json:"user,omitempty"`
 }
 
@@ -168,4 +170,15 @@ type CommunityPostLike struct {
 	PostID    uuid.UUID `gorm:"type:uuid;primaryKey" json:"post_id"`
 	UserID    uuid.UUID `gorm:"type:uuid;primaryKey" json:"user_id"`
 	CreatedAt time.Time `gorm:"default:now()" json:"created_at"`
+}
+
+// ✅ Auth Tokens (email verification + password reset)
+type AuthToken struct {
+	TokenID   uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"token_id"`
+	UserID    uuid.UUID `gorm:"type:uuid;not null"                             json:"user_id"`
+	Token     string    `gorm:"size:255;not null;uniqueIndex"                  json:"token"`
+	TokenType string    `gorm:"type:auth_token_type;not null"                  json:"token_type"`
+	Used      bool      `gorm:"default:false"                                  json:"used"`
+	ExpiresAt time.Time `gorm:"not null"                                       json:"expires_at"`
+	CreatedAt time.Time `gorm:"default:now()"                                  json:"created_at"`
 }

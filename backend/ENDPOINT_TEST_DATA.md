@@ -1,374 +1,244 @@
-# ENDPOINT TEST DATA
+# 🌍 Africa Tourism Platform — API Documentation & Integration Guide
 
-This document provides ready-to-use testing data for all API endpoints. Copy and paste the JSON payloads into the "Try it out" section of Swagger UI.
-
-> **Note**: For all endpoints marked with 🔒 **Auth Required**, you must first login and paste the returned `token` into the **Authorize** lock icon at the top of Swagger UI in the format: `Bearer YOUR_TOKEN_HERE`.
+This guide provides a comprehensive reference for the Africa Tourism Platform backend. It includes structured request/response examples and allowed values for fields to ensure a smooth frontend integration.
 
 ---
 
-## 🏥 Health
-### 1. Health Check
-- **Endpoint**: `GET /api/v1/health`
-- **Auth**: None
-- **Action**: Click **Execute**
+## 🔑 Authentication
+Most endpoints require a **Bearer Token**.
+1.  **Login** to get a `token`.
+2.  In Swagger or your HTTP client, add the header:
+    `Authorization: Bearer <YOUR_TOKEN>`
+
+## 🔑 Authentication & Workflows
+
+### 📧 The Email Verification Loop
+1.  **Register**: Frontend calls `POST /api/v1/auth/register`.
+2.  **Email**: Backend sends a link: `http://localhost:8080/api/v1/auth/verify-email?token=...`
+3.  **Click**: User clicks the button in their inbox. This opens the **Backend** in their browser.
+4.  **Backend Action**: Backend verifies the user and then **Redirects** them to your login page: `${FRONTEND_URL}/login?verified=true`.
+5.  **Frontend Result**: Your `/login` page displays a "Congrats, you're verified!" message.
+    > **Note**: Frontend *never* needs to call `/verify-email` via `fetch()` or `axios`. It's a browser-only redirect.
+
+### 🔑 The Password Reset Loop
+1.  **Forgot**: Frontend calls `POST /api/v1/auth/forgot-password`.
+2.  **Email**: Backend sends a direct link to your **Frontend**: `${FRONTEND_URL}/reset-password?token=...`
+3.  **Frontend Reset Page**: You extract the `token` from the URL and show a "New Password" form.
+4.  **Finalize**: When the user clicks "Save", you call `POST /api/v1/auth/reset-password` sending the token and the new password.
 
 ---
 
-## 🔐 Auth
-### 2. User Registration
+## 🔐 1. Authentication & Security (JSON API)
+### 1.1 Register User
 - **Endpoint**: `POST /api/v1/auth/register`
-- **Payload**:
-```json
-{
-  "email": "traveler@example.com",
-  "password": "StrongPassword123!",
-  "first_name": "Arsema",
-  "last_name": "Zeweldi"
-}
-```
+- **Request**:
+  ```json
+  {
+    "email": "traveler@example.com",
+    "password": "StrongPassword123!",
+    "first_name": "Arsema",
+    "last_name": "Zeweldi"
+  }
+  ```
+- **Response (Success)**: `{"message": "Registration successful. Please check your email for verification link."}`
 
-### 3. User Login
+### 1.2 Login
 - **Endpoint**: `POST /api/v1/auth/login`
-- **Payload**:
-```json
-{
-  "email": "traveler@example.com",
-  "password": "StrongPassword123!"
-}
-```
+- **Request**: `{"email": "traveler@example.com", "password": "StrongPassword123!"}`
+- **Response**:
+  ```json
+  {
+    "token": "eyJhbGciOiJIUzI1Ni...",
+    "user_id": "0ba76c8f-f776-4fcf-83b8-ca50f10c0adb",
+    "email": "traveler@example.com",
+    "status": "active"
+  }
+  ```
+
+### 1.3 Logout
+- **Endpoint**: `POST /api/v1/auth/logout` 🔒
+- **Action**: Invalidates the current JWT using a Redis blacklist.
+- **Response (Success)**: `{"message": "Logged out successfully"}`
+
+### 1.4 Forgot/Reset Password
+- `POST /api/v1/auth/forgot-password`: `{"email": "..."}`
+  - **Success**: `{"message": "A reset link has been sent to your email"}`
+  - **Error**: `{"error": "User with this email does not exist"}` (404)
+- `POST /api/v1/auth/reset-password`: `{"token": "uuid", "password": "...", "password_confirm": "..."}`
+  - **Success**: `{"message": "Password reset successfully. You can now log in."}`
+  - **Error**: `{"error": "Invalid or expired reset link"}` (400)
 
 ---
 
-## 📷 Media Upload (⚠️ Internal Testing)
-### 4. Upload Image (Multipart)
-- **Endpoint**: `POST /api/v1/upload/image` 🔒
-- **Query Parameter**: `folder` = `packages` or `posts`
-- **Action**: Upload a file (max 10MB)
-
-### 5. Upload Video (Multipart)
-- **Endpoint**: `POST /api/v1/upload/video` 🔒
-- **Query Parameter**: `folder` = `posts`
-- **Action**: Upload a file (max 100MB)
-
----
-
-## 📦 Packages
-### 6. Get Packages Feed
-- **Endpoint**: `GET /api/v1/packages`
-- **Query Parameters**:
-| Parameter | Default/Example | Enum Options |
-|-----------|-----------------|--------------|
-| `status` | `public` | `public`, `private`, `archived`, `all` |
-| `sort_by`| `rating_avg` | `rating_avg`, `price`, `verified`, `views` |
-| `order` | `desc` | `asc`, `desc` |
-| `page` | `1` | (Integer) |
-| `page_size`| `20` | (Integer) |
-
-### 7. Create Package
-- **Endpoint**: `POST /api/v1/packages` 🔒
-- **Payload**:
-```json
-{
-  "itinerary_id": "00000000-0000-0000-0000-000000000700",
-  "title": "Safari Adventure in Kenya",
-  "summary": "An unforgettable 3-day guided safari through the Masai Mara.",
-  "price": 299.99,
-  "country": "Kenya",
-  "location": "Nairobi",
-  "currency": "USD",
-  "image_url": "https://example.com/safari.jpg",
-  "duration_days": 3,
-  "category": "adventure",
-  "group_size": "medium",
-  "is_public": true
-}
-```
-
-### 8. Get Package by ID
-- **Endpoint**: `GET /api/v1/packages/{id}`
-- **Path Parameter**: `id` = (UUID of an existing package)
-
-### 9. Update Package
-- **Endpoint**: `PATCH /api/v1/packages/{id}` 🔒
-- **Payload**:
-```json
-{
-  "title": "Updated Safari Adventure",
-  "summary": "New and improved safari experience.",
-  "description": "Full description of the package including logistics.",
-  "price": 349.50,
-  "country": "Kenya",
-  "location": "Masai Mara",
-  "currency": "USD",
-  "image_url": "https://example.com/new-safari.jpg",
-  "duration_days": 4,
-  "category": "wildlife",
-  "group_size": "small",
-  "is_public": true
-}
-```
-
-### 10. Archive Package
-- **Endpoint**: `DELETE /api/v1/packages/{id}` 🔒
-- **Action**: Click **Execute**
-
-### 11. Publish Package
-- **Endpoint**: `POST /api/v1/packages/{id}/publish` 🔒
-- **Action**: Click **Execute**
-
-### 12. Update Package Status
-- **Endpoint**: `PATCH /api/v1/packages/{id}/status` 🔒
-- **Payload**:
-```json
-{
-  "status": "public"
-}
-```
-
----
-
-## 💬 Community Reviews & Chat
-### 13. Get Package Reviews
-- **Endpoint**: `GET /api/v1/packages/{id}/reviews`
-- **Path Parameter**: `id` = (UUID of package)
-
-### 14. Submit Package Review
-- **Endpoint**: `POST /api/v1/packages/{id}/reviews` 🔒
-- **Payload**:
-```json
-{
-  "rating": 5,
-  "comment": "Absolutely loved the trip! Everything was well organized."
-}
-```
-
-### 15. Get Chat History
-- **Endpoint**: `GET /api/v1/packages/{id}/chat`
-- **Path Parameter**: `id` = (UUID of package)
-
-### 16. Post Chat Message
-- **Endpoint**: `POST /api/v1/packages/{id}/chat` 🔒
-- **Payload**:
-```json
-{
-  "message": "Is transport from the airport included in the price?"
-}
-```
-
-### 17. WebSocket Chat
-- **Endpoint**: `GET /api/v1/packages/{id}/ws`
-- **Action**: Use a WebSocket testing tool. Connect to `ws://localhost:8080/api/v1/packages/{id}/ws`.
-
----
-
-## 👤 User Profile & Preferences
-### 18. Get User Profile
+## 👤 2. User Profile & Preferences
+### 2.1 Get Profile
 - **Endpoint**: `GET /api/v1/user/profile` 🔒
-- **Action**: Click **Execute**
+- **Response**:
+  ```json
+  {
+    "user_id": "uuid",
+    "email": "traveler@example.com",
+    "first_name": "Arsema",
+    "last_name": "Zeweldi",
+    "country": "Ethiopia",
+    "bio": "Travel enthusiast",
+    "avatar_url": "https://example.com/avatar.jpg",
+    "created_at": "2026-03-20T..."
+  }
+  ```
 
-### 19. Update User Profile
-- **Endpoint**: `PATCH /api/v1/user/profile` 🔒
+### 2.2 Update Profile
+- **Endpoint**: `PATCH /api/v1/user/profile` 🔒 (Supports JSON or Multipart for `avatar_url`)
+- **Multipart Field**: `image` (Upload new profile pic)
+
+### 2.3 User Preferences (Enums)
+- **Endpoint**: `PATCH /api/v1/user/preferences` 🔒
+- **Allowed Enum Values**:
+
+| Field | Allowed Values |
+|-------|---------------|
+| `preferred_season` | `spring`, `summer`, `autumn`, `winter`, `any` |
+| `budget_range` | `low`, `medium`, `high`, `luxury` |
+| `preferred_climate` | `tropical`, `desert`, `coastal`, `highland`, `temperate`, `any` |
+| `preferred_language` | `english`, `french`, `arabic`, `portuguese`, `swahili`, `any` |
+| `travel_vibe_interest` | `adventure`, `relaxed`, `foodie`, `history`, `party`, `culture`, `wildlife`, `any` |
+
+### 2.4 Change Password
+- **Endpoint**: `POST /api/v1/user/change-password` 🔒
 - **Payload**:
-```json
-{
-  "first_name": "Arsema",
-  "last_name": "Zeweldi",
-  "country": "Ethiopia",
-  "bio": "Dev and traveler based in Addis Ababa.",
-  "profile_image_url": "https://res.cloudinary.com/example/profile.jpg"
-}
-```
-
-### 20. Get User Preferences
-- **Endpoint**: `GET /api/v1/user/preferences` 🔒
-- **Action**: Click **Execute**
-
-### 21. Update User Preferences
-- **Endpoint**: `PUT /api/v1/user/preferences` 🔒
-- **Payload**:
-```json
-{
-  "preferred_season": "summer",
-  "budget_range": "medium",
-  "preferred_activities": ["hiking", "food", "museums"],
-  "dietary_restrictions": ["none"],
-  "preferred_climate": "tropical",
-  "preferred_language": "english",
-  "travel_vibe_interest": "adventure",
-  "travel_vibes": ["relaxed", "exploratory"]
-}
-```
+  ```json
+  {
+    "current_password": "old_password",
+    "new_password": "new_password_8_chars",
+    "password_confirm": "new_password_8_chars"
+  }
+  ```
+- **Response (Success)**: `{"message": "Password changed successfully"}`
+- **Response (Error - Wrong Current)**: `{"error": "Current password is incorrect"}` (401)
+- **Response (Error - Mismatch)**: `{"error": "new passwords do not match"}` (400)
 
 ---
 
-## 🗺️ AI Itinerary Planner
-### 22. Generate AI Itinerary
+---
+
+## 📦 3. Community Packages
+### 3.1 List Packages (Feed)
+- **Endpoint**: `GET /api/v1/packages`
+- **Query Params**:
+  - `q`: Search query (matches title, country, location, category, etc.)
+  - `status`: `public`, `private`, `archived`.
+  - `sort_by`: `rating_avg`, `price`, `views`, `verified`.
+  - `order`: `asc`, `desc`.
+  - `page`, `page_size`.
+
+### 3.2 Create Package
+- **Endpoint**: `POST /api/v1/packages` 🔒 (Supports Multipart for `image`)
+- **Request Body (JSON)**:
+  ```json
+  {
+    "itinerary_id": "aa24b4bb-59ac-468a-afd8-0810c2a464d0",
+    "title": "Historical Route of Ethiopia",
+    "summary": "Step back in time through the churches of Lalibela.",
+    "price": 450.00,
+    "country": "Ethiopia",
+    "location": "Lalibela",
+    "currency": "USD",
+    "duration_days": 7,
+    "category": "culture",
+    "group_size": "1-10"
+  }
+  ```
+- **Multipart Field**: `image` (Upload package thumbnail)
+
+### 3.3 My Created Packages
+- **Endpoint**: `GET /api/v1/packages/me` 🔒
+- **Query Params**: `q`, `page`, `page_size`.
+
+### 3.4 Update Package
+- **Endpoint**: `PATCH /api/v1/packages/{id}` 🔒
+- **Example Payload**:
+  ```json
+  {
+    "title": "Extreme Safari in Kenya",
+    "price": 599.99,
+    "location": "Maasai Mara"
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "message": "Package updated successfully",
+    "package_id": "uuid"
+  }
+  ```
+
+---
+
+## ⭐ 4. Reviews & Ratings
+### 4.1 Submit Review
+- **Endpoint**: `POST /api/v1/packages/{id}/reviews` 🔒
+- **Request**:
+  ```json
+  {
+    "rating": 4.5,
+    "comment": "Incredible experience!"
+  }
+  ```
+
+### 4.2 Get Reviews
+- **Endpoint**: `GET /api/v1/packages/{id}/reviews`
+
+---
+
+## 🗺️ 5. AI Itinerary Planner
+### 5.1 Generate Itinerary
 - **Endpoint**: `POST /api/v1/planner/generate` 🔒
-- **Payload**:
-```json
-{
-  "destination": "Nairobi, Kenya",
-  "duration_days": 3,
-  "budget": 500,
-  "budget_level": "medium",
-  "vibe_tags": ["nature", "wildlife", "culture"],
-  "group_size": 2,
-  "climate_pref": "temperate",
-  "multi_country": false,
-  "notes": "Interested in visiting the Giraffe Centre."
-}
-```
+- **Request**:
+  ```json
+  {
+    "destination": "Cape Town, South Africa",
+    "duration_days": 3,
+    "budget_level": "medium",
+    "vibe_tags": ["culture", "foodie"],
+    "group_size": 2,
+    "climate_pref": "any"
+  }
+  ```
+- **Note**: The returned `data` object should be sent to `POST /api/v1/itineraries` to be saved.
 
 ---
 
-## 🗓️ Itineraries
-### 23. List User Itineraries
-- **Endpoint**: `GET /api/v1/itineraries` 🔒
-- **Action**: Click **Execute**
-
-### 24. Create Itinerary (Manual)
-- **Endpoint**: `POST /api/v1/itineraries` 🔒
-- **Payload**:
-```json
-{
-  "title": "Summer Trip to Kenya",
-  "description": "Family vacation exploring Nairobi and beyond.",
-  "days_count": 5,
-  "nights_count": 4,
-  "start_date": "2026-06-01",
-  "end_date": "2026-06-05",
-  "activities": [
-    {
-      "day_number": 1,
-      "order_index": 1,
-      "title": "Arrival at Jomo Kenyatta International Airport",
-      "description": "Flight arrival and shuttle to hotel.",
-      "time_label": "10:00 AM",
-      "duration_label": "2 hours",
-      "cost_label": "Free",
-      "location": "Airport",
-      "activity_type": "transport",
-      "image_url": "https://example.com/airport.jpg",
-      "ai_pick": false,
-      "requirement": "Passport & Visa",
-      "latitude": -1.332,
-      "longitude": 36.927,
-      "start_time": "10:00",
-      "end_time": "12:00"
-    }
-  ]
-}
-```
-
-### 25. Get Itinerary by ID
-- **Endpoint**: `GET /api/v1/itineraries/{id}` 🔒
-- **Path Parameter**: `id` = (UUID of itinerary)
-
-### 26. Delete Itinerary
-- **Endpoint**: `DELETE /api/v1/itineraries/{id}` 🔒
-- **Action**: Click **Execute**
-
-### 27. Add Itinerary Activity
-- **Endpoint**: `POST /api/v1/itineraries/{id}/activities` 🔒
-- **Payload**:
-```json
-{
-  "day_number": 2,
-  "order_index": 1,
-  "title": "Visit David Sheldrick Wildlife Trust",
-  "description": "Feeding orphaned baby elephants.",
-  "time_label": "11:00 AM",
-  "duration_label": "1 hour",
-  "cost_label": "1500 KES",
-  "location": "Nairobi",
-  "activity_type": "wildlife",
-  "image_url": "https://example.com/elephants.jpg",
-  "ai_pick": true,
-  "requirement": "Pre-booked ticket",
-  "latitude": -1.376,
-  "longitude": 36.773,
-  "start_time": "11:00",
-  "end_time": "12:00"
-}
-```
-
-### 28. Update Itinerary Activity
-- **Endpoint**: `PATCH /api/v1/itineraries/{id}/activities` 🔒
-- **Payload**:
-```json
-{
-  "activity_id": "00000000-0000-0000-0000-000000000000",
-  "title": "Updated Activity Title",
-  "description": "Updated activity description.",
-  "day_number": 2,
-  "order_index": 2,
-  "time_label": "02:00 PM",
-  "duration_label": "2 hours",
-  "cost_label": "500 KES",
-  "location": "Updated Location",
-  "activity_type": "culture",
-  "image_url": "https://example.com/img.jpg",
-  "ai_pick": false,
-  "requirement": "None",
-  "latitude": 0.0,
-  "longitude": 0.0,
-  "start_time": "14:00",
-  "end_time": "16:00"
-}
-```
-
-### 29. Delete Itinerary Activity
-- **Endpoint**: `DELETE /api/v1/itineraries/{id}/activities/{activityId}` 🔒
-- **Path Parameter**: `id` = (UUID of itinerary)
-- **Path Parameter**: `activityId` = (UUID of activity)
+## 📝 6. My Itineraries
+- `GET /api/v1/itineraries`: List user's saved itineraries.
+- `POST /api/v1/itineraries`: Save an itinerary (AI generated or manual).
+- `DELETE /api/v1/itineraries/{id}`: Delete an itinerary.
+- `PATCH /api/v1/itineraries/{id}/activities`: Batch update activities (requires full array).
 
 ---
 
-## 📜 Community Posts
-### 30. List Community Posts
+## 💬 7. Community Social Feed
+### 7.1 List Posts
 - **Endpoint**: `GET /api/v1/posts`
-- **Query Parameters**:
-| Parameter | Default/Example | Description |
-|-----------|-----------------|-------------|
-| `status` | `public` | `public`, `private`, `archived`, `all` |
-| `user_id` | (UUID) | Filter by a specific traveler's ID |
-| `q` | `safari` | Search in content, location, or package name |
-| `sort_by`| `created_at` | `created_at`, `likes_count`, `comments_count` |
-| `order` | `desc` | `asc`, `desc` |
-| `page` | `1` | (Integer) |
-| `page_size`| `10` | (Integer) |
+- **Response Item**: Includes `user_name`, `user_avatar`, `likes_count`, `comments_count`, and `tags` (array).
+- **Search**: `GET /api/v1/posts?q=safari` search matches content AND tags.
 
-### 31. Create Community Post
-- **Endpoint**: `POST /api/v1/posts` 🔒
-- **Flexible Options**: You can either upload a local file (`media` field) OR provide a direct `media_url` and `media_type`.
-- **Payload (JSON)**:
-```json
-{
-  "content": "Just finished my safari trip! It was amazing.",
-  "media_url": "https://example.com/safari-photo.jpg",
-  "media_type": "image",
-  "location": "Masai Mara, Kenya",
-  "package_name": "Safari Adventure"
-}
-```
+### 7.2 Create Post
+- **Endpoint**: `POST /api/v1/posts` 🔒 (MULTIPART ONLY)
+- **Fields**: `content` (text), `location` (text), `media` (file), `tags` (array of strings).
+- **Multipart Note**: To send tags in a multipart request, use multiple `tags` keys or a JSON-encoded string if your client supports it. Most common: `tags=nature&tags=adventure`.
 
-### 32. List Post Comments
-- **Endpoint**: `GET /api/v1/posts/{id}/comments`
-- **Query Parameters**: `page=1`, `page_size=20`
-
-### 33. Add Comment to Post
-- **Endpoint**: `POST /api/v1/posts/{id}/comments` 🔒
-- **Payload**:
-```json
-{
-  "text": "Wow, looks like you had a great time!"
-}
-```
-
-### 34. Get Single Community Post
-- **Endpoint**: `GET /api/v1/posts/{id}`
-- **Action**: Click **Execute** to see the post along with populated author data (`user_name`, `user_avatar`).
-
-### 35. Toggle Like on Post
+### 7.3 Like/Unlike Post
 - **Endpoint**: `POST /api/v1/posts/{id}/like` 🔒
-- **Action**: This will Like the post if you haven't liked it yet, or Unlike it if you already have. It automatically updates the `likes_count`.
+- **Response**: `{"message": "Post liked", "liked": true}`
+
+### 7.4 Delete Comment
+- **Endpoint**: `DELETE /api/v1/posts/comments/{commentId}` 🔒
+- **Response**: `{"message": "Comment deleted successfully"}`
+- **Note**: Only the author of the comment can perform this action.
+
+---
+
+## 🚀 8. Direct Media Upload (Helpers)
+*Use these only if you aren't using the resource-specific multipart endpoints above.*
+- `POST /api/v1/upload/image?folder=posts` 🔒
+- `POST /api/v1/upload/video?folder=posts` 🔒

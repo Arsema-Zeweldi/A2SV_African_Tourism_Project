@@ -20,6 +20,12 @@ type Config struct {
 	AllowedOrigins  []string
 	Environment     string
 	CloudinaryURL   string
+	// Email
+	BrevoAPIKey     string
+	BrevoAPIURL     string
+	EmailFrom       string
+	EmailFromName   string
+	FrontendURL     string
 }
 
 // LoadConfig reads configuration from environment variables (and an optional .env file).
@@ -57,6 +63,11 @@ func LoadConfig() (*Config, error) {
 		AllowedOrigins: origins,
 		Environment:    getEnv("ENVIRONMENT", "development"),
 		CloudinaryURL:  getEnv("CLOUDINARY_URL", ""),
+		BrevoAPIKey:    getEnv("BREVO_API_KEY", ""),
+		BrevoAPIURL:    getEnv("BREVO_API_URL", "https://api.brevo.com/v3/smtp/email"),
+		EmailFrom:      getEnv("EMAIL_FROM", "noreply@amona.travel"),
+		EmailFromName:  getEnv("EMAIL_FROM_NAME", "Amona"),
+		FrontendURL:    getEnv("FRONTEND_URL", "http://localhost:3000"),
 	}, nil
 }
 

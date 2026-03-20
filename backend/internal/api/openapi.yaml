@@ -13,9 +13,11 @@ tags:
   - name: User
     description: User profile and preferences
   - name: Packages
-    description: Community packages and reviews
+    description: Community packages
+  - name: Reviews
+    description: Package reviews and ratings
   - name: Chat
-    description: Package chat and WebSocket
+    description: Package chat
   - name: Itineraries
     description: Itinerary CRUD and items
   - name: Planner
@@ -100,9 +102,132 @@ paths:
                   email: user@example.com
         '401':
           description: Unauthorized
+  /api/v1/auth/verify-email:
+    get:
+      summary: "[BROWSER REDIRECT] Verify user email"
+      description: |
+        **THIS IS NOT A JSON API.** This endpoint is intended for the browser's direct address bar. 
+        When a user clicks the button in their email, they hit this link. 
+        The backend performs the verification and then redirects to the frontend URL (e.g., `http://localhost:3000/login?verified=true`).
+      tags: [Auth]
+      parameters:
+        - in: query
+          name: token
+          schema:
+            type: string
+          required: true
+          description: The verification token sent via email
+      responses:
+        '302':
+          description: Redirects to Frontend login page with `?verified=true`
+  /api/v1/auth/resend-verification:
+    post:
+      summary: Resend verification email
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+      responses:
+        '200':
+          description: Verification email sent
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: User with this email does not exist
+  /api/v1/auth/forgot-password:
+    post:
+      summary: Request a password reset password
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ForgotPasswordRequest'
+      responses:
+        '200':
+          description: Reset link sent successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+              example:
+                message: A reset link has been sent to your email
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: User with this email does not exist
+  /api/v1/auth/reset-password:
+    post:
+      summary: Reset password via email token
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResetPasswordRequest'
+      responses:
+        '200':
+          description: Password reset successfully
+  /api/v1/auth/logout:
+    post:
+      summary: Invalidate the current session token
+      tags: [Auth]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Logged out successfully
+  /api/v1/user/change-password:
+    post:
+      summary: Change password while logged in
+      tags: [User]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+      responses:
+        '200':
+          description: Password changed successfully
+        '400':
+          description: Validation error or passwords do not match
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: new passwords do not match
+        '401':
+          description: Current password is incorrect
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: Current password is incorrect
   /api/v1/upload/image:
     post:
-      summary: 🔒 [INTERNAL] Upload an image (Backend Test Only)
+      summary: "🔒 [INTERNAL] Upload an image (Backend Test Only)"
       description: |
         **Note to Frontend:** Do not use this endpoint directly for Packages, Posts, or Profile updates. 
         Instead, use the multipart support on the respective `POST /packages`, `POST /posts`, or `PATCH /profile` endpoints.
@@ -143,7 +268,7 @@ paths:
           description: Invalid file or too large
   /api/v1/upload/video:
     post:
-      summary: 🔒 [INTERNAL] Upload a video (Backend Test Only)
+      summary: "🔒 [INTERNAL] Upload a video (Backend Test Only)"
       description: |
         **Note to Frontend:** Do not use this endpoint directly for Community posts. 
         Instead, use the multipart support on the `POST /posts` endpoint.
@@ -188,11 +313,44 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
               example:
                 error: Invalid email or password
+  /api/v1/packages/me:
+    get:
+      summary: Get my packages
+      description: Returns a list of packages created by the authenticated user.
+      tags: [Packages]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: q
+          schema:
+            type: string
+          description: Search through your own packages
+        - in: query
+          name: page
+          schema:
+            type: integer
+        - in: query
+          name: page_size
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PackagesFeedResponse'
   /api/v1/packages:
     get:
       summary: Get packages feed
       tags: [Packages]
       parameters:
+        - in: query
+          name: q
+          schema:
+            type: string
+          description: Robust search query. Matches title, summary, country, location, and category.
         - in: query
           name: status
           schema:
@@ -242,7 +400,6 @@ paths:
                     duration_days: 3
                     category: adventure
                     group_size: small
-                    is_public: true
                     created_at: "2026-03-14T10:00:00Z"
                 meta:
                   page: 1
@@ -295,7 +452,6 @@ paths:
                 image_url: https://example.com/safari.jpg
                 duration_days: 3
                 category: adventure
-                is_public: false
                 created_at: "2026-03-14T10:00:00Z"
   /api/v1/packages/{id}:
     get:
@@ -332,7 +488,6 @@ paths:
                 image_url: https://example.com/safari.jpg
                 duration_days: 3
                 category: adventure
-                is_public: true
                 created_at: "2026-03-14T10:00:00Z"
     patch:
       summary: Update package
@@ -364,29 +519,26 @@ paths:
                       description: Optional new package thumbnail image
       responses:
         '200':
-          description: OK
+          description: Package updated successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Package'
+                type: object
+                properties:
+                  message:
+                    type: string
+                  package_id:
+                    type: string
+                    format: uuid
               example:
+                message: Package updated successfully
                 package_id: 00000000-0000-0000-0000-000000000500
-                creator_id: 00000000-0000-0000-0000-000000000001
-                itinerary_id: 00000000-0000-0000-0000-000000000700
-                title: Updated Package Title
-                summary: Updated summary
-                price: 149.5
-                status: private
-                rating_avg: 0
-                reviews_count: 0
-                views_count: 0
                 country: Kenya
                 location: Nairobi
                 currency: USD
                 image_url: https://example.com/safari.jpg
                 duration_days: 3
                 category: adventure
-                is_public: false
                 created_at: "2026-03-14T10:00:00Z"
     delete:
       summary: Archive package
@@ -409,28 +561,6 @@ paths:
                 $ref: '#/components/schemas/MessageResponse'
               example:
                 message: Package archived successfully
-  /api/v1/packages/{id}/publish:
-    post:
-      summary: Publish package
-      tags: [Packages]
-      security:
-        - bearerAuth: []
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/MessageResponse'
-              example:
-                message: Package public successfully
   /api/v1/packages/{id}/status:
     patch:
       summary: Update package status
@@ -464,7 +594,7 @@ paths:
   /api/v1/packages/{id}/reviews:
     get:
       summary: Get package reviews
-      tags: [Packages]
+      tags: [Reviews]
       parameters:
         - in: path
           name: id
@@ -478,19 +608,22 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/PackageReview'
+                $ref: '#/components/schemas/PackageReviewsResponse'
               example:
-                - review_id: 00000000-0000-0000-0000-000000000900
-                  package_id: 00000000-0000-0000-0000-000000000500
-                  user_id: 00000000-0000-0000-0000-000000000001
-                  rating: 5
-                  comment: Great trip
-                  created_at: "2026-03-14T10:00:00Z"
+                data:
+                  - review_id: 00000000-0000-0000-0000-000000000900
+                    package_id: 00000000-0000-0000-0000-000000000500
+                    user_id: 00000000-0000-0000-0000-000000000001
+                    rating: 5
+                    comment: Great trip!
+                    created_at: "2026-03-14T10:00:00Z"
+                meta:
+                  total: 1
+                  page: 1
+                  page_size: 50
     post:
       summary: Submit package review
-      tags: [Packages]
+      tags: [Reviews]
       security:
         - bearerAuth: []
       parameters:
@@ -518,6 +651,34 @@ paths:
                 $ref: '#/components/schemas/MessageResponse'
               example:
                 message: Review submitted successfully
+  /api/v1/packages/{id}/reviews/{reviewId}:
+    delete:
+      summary: Delete a review (author only)
+      tags: [Reviews]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: path
+          name: reviewId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Review deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+              example:
+                message: Review deleted successfully
   /api/v1/packages/{id}/chat:
     get:
       summary: Get package chat history
@@ -580,21 +741,6 @@ paths:
                 user_id: 00000000-0000-0000-0000-000000000001
                 message: Is transport included?
                 created_at: "2026-03-14T10:00:00Z"
-  /api/v1/packages/{id}/ws:
-    get:
-      summary: WebSocket chat
-      description: WebSocket endpoint for package chat. Use a WebSocket client and include Authorization header.
-      tags: [Chat]
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        '101':
-          description: Switching protocols
   /api/v1/user/profile:
     get:
       summary: Get user profile
@@ -615,11 +761,11 @@ paths:
                 data:
                   user_id: 00000000-0000-0000-0000-000000000001
                   email: user@example.com
-                  first_name: Arsema
-                  last_name: Zeweldi
+                  first_name: Yihenew
+                  last_name: Amogne
                   country: Ethiopia
                   bio: Passionate traveler and developer.
-                  profile_image_url: https://example.com/avatar.jpg
+                  avatar_url: https://example.com/avatar.jpg
                   created_at: 2026-03-14T10:00:00Z
     patch:
       summary: Update user profile
@@ -663,7 +809,7 @@ paths:
                   last_name: Zeweldi
                   country: Ethiopia
                   bio: Updated bio.
-                  profile_image_url: https://example.com/avatar.jpg
+                  avatar_url: https://example.com/avatar.jpg
                   created_at: 2026-03-14T10:00:00Z
   /api/v1/user/preferences:
     get:
@@ -689,7 +835,7 @@ paths:
                   preferred_climate: tropical
                   preferred_language: english
                   travel_vibe_interest: adventure
-    put:
+    patch:
       summary: Update user preferences
       tags: [User]
       security:
@@ -703,31 +849,40 @@ paths:
               properties:
                 preferred_season:
                   type: string
+                  description: "Allowed values: `spring`, `summer`, `autumn`, `winter`, `any`"
                   enum: [spring, summer, autumn, winter, any]
                 budget_range:
                   type: string
+                  description: "Allowed values: `low`, `medium`, `high`, `luxury`"
                   enum: [low, medium, high, luxury]
                 preferred_activities:
                   type: array
+                  description: "Free text tags for activities you enjoy (e.g. hiking, museums, food)"
                   items:
                     type: string
                 dietary_restrictions:
                   type: array
+                  description: "Optional list of dietary constraints (e.g. vegan, gluten-free)"
                   items:
                     type: string
                 preferred_climate:
                   type: string
+                  description: "Allowed values: `tropical`, `desert`, `coastal`, `highland`, `temperate`, `any`"
                   enum: [tropical, desert, coastal, highland, temperate, any]
                 preferred_language:
                   type: string
+                  description: "Allowed values: `english`, `french`, `arabic`, `portuguese`, `swahili`, `any`"
                   enum: [english, french, arabic, portuguese, swahili, any]
                 travel_vibe_interest:
                   type: string
+                  description: "Primary travel style. Allowed values: `adventure`, `relaxed`, `foodie`, `history`, `party`, `culture`, `wildlife`, `any`"
                   enum: [adventure, relaxed, foodie, history, party, culture, wildlife, any]
                 travel_vibes:
                   type: array
+                  description: "List of vibes. Note: Currently the server may use the first element of this array to update travel_vibe_interest. Use values from the same enum: `adventure`, `relaxed`, `foodie`, `history`, `party`, `culture`, `wildlife`, `any`"
                   items:
                     type: string
+                    enum: [adventure, relaxed, foodie, history, party, culture, wildlife, any]
       responses:
         '200':
           description: OK
@@ -740,6 +895,7 @@ paths:
   /api/v1/planner/generate:
     post:
       summary: Generate itinerary using AI
+      description: "**Note**: The generated itinerary is NOT automatically saved. To persist it, users must explicitly save the returned `data` object by sending it as a payload to the `POST /api/v1/itineraries` endpoint."
       tags: [Planner]
       security:
         - bearerAuth: []
@@ -885,50 +1041,6 @@ paths:
               example:
                 message: Itinerary deleted successfully
   /api/v1/itineraries/{id}/activities:
-    post:
-      summary: Add itinerary activity
-      tags: [Itineraries]
-      security:
-        - bearerAuth: []
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreateItineraryItem'
-            example:
-              day_number: 1
-              title: Arrival and check-in
-              description: Check in and rest
-              start_time: "09:00"
-              end_time: "12:00"
-      responses:
-        '201':
-          description: Created
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ItineraryItem'
-              example:
-                item_id: 00000000-0000-0000-0000-000000000701
-                itinerary_id: 00000000-0000-0000-0000-000000000700
-                day_number: 1
-                title: Arrival and check-in
-        '400':
-          description: Bad request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              example:
-                error: Invalid itinerary activity
     patch:
       summary: Update itinerary activity
       tags: [Itineraries]
@@ -946,9 +1058,9 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UpdateItineraryItemRequest'
+              $ref: '#/components/schemas/UpdateItineraryActivityRequest'
             example:
-              item_id: 00000000-0000-0000-0000-000000000701
+              activity_id: 00000000-0000-0000-0000-000000000701
               title: Updated activity title
       responses:
         '200':
@@ -956,39 +1068,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ItineraryItem'
+                $ref: '#/components/schemas/Activity'
               example:
-                item_id: 00000000-0000-0000-0000-000000000701
+                activity_id: 00000000-0000-0000-0000-000000000701
                 itinerary_id: 00000000-0000-0000-0000-000000000700
                 day_number: 1
                 title: Updated activity title
-    delete:
-      summary: Delete itinerary activity
-      tags: [Itineraries]
-      security:
-        - bearerAuth: []
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: string
-            format: uuid
-        - in: path
-          name: activityId
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/MessageResponse'
-              example:
-                message: Itinerary activity deleted successfully
   /api/v1/posts:
     get:
       summary: List community posts
@@ -1205,6 +1290,35 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CommentResponse'
+  /api/v1/posts/comments/{commentId}:
+    delete:
+      summary: 🔒 Delete a comment
+      description: |
+        Allows a user to delete their own comment. 
+        Backend verifies ownership; returns 403 if the user is not the author.
+      tags: [Community]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: commentId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+              example:
+                message: Comment deleted successfully
+        '403':
+          description: Unauthorized to delete this comment
+        '404':
+          description: Comment not found
 components:
   securitySchemes:
     bearerAuth:
@@ -1212,6 +1326,38 @@ components:
       scheme: bearer
       bearerFormat: JWT
   schemas:
+    UserPreferencesResponse:
+      type: object
+      properties:
+        preference_id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        preferred_season:
+          type: string
+          enum: [spring, summer, autumn, winter, any]
+        budget_range:
+          type: string
+          enum: [low, medium, high, luxury]
+        preferred_activities:
+          type: array
+          items:
+            type: string
+        dietary_restrictions:
+          type: array
+          items:
+            type: string
+        preferred_climate:
+          type: string
+          enum: [tropical, desert, coastal, highland, temperate, any]
+        preferred_language:
+          type: string
+          enum: [english, french, arabic, portuguese, swahili, any]
+        travel_vibe_interest:
+          type: string
+          enum: [adventure, relaxed, foodie, history, party, culture, wildlife, any]
     HealthResponse:
       type: object
       properties:
@@ -1318,14 +1464,14 @@ components:
           type: string
         group_size:
           type: string
-        is_public:
-          type: boolean
         created_at:
           type: string
           format: date-time
         updated_at:
           type: string
           format: date-time
+        itinerary:
+          $ref: '#/components/schemas/Itinerary'
     PackageCreateRequest:
       type: object
       required: [itinerary_id, title]
@@ -1333,55 +1479,73 @@ components:
         itinerary_id:
           type: string
           format: uuid
+          example: "aa24b4bb-59ac-468a-afd8-0810c2a464d0"
         title:
           type: string
+          example: "Test Package"
         summary:
           type: string
+          example: "test summary"
         price:
           type: number
+          example: 250.0
         country:
           type: string
+          example: "Ethiopia"
         location:
           type: string
+          example: "Lalibela"
         currency:
           type: string
+          example: "USD"
         image_url:
           type: string
+          example: "https://example.com/package.jpg"
         duration_days:
           type: integer
+          example: 5
         category:
           type: string
+          example: "culture"
         group_size:
           type: string
-        is_public:
-          type: boolean
+          example: "small"
     PackageUpdateRequest:
       type: object
       properties:
         title:
           type: string
+          example: "Updated Title"
         summary:
           type: string
+          example: "Updated brief description"
         description:
           type: string
+          example: "Full detailed description of the tour..."
         price:
           type: number
+          example: 299.99
         country:
           type: string
+          example: "Kenya"
         location:
           type: string
+          example: "Mombasa"
         currency:
           type: string
+          example: "USD"
         image_url:
           type: string
+          example: "https://example.com/updated.jpg"
         duration_days:
           type: integer
+          example: 7
         category:
           type: string
+          example: "adventure"
         group_size:
           type: string
-        is_public:
-          type: boolean
+          example: "medium"
     PackageStatusRequest:
       type: object
       required: [status]
@@ -1463,6 +1627,7 @@ components:
           type: string
         activity_type:
           type: string
+          enum: [food, adventure, culture, party, wildlife]
         image_url:
           type: string
         ai_pick:
@@ -1519,6 +1684,47 @@ components:
           type: string
         activity_type:
           type: string
+          enum: [food, adventure, culture, party, wildlife]
+        image_url:
+          type: string
+        ai_pick:
+          type: boolean
+        requirement:
+          type: string
+        latitude:
+          type: number
+        longitude:
+          type: number
+        start_time:
+          type: string
+        end_time:
+          type: string
+    UpdateItineraryActivityRequest:
+      type: object
+      required: [activity_id]
+      properties:
+        activity_id:
+          type: string
+          format: uuid
+        day_number:
+          type: integer
+        order_index:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        time_label:
+          type: string
+        duration_label:
+          type: string
+        cost_label:
+          type: string
+        location:
+          type: string
+        activity_type:
+          type: string
+          enum: [food, adventure, culture, party, wildlife]
         image_url:
           type: string
         ai_pick:
@@ -1544,8 +1750,10 @@ components:
           format: uuid
         preferred_season:
           type: string
+          enum: [spring, summer, autumn, winter, any]
         budget_range:
           type: string
+          enum: [low, medium, high, luxury]
         preferred_activities:
           type: array
           items:
@@ -1556,16 +1764,46 @@ components:
             type: string
         preferred_climate:
           type: string
+          enum: [tropical, desert, coastal, highland, temperate, any]
         preferred_language:
           type: string
+          enum: [english, french, arabic, portuguese, swahili, any]
         travel_vibe_interest:
           type: string
+          enum: [adventure, relaxed, foodie, history, party, culture, wildlife, any]
         created_at:
           type: string
           format: date-time
         updated_at:
           type: string
           format: date-time
+    ForgotPasswordRequest:
+      type: object
+      required: [email]
+      properties:
+        email:
+          type: string
+          format: email
+    ResetPasswordRequest:
+      type: object
+      required: [token, password, password_confirm]
+      properties:
+        token:
+          type: string
+        password:
+          type: string
+        password_confirm:
+          type: string
+    ChangePasswordRequest:
+      type: object
+      required: [current_password, new_password, password_confirm]
+      properties:
+        current_password:
+          type: string
+        new_password:
+          type: string
+        password_confirm:
+          type: string
     UpdateProfileRequest:
       type: object
       properties:
@@ -1577,7 +1815,7 @@ components:
           type: string
         bio:
           type: string
-        profile_image_url:
+        avatar_url:
           type: string
           format: url
     UserProfileResponse:
@@ -1596,7 +1834,7 @@ components:
           type: string
         bio:
           type: string
-        profile_image_url:
+        avatar_url:
           type: string
         created_at:
           type: string
@@ -1628,6 +1866,11 @@ components:
           type: integer
         comments_count:
           type: integer
+        tags:
+          type: array
+          items:
+            type: string
+          example: ["adventure", "safari", "kenya"]
         created_at:
           type: string
     CreatePostRequest:
@@ -1655,6 +1898,11 @@ components:
           type: string
           description: "Optional reference to a tourism package."
           example: "South Africa Coastal Tour"
+        tags:
+          type: array
+          items:
+            type: string
+          example: ["nature", "sunset", "travel"]
     CommentResponse:
       type: object
       properties:
@@ -1687,24 +1935,35 @@ components:
       properties:
         destination:
           type: string
+          example: "Nairobi, Kenya"
         duration_days:
           type: integer
+          example: 3
         budget:
           type: number
+          example: 500.0
         budget_level:
           type: string
+          enum: [low, medium, luxury]
+          example: "medium"
         vibe_tags:
           type: array
           items:
             type: string
+          example: ["culture", "food", "wildlife"]
         group_size:
           type: integer
+          example: 2
         climate_pref:
           type: string
+          enum: [tropical, desert, coastal, highland, temperate, any]
+          example: "temperate"
         multi_country:
           type: boolean
+          example: false
         notes:
           type: string
+          example: "Interested in local markets and wildlife conservation."
     GeneratePlanResponse:
       type: object
       properties:
@@ -1765,10 +2024,13 @@ components:
           format: date-time
     ReviewRequest:
       type: object
-      required: [rating]
+      required: [rating, comment]
       properties:
         rating:
-          type: integer
+          type: number
+          format: float
+          minimum: 1
+          maximum: 5
         comment:
           type: string
     PackageChat:
@@ -1807,4 +2069,20 @@ components:
             page:
               type: integer
             total:
+              type: integer
+    PackageReviewsResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/PackageReview'
+        meta:
+          type: object
+          properties:
+            total:
+              type: integer
+            page:
+              type: integer
+            page_size:
               type: integer

@@ -2,11 +2,12 @@ package handlers
 
 import (
 	"encoding/json"
+	"log/slog"
 	"net/http"
+	"strings"
 
 	"github.com/Arsema-Zeweldi/africa-tourism-platform/backend/internal/models"
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -35,12 +36,6 @@ func (h *AppHandler) GetUserPreferences(c *gin.Context) {
 }
 
 func (h *AppHandler) UpdateUserPreferences(c *gin.Context) {
-	userIdStr, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-		return
-	}
-
 	var req UpdateUserPreferencesRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -94,10 +89,15 @@ func (h *AppHandler) UpdateUserPreferences(c *gin.Context) {
 		return
 	}
 
-	userID := uuid.MustParse(userIdStr.(string))
+	userID, err := getUserID(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
 	updated, err := h.UserService.UpdatePreferences(c.Request.Context(), userID.String(), updates)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update preferences"})
+		slog.Error("Failed to update preferences", "user_id", userID, "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update preferences: " + err.Error()})
 		return
 	}
 
@@ -132,7 +132,7 @@ func (h *AppHandler) GetProfile(c *gin.Context) {
 		LastName:        user.LastName,
 		Country:         user.Country,
 		Bio:             user.Bio,
-		ProfileImageURL: user.ProfileImageURL,
+		AvatarURL:       user.AvatarURL,
 		CreatedAt:       user.CreatedAt.Format("2006-01-02T15:04:05Z"),
 	}
 
@@ -186,11 +186,11 @@ func (h *AppHandler) UpdateProfile(c *gin.Context) {
 	if req.Bio != nil {
 		updates["bio"] = *req.Bio
 	}
-	if req.ProfileImageURL != nil {
-		updates["profile_image_url"] = *req.ProfileImageURL
+	if req.AvatarURL != nil && strings.TrimSpace(*req.AvatarURL) != "" {
+		updates["avatar_url"] = strings.TrimSpace(*req.AvatarURL)
 	}
 	if imageUrl != "" {
-		updates["profile_image_url"] = imageUrl
+		updates["avatar_url"] = imageUrl
 	}
 
 	if len(updates) == 0 {
@@ -200,7 +200,8 @@ func (h *AppHandler) UpdateProfile(c *gin.Context) {
 
 	user, err := h.UserService.UpdateProfile(c.Request.Context(), userIdStr.(string), updates)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update profile"})
+		slog.Error("Failed to update profile", "user_id", userIdStr, "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update profile: " + err.Error()})
 		return
 	}
 
@@ -211,7 +212,7 @@ func (h *AppHandler) UpdateProfile(c *gin.Context) {
 		LastName:        user.LastName,
 		Country:         user.Country,
 		Bio:             user.Bio,
-		ProfileImageURL: user.ProfileImageURL,
+		AvatarURL:       user.AvatarURL,
 		CreatedAt:       user.CreatedAt.Format("2006-01-02T15:04:05Z"),
 	}
 

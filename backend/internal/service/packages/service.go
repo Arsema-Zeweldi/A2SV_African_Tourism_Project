@@ -43,6 +43,7 @@ type PackageService interface {
 	UpdateStatus(ctx context.Context, id uuid.UUID, status string) error
 	SubmitReview(ctx context.Context, review *models.PackageReview) (float64, int64, error)
 	GetReviews(ctx context.Context, packageID uuid.UUID, params ReviewParams) ([]models.PackageReview, int64, error)
+	DeleteReview(ctx context.Context, reviewID uuid.UUID, packageID uuid.UUID, userID uuid.UUID) error
 	PostChat(ctx context.Context, msg *models.PackageChat) error
 	GetChatHistory(ctx context.Context, packageID uuid.UUID, params ChatParams) ([]models.PackageChat, int64, error)
 	IncrementViews(ctx context.Context, packageID uuid.UUID) error

@@ -1,9 +1,13 @@
 package handlers
 
 import (
+	"context"
+	"log/slog"
 	"net/http"
 	"strings"
+	"time"
 
+	"github.com/Arsema-Zeweldi/africa-tourism-platform/backend/internal/cache"
 	"github.com/Arsema-Zeweldi/africa-tourism-platform/backend/internal/config"
 	"github.com/Arsema-Zeweldi/africa-tourism-platform/backend/internal/service/ai_planner"
 	"github.com/Arsema-Zeweldi/africa-tourism-platform/backend/internal/service/community"
@@ -22,6 +26,7 @@ type AppHandler struct {
 	ItinerarySvc   itinerary.ItineraryService
 	CommunitySvc   community.CommunityService
 	UploadSvc      upload.UploadService
+	Cache          cache.Client
 }
 
 func NewAppHandler(
@@ -32,6 +37,7 @@ func NewAppHandler(
 	itinerarySvc itinerary.ItineraryService,
 	communitySvc community.CommunityService,
 	uploadSvc upload.UploadService,
+	cache cache.Client,
 ) *AppHandler {
 	return &AppHandler{
 		DB:             db,
@@ -41,6 +47,7 @@ func NewAppHandler(
 		ItinerarySvc:   itinerarySvc,
 		CommunitySvc:   communitySvc,
 		UploadSvc:      uploadSvc,
+		Cache:          cache,
 	}
 }
 
@@ -57,7 +64,6 @@ func (h *AppHandler) Register(c *gin.Context) {
 		return
 	}
 
-	// 2. Create user (explicitly default to traveler)
 	firstName := req.FirstName
 	lastName := req.LastName
 	if firstName == "" && lastName == "" && req.Name != "" {
@@ -82,7 +88,13 @@ func (h *AppHandler) Register(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"message": "User registered successfully", "user_id": created.UserID})
+	// Send verification email async
+	go sendVerificationEmail(h, created.UserID, created.Email, created.FirstName)
+
+	c.JSON(http.StatusCreated, gin.H{
+		"message": "Registration successful! Please check your email to verify your account.",
+		"user_id": created.UserID,
+	})
 }
 
 func (h *AppHandler) Login(c *gin.Context) {
@@ -103,6 +115,16 @@ func (h *AppHandler) Login(c *gin.Context) {
 		return
 	}
 
+	// Block unverified users and resend verification link
+	if !loggedIn.EmailVerified {
+		go sendVerificationEmail(h, loggedIn.UserID, loggedIn.Email, loggedIn.FirstName)
+		c.JSON(http.StatusForbidden, gin.H{
+			"error":   "email_not_verified",
+			"message": "Your email is not verified. A new verification link has been sent to your email.",
+		})
+		return
+	}
+
 	c.JSON(http.StatusOK, AuthResponse{
 		Token: tokenString,
 		User: struct {
@@ -113,4 +135,30 @@ func (h *AppHandler) Login(c *gin.Context) {
 			Email: loggedIn.Email,
 		},
 	})
+}
+
+func (h *AppHandler) Logout(c *gin.Context) {
+	authHeader := c.GetHeader("Authorization")
+	if authHeader == "" {
+		c.JSON(http.StatusOK, gin.H{"message": "Logged out successfully"})
+		return
+	}
+
+	parts := strings.Fields(authHeader)
+	if len(parts) < 2 || strings.ToLower(parts[0]) != "bearer" {
+		c.JSON(http.StatusOK, gin.H{"message": "Logged out successfully"})
+		return
+	}
+
+	tokenString := strings.TrimSpace(parts[1])
+	
+	// Blacklist for 24h
+	if h.Cache != nil {
+		slog.Info("Blacklisting token", "token_tail", tokenString[len(tokenString)-10:])
+		if err := h.Cache.Set(context.Background(), "blacklist:"+tokenString, "true", 24*time.Hour); err != nil {
+			slog.Warn("Failed to blacklist token", "error", err)
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Logged out successfully"})
 }

@@ -17,7 +17,7 @@ func TestBuildCacheKey(t *testing.T) {
 	}
 
 	key := BuildCacheKey(req)
-	expected := "planner:nairobi_kenya:3d:luxury:adventure_foodie:tropical:g2"
+	expected := "planner:nairobi_kenya:3d:luxury:adventure_foodie:tropical:single:b0:g2:nnone"
 	assert.Equal(t, expected, key)
 
 	// Test normalization

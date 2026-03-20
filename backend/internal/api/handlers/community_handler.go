@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"net/http"
 	"strings"
 	"time"
@@ -58,6 +59,7 @@ func (h *AppHandler) CreatePost(c *gin.Context) {
 		}
 	}
 
+	tagsJSON, _ := json.Marshal(req.Tags)
 	post := models.CommunityPost{
 		UserID:      userID,
 		Content:     req.Content,
@@ -65,6 +67,7 @@ func (h *AppHandler) CreatePost(c *gin.Context) {
 		MediaType:   mediaType,
 		Location:    req.Location,
 		PackageName: req.PackageName,
+		Tags:        tagsJSON,
 	}
 
 	if err := h.CommunitySvc.CreatePost(c.Request.Context(), &post); err != nil {
@@ -193,7 +196,7 @@ func (h *AppHandler) AddComment(c *gin.Context) {
 	if h.UserService != nil {
 		if profile, err := h.UserService.GetProfile(c.Request.Context(), userID.String()); err == nil {
 			resp.UserName = profile.FirstName + " " + profile.LastName
-			resp.UserAvatar = profile.ProfileImageURL
+			resp.UserAvatar = profile.AvatarURL
 		}
 	}
 
@@ -277,12 +280,38 @@ func (h *AppHandler) ListComments(c *gin.Context) {
 	})
 }
 
+func (h *AppHandler) DeleteComment(c *gin.Context) {
+	userID, err := getUserID(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	if h.CommunitySvc == nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Community service not configured"})
+		return
+	}
+
+	commentID, err := uuid.Parse(c.Param("commentId"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid comment ID"})
+		return
+	}
+
+	if err := h.CommunitySvc.DeleteComment(c.Request.Context(), commentID, userID); err != nil {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Failed to delete comment or unauthorized"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Comment deleted successfully"})
+}
+
 func mapPostToResponse(p models.CommunityPost) PostResponse {
 	return PostResponse{
 		PostID:        p.PostID,
 		UserID:        p.UserID,
 		UserName:      p.User.FirstName + " " + p.User.LastName,
-		UserAvatar:    p.User.ProfileImageURL,
+		UserAvatar:    p.User.AvatarURL,
 		Content:       p.Content,
 		MediaURL:      p.MediaURL,
 		MediaType:     p.MediaType,
@@ -290,6 +319,7 @@ func mapPostToResponse(p models.CommunityPost) PostResponse {
 		PackageName:   p.PackageName,
 		LikesCount:    p.LikesCount,
 		CommentsCount: p.CommentsCount,
+		Tags:          p.Tags,
 		CreatedAt:     p.CreatedAt.Format(time.RFC3339),
 		Status:        p.Status,
 	}
@@ -301,7 +331,7 @@ func mapCommentToResponse(c models.CommunityPostComment) CommentResponse {
 		PostID:     c.PostID,
 		UserID:     c.UserID,
 		UserName:   c.User.FirstName + " " + c.User.LastName,
-		UserAvatar: c.User.ProfileImageURL,
+		UserAvatar: c.User.AvatarURL,
 		Text:       c.Text,
 		CreatedAt:  c.CreatedAt.Format(time.RFC3339),
 	}

@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"encoding/json"
+
 	"github.com/google/uuid"
 )
 
@@ -58,12 +60,11 @@ type PackageUpdateRequest struct {
 	DurationDays *int     `json:"duration_days" form:"duration_days" binding:"omitempty,min=0"`
 	Category     *string  `json:"category"      form:"category"`
 	GroupSize    *string  `json:"group_size"     form:"group_size"`
-	IsPublic     *bool    `json:"is_public"      form:"is_public"`
 }
 
 type ReviewRequest struct {
-	Rating  int    `json:"rating"  binding:"required,min=1,max=5"`
-	Comment string `json:"comment"`
+	Rating  float64 `json:"rating"  binding:"required,min=1,max=5"`
+	Comment string  `json:"comment"`
 }
 
 type ChatRequest struct {
@@ -153,8 +154,8 @@ type CreateItineraryActivity struct {
 	Requirement   string  `json:"requirement"`
 	Latitude      float64 `json:"latitude"`
 	Longitude     float64 `json:"longitude"`
-	StartTime     string  `json:"start_time"`
-	EndTime       string  `json:"end_time"`
+	StartTime     *string `json:"start_time"`
+	EndTime       *string `json:"end_time"`
 }
 
 type UpdateItineraryActivityRequest struct {
@@ -182,8 +183,9 @@ type CreatePostRequest struct {
 	Content     string `json:"content"      form:"content"      binding:"required"`
 	MediaURL    string `json:"media_url"     form:"media_url"`
 	MediaType   string `json:"media_type"    form:"media_type"`
-	Location    string `json:"location"      form:"location"`
-	PackageName string `json:"package_name"  form:"package_name"`
+	Location    string   `json:"location"      form:"location"`
+	PackageName string   `json:"package_name"  form:"package_name"`
+	Tags        []string `json:"tags"          form:"tags"`
 }
 
 type PostResponse struct {
@@ -196,10 +198,11 @@ type PostResponse struct {
 	MediaType     string    `json:"media_type"`
 	Location      string    `json:"location"`
 	PackageName   string    `json:"package_name"`
-	LikesCount    int       `json:"likes_count"`
-	CommentsCount int       `json:"comments_count"`
-	CreatedAt     string    `json:"created_at"`
-	Status        string    `json:"status"`
+	LikesCount    int             `json:"likes_count"`
+	CommentsCount int             `json:"comments_count"`
+	Tags          json.RawMessage `json:"tags"`
+	CreatedAt     string          `json:"created_at"`
+	Status        string          `json:"status"`
 }
 
 type CreateCommentRequest struct {
@@ -220,8 +223,8 @@ type UpdateProfileRequest struct {
 	FirstName       *string `json:"first_name"         form:"first_name"         binding:"omitempty,max=100"`
 	LastName        *string `json:"last_name"          form:"last_name"          binding:"omitempty,max=100"`
 	Country         *string `json:"country"            form:"country"            binding:"omitempty,max=100"`
-	Bio             *string `json:"bio"                form:"bio"                binding:"omitempty,max=1000"`
-	ProfileImageURL *string `json:"profile_image_url"  form:"profile_image_url"  binding:"omitempty,url"`
+	Bio       *string `json:"bio"                form:"bio"                binding:"omitempty,max=1000"`
+	AvatarURL *string `json:"avatar_url"         form:"avatar_url"         binding:"omitempty"`
 }
 
 type UserProfileResponse struct {
@@ -230,7 +233,7 @@ type UserProfileResponse struct {
 	FirstName       string    `json:"first_name"`
 	LastName        string    `json:"last_name"`
 	Country         string    `json:"country"`
-	Bio             string    `json:"bio"`
-	ProfileImageURL string    `json:"profile_image_url"`
-	CreatedAt       string    `json:"created_at"`
+	Bio       string    `json:"bio"`
+	AvatarURL string    `json:"avatar_url"`
+	CreatedAt string    `json:"created_at"`
 }

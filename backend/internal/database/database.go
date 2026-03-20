@@ -27,7 +27,6 @@ func InitDB(cfg *config.Config) (*gorm.DB, error) {
 	}
 
 	dsn := ensureSSLModeRequire(cfg.DatabaseURL)
-	slog.Info("Connecting to database using DATABASE_URL")
 
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
@@ -42,12 +41,8 @@ func InitDB(cfg *config.Config) (*gorm.DB, error) {
 		sqlDB.SetConnMaxLifetime(5 * time.Minute)
 	}
 
-	slog.Info("Database connection established")
-
 	// 3. Run migrations using golang-migrate
-	slog.Info("Running versioned migrations")
 	migrationsPath := getEnv("MIGRATIONS_PATH", "file://migrations")
-	slog.Info("Using migrations path", "path", migrationsPath)
 
 	m, err := migrate.New(
 		migrationsPath,
@@ -59,20 +54,19 @@ func InitDB(cfg *config.Config) (*gorm.DB, error) {
 		if strings.HasPrefix(migrationsPath, "file://") {
 			relPath := strings.TrimPrefix(migrationsPath, "file://")
 			if abs, err := filepath.Abs(relPath); err == nil {
-				slog.Info("Absolute path attempted", "path", abs)
 				if _, err := os.Stat(abs); err != nil {
-					slog.Error("Migrations directory not found", "path", abs, "error", err)
+					slog.Warn("Migrations directory not found", "path", abs)
 				}
 			}
 		}
 	} else {
 		if err := m.Up(); err != nil && err != migrate.ErrNoChange {
 			slog.Warn("Migration execution failed", "error", err)
-		} else {
-			slog.Info("Migrations completed successfully")
 		}
 		m.Close()
 	}
+
+	slog.Info("✅ Database connected successfully")
 
 	return db, nil
 }

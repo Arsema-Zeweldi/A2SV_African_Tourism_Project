@@ -73,9 +73,11 @@ func (r *GormUserRepository) GetPreferences(ctx context.Context, userID uuid.UUI
 
 func (r *GormUserRepository) UpsertPreferences(ctx context.Context, userID uuid.UUID, updates map[string]interface{}) (*models.UserPreference, error) {
 	var prefs models.UserPreference
-	if err := r.db.WithContext(ctx).
+	err := r.db.WithContext(ctx).
 		Where("user_id = ?", userID).
-		First(&prefs).Error; err != nil {
+		First(&prefs).Error
+
+	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			prefs = models.UserPreference{UserID: userID}
 			if createErr := r.db.WithContext(ctx).Create(&prefs).Error; createErr != nil {
@@ -87,8 +89,10 @@ func (r *GormUserRepository) UpsertPreferences(ctx context.Context, userID uuid.
 	}
 
 	if len(updates) > 0 {
+		// Use Session to allow updating zero-values (e.g. enum strings)
 		if err := r.db.WithContext(ctx).
 			Model(&models.UserPreference{}).
+			Session(&gorm.Session{FullSaveAssociations: false}).
 			Where("user_id = ?", userID).
 			Updates(updates).Error; err != nil {
 			return nil, err

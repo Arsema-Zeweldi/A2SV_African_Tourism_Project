@@ -17,7 +17,7 @@ func TestJWTMiddleware(t *testing.T) {
 
 	t.Run("Valid Token", func(t *testing.T) {
 		r := gin.New()
-		r.Use(JWTMiddleware(secret))
+		r.Use(JWTMiddleware(secret, nil))
 		r.GET("/test", func(c *gin.Context) {
 			userID, exists := c.Get("user_id")
 			assert.True(t, exists)
@@ -41,7 +41,7 @@ func TestJWTMiddleware(t *testing.T) {
 
 	t.Run("Missing Header", func(t *testing.T) {
 		r := gin.New()
-		r.Use(JWTMiddleware(secret))
+		r.Use(JWTMiddleware(secret, nil))
 		r.GET("/test", func(c *gin.Context) { c.Status(http.StatusOK) })
 
 		req := httptest.NewRequest("GET", "/test", nil)
@@ -53,7 +53,7 @@ func TestJWTMiddleware(t *testing.T) {
 
 	t.Run("Invalid Secret", func(t *testing.T) {
 		r := gin.New()
-		r.Use(JWTMiddleware(secret))
+		r.Use(JWTMiddleware(secret, nil))
 		r.GET("/test", func(c *gin.Context) { c.Status(http.StatusOK) })
 
 		token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
@@ -72,7 +72,7 @@ func TestJWTMiddleware(t *testing.T) {
 
 	t.Run("Missing Bearer Prefix", func(t *testing.T) {
 		r := gin.New()
-		r.Use(JWTMiddleware(secret))
+		r.Use(JWTMiddleware(secret, nil))
 		r.GET("/test", func(c *gin.Context) { c.Status(http.StatusOK) })
 
 		token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
@@ -91,7 +91,7 @@ func TestJWTMiddleware(t *testing.T) {
 
 	t.Run("Expired Token", func(t *testing.T) {
 		r := gin.New()
-		r.Use(JWTMiddleware(secret))
+		r.Use(JWTMiddleware(secret, nil))
 		r.GET("/test", func(c *gin.Context) { c.Status(http.StatusOK) })
 
 		token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
@@ -110,7 +110,7 @@ func TestJWTMiddleware(t *testing.T) {
 
 	t.Run("Invalid Signing Method", func(t *testing.T) {
 		r := gin.New()
-		r.Use(JWTMiddleware(secret))
+		r.Use(JWTMiddleware(secret, nil))
 		r.GET("/test", func(c *gin.Context) { c.Status(http.StatusOK) })
 
 		token := jwt.NewWithClaims(jwt.SigningMethodNone, jwt.MapClaims{
@@ -129,7 +129,7 @@ func TestJWTMiddleware(t *testing.T) {
 
 	t.Run("Garbage Token", func(t *testing.T) {
 		r := gin.New()
-		r.Use(JWTMiddleware(secret))
+		r.Use(JWTMiddleware(secret, nil))
 		r.GET("/test", func(c *gin.Context) { c.Status(http.StatusOK) })
 
 		req := httptest.NewRequest("GET", "/test", nil)

@@ -29,10 +29,9 @@ func TestBuildPromptIncludesInputsAndSchema(t *testing.T) {
 	// Schema checks
 	assert.True(t, strings.Contains(prompt, "REQUIRED JSON SCHEMA"))
 	assert.True(t, strings.Contains(prompt, "\"title\""))
-	assert.True(t, strings.Contains(prompt, "\"currency\""))
-	assert.True(t, strings.Contains(prompt, "\"day_num\""))
+	assert.True(t, strings.Contains(prompt, "\"day_number\""))
 	assert.True(t, strings.Contains(prompt, "\"activities\""))
-	assert.True(t, strings.Contains(prompt, "food|adventure|culture|party"))
+	assert.True(t, strings.Contains(prompt, "food|adventure|culture|party|wildlife"))
 }
 
 func TestBuildPromptDefaults(t *testing.T) {

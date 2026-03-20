@@ -149,6 +149,19 @@ func (s *PackageServiceImpl) GetReviews(ctx context.Context, packageID uuid.UUID
 	return s.repo.GetReviews(ctx, packageID, repository.Pagination{Page: params.Page, PageSize: params.PageSize})
 }
 
+func (s *PackageServiceImpl) DeleteReview(ctx context.Context, reviewID uuid.UUID, packageID uuid.UUID, userID uuid.UUID) error {
+	if reviewID == uuid.Nil {
+		return errors.New("review_id is required")
+	}
+	if err := s.repo.DeleteReview(ctx, reviewID, packageID, userID); err != nil {
+		return err
+	}
+	
+	// Recalculate and update the package's review stats after deletion
+	_, _, err := s.repo.UpdateReviewStats(ctx, packageID)
+	return err
+}
+
 func (s *PackageServiceImpl) PostChat(ctx context.Context, msg *models.PackageChat) error {
 	if msg == nil {
 		return errors.New("chat message is nil")

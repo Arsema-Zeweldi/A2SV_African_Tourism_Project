@@ -87,3 +87,10 @@ func (s *CommunityServiceImpl) ToggleLike(ctx context.Context, postID, userID uu
 	}
 	return s.repo.ToggleLike(ctx, postID, userID)
 }
+
+func (s *CommunityServiceImpl) DeleteComment(ctx context.Context, commentID, userID uuid.UUID) error {
+	if commentID == uuid.Nil || userID == uuid.Nil {
+		return errors.New("comment_id and user_id are required")
+	}
+	return s.repo.DeleteComment(ctx, commentID, userID)
+}

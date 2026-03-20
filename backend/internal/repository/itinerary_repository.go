@@ -31,18 +31,7 @@ func NewGormItineraryRepository(db *gorm.DB) *GormItineraryRepository {
 
 // Create persists a new itinerary and all its items in a single transaction.
 func (r *GormItineraryRepository) Create(ctx context.Context, itinerary *models.Itinerary) error {
-	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		if err := tx.Create(itinerary).Error; err != nil {
-			return err
-		}
-		for i := range itinerary.Activities {
-			itinerary.Activities[i].ItineraryID = itinerary.ItineraryID
-		}
-		if len(itinerary.Activities) > 0 {
-			return tx.Create(&itinerary.Activities).Error
-		}
-		return nil
-	})
+	return r.db.WithContext(ctx).Create(itinerary).Error
 }
 
 // GetByID fetches an itinerary with all items preloaded.

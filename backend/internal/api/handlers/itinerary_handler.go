@@ -64,8 +64,8 @@ func (h *AppHandler) SaveItinerary(c *gin.Context) {
 			Requirement:   strings.TrimSpace(item.Requirement),
 			Latitude:      item.Latitude,
 			Longitude:     item.Longitude,
-			StartTime:     strings.TrimSpace(item.StartTime),
-			EndTime:       strings.TrimSpace(item.EndTime),
+			StartTime:     trimStringPtr(item.StartTime),
+			EndTime:       trimStringPtr(item.EndTime),
 		})
 	}
 	itinerary.Activities = activities
@@ -76,6 +76,17 @@ func (h *AppHandler) SaveItinerary(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, itinerary)
+}
+
+func trimStringPtr(s *string) *string {
+	if s == nil {
+		return nil
+	}
+	trimmed := strings.TrimSpace(*s)
+	if trimmed == "" {
+		return nil
+	}
+	return &trimmed
 }
 
 func (h *AppHandler) ListUserItineraries(c *gin.Context) {
@@ -178,8 +189,8 @@ func (h *AppHandler) AddItineraryActivity(c *gin.Context) {
 		Requirement:   strings.TrimSpace(req.Requirement),
 		Latitude:      req.Latitude,
 		Longitude:     req.Longitude,
-		StartTime:     strings.TrimSpace(req.StartTime),
-		EndTime:       strings.TrimSpace(req.EndTime),
+		StartTime:     trimStringPtr(req.StartTime),
+		EndTime:       trimStringPtr(req.EndTime),
 	}
 
 	if err := h.ItinerarySvc.AddActivity(c.Request.Context(), itineraryID, &activity); err != nil {

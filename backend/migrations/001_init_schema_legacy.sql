@@ -19,7 +19,7 @@ CREATE TABLE users (
     last_name VARCHAR(100),
     phone_number VARCHAR(50),
     country VARCHAR(100),
-    profile_image_url TEXT,
+    avatar_url TEXT,
     account_type account_type_enum NOT NULL DEFAULT 'traveler',
     email_verified BOOLEAN NOT NULL DEFAULT FALSE,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
@@ -288,9 +288,9 @@ CREATE TABLE itineraries (
     CONSTRAINT fk_itinerary_user FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
--- Itinerary Items (Activities/Days)
-CREATE TABLE itinerary_items (
-    item_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+-- Itinerary Activities (Activities/Days)
+CREATE TABLE itinerary_activities (
+    activity_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     itinerary_id UUID NOT NULL,
     destination_id UUID,
     day_number INTEGER NOT NULL,
@@ -302,8 +302,8 @@ CREATE TABLE itinerary_items (
     start_time TIME,
     end_time TIME,
 
-    CONSTRAINT fk_item_itinerary FOREIGN KEY (itinerary_id) REFERENCES itineraries(itinerary_id) ON DELETE CASCADE,
-    CONSTRAINT fk_item_destination FOREIGN KEY (destination_id) REFERENCES destinations(destination_id) ON DELETE SET NULL
+    CONSTRAINT fk_activity_itinerary FOREIGN KEY (itinerary_id) REFERENCES itineraries(itinerary_id) ON DELETE CASCADE,
+    CONSTRAINT fk_activity_destination FOREIGN KEY (destination_id) REFERENCES destinations(destination_id) ON DELETE SET NULL
 );
 
 -- Community Packages (Purchasable/Public Itineraries)

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"net/http"
 	"strings"
 
@@ -26,11 +27,54 @@ func (h *AppHandler) GenerateItinerary(c *gin.Context) {
 		DurationDays: req.DurationDays,
 		Budget:       req.Budget,
 		BudgetLevel:  resolveBudgetLevel(req.BudgetLevel, req.Budget),
-		VibeTags:     req.VibeTags,
 		GroupSize:    req.GroupSize,
-		ClimatePref:  req.ClimatePref,
 		MultiCountry: boolFromPtr(req.MultiCountry),
 		Notes:        req.Notes,
+	}
+
+	// Make AI planner aware of user preferences if available
+	userID, err := getUserID(c)
+	if err == nil && h.UserService != nil {
+		prefs, prefErr := h.UserService.GetPreferences(c.Request.Context(), userID.String())
+		if prefErr == nil {
+			// Inject preferences if user didn't explicitly specify them in this request
+			if req.BudgetLevel == "" && planReq.BudgetLevel == "" && prefs.BudgetRange != nil && *prefs.BudgetRange != "" {
+				planReq.BudgetLevel = *prefs.BudgetRange
+			}
+			if len(req.VibeTags) == 0 && prefs.TravelVibeInterest != nil && *prefs.TravelVibeInterest != "" {
+				planReq.VibeTags = []string{*prefs.TravelVibeInterest}
+			} else {
+				planReq.VibeTags = req.VibeTags
+			}
+			if req.ClimatePref == "" && prefs.PreferredClimate != nil && *prefs.PreferredClimate != "" {
+				planReq.ClimatePref = *prefs.PreferredClimate
+			} else {
+				planReq.ClimatePref = req.ClimatePref
+			}
+			
+			// Append dietary restrictions / languages to notes
+			if len(prefs.DietaryRestrictions) > 0 || (prefs.PreferredLanguage != nil && *prefs.PreferredLanguage != "") {
+				var extraNotes strings.Builder
+				if len(prefs.DietaryRestrictions) > 0 {
+					var rawList []string
+					if err := json.Unmarshal(prefs.DietaryRestrictions, &rawList); err == nil && len(rawList) > 0 {
+						extraNotes.WriteString("Dietary Restrictions: " + strings.Join(rawList, ", ") + ". ")
+					}
+				}
+				if prefs.PreferredLanguage != nil && *prefs.PreferredLanguage != "" {
+					extraNotes.WriteString("Preferred Language: " + *prefs.PreferredLanguage + ". ")
+				}
+				if extraNotes.Len() > 0 {
+					planReq.Notes = planReq.Notes + " [User Preferences: " + extraNotes.String() + "]"
+				}
+			}
+		} else {
+			planReq.VibeTags = req.VibeTags
+			planReq.ClimatePref = req.ClimatePref
+		}
+	} else {
+		planReq.VibeTags = req.VibeTags
+		planReq.ClimatePref = req.ClimatePref
 	}
 
 	result, err := h.PlannerService.GenerateItinerary(c.Request.Context(), planReq)

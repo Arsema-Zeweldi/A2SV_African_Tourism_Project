@@ -20,10 +20,7 @@ func main() {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	slog.SetDefault(logger)
 
-	slog.Info("Backend starting...")
-
 	// 1. Load configuration
-	slog.Info("Loading configuration...")
 	cfg, err := config.LoadConfig()
 	if err != nil {
 		slog.Error("Failed to load configuration", "error", err)
@@ -37,7 +34,6 @@ func main() {
 	}
 
 	// 2. Initialize database
-	slog.Info("Initializing database...")
 	db, err := database.InitDB(cfg)
 	if err != nil {
 		slog.Error("Failed to initialize database", "error", err)
@@ -45,7 +41,6 @@ func main() {
 	}
 
 	// 3. Setup router
-	slog.Info("Setting up router...")
 	r := api.SetupRouter(db, cfg, uploadSvc)
 
 	// 4. Start server with graceful shutdown
@@ -55,7 +50,7 @@ func main() {
 	}
 
 	go func() {
-		slog.Info("Server starting", "port", cfg.ServerPort)
+		slog.Info("🚀 Server started", "port", cfg.ServerPort)
 		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			slog.Error("Listen failed", "error", err)
 		}

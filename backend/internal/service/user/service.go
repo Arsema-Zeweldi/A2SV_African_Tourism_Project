@@ -14,6 +14,7 @@ type UserService interface {
 	UpdatePreferences(ctx context.Context, userID string, updates map[string]interface{}) (*models.UserPreference, error)
 	GetProfile(ctx context.Context, userID string) (*models.User, error)
 	UpdateProfile(ctx context.Context, userID string, updates map[string]interface{}) (*models.User, error)
+	GetUserByEmail(ctx context.Context, email string) (*models.User, error)
 }
 
 // RegisterRequest is a placeholder for service-level registration inputs.

@@ -113,8 +113,19 @@ func validateActivity(item *models.ItineraryActivity) error {
 	item.ActivityType = strings.TrimSpace(item.ActivityType)
 	item.ImageURL = strings.TrimSpace(item.ImageURL)
 	item.Requirement = strings.TrimSpace(item.Requirement)
-	item.StartTime = strings.TrimSpace(item.StartTime)
-	item.EndTime = strings.TrimSpace(item.EndTime)
+
+	trimPtr := func(s *string) *string {
+		if s == nil {
+			return nil
+		}
+		trimmed := strings.TrimSpace(*s)
+		if trimmed == "" {
+			return nil
+		}
+		return &trimmed
+	}
+	item.StartTime = trimPtr(item.StartTime)
+	item.EndTime = trimPtr(item.EndTime)
 	if item.DayNumber <= 0 {
 		return errors.New("day_number must be greater than 0")
 	}

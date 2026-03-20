@@ -59,10 +59,10 @@ func (s *Service) Login(ctx context.Context, req LoginRequest) (string, *models.
 	}
 	user, err := s.repo.FindByEmail(ctx, req.Email)
 	if err != nil {
-		return "", nil, errors.New("invalid email or password")
+		return "", nil, errors.New("user not registered/does not exist")
 	}
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.Password)); err != nil {
-		return "", nil, errors.New("invalid email or password")
+		return "", nil, errors.New("invalid password")
 	}
 	if s.jwtSecret == "" {
 		return "", nil, errors.New("jwt secret not configured")
@@ -70,7 +70,6 @@ func (s *Service) Login(ctx context.Context, req LoginRequest) (string, *models.
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"user_id": user.UserID.String(),
-		"role":    "traveler",
 		"exp":     time.Now().Add(s.jwtTTL).Unix(),
 	})
 	tokenString, err := token.SignedString([]byte(s.jwtSecret))
@@ -122,6 +121,10 @@ func (s *Service) UpdateProfile(ctx context.Context, userID string, updates map[
 		return nil, err
 	}
 	return s.repo.Update(ctx, uid, updates)
+}
+
+func (s *Service) GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
+	return s.repo.FindByEmail(ctx, email)
 }
 
 func parseUUID(raw string) (uuid.UUID, error) {

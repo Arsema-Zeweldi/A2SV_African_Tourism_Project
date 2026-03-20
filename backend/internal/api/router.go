@@ -23,10 +23,8 @@ import (
 )
 
 func SetupRouter(db *gorm.DB, cfg *config.Config, uploadService upload.UploadService) *gin.Engine {
-	// Set Gin to release mode if not development
-	if cfg.Environment == "production" {
-		gin.SetMode(gin.ReleaseMode)
-	}
+	// Force release mode to suppress verbose route logs
+	gin.SetMode(gin.ReleaseMode)
 
 	// 1. Initialize Redis Cache
 	var redisClient cache.Client
@@ -93,11 +91,7 @@ func SetupRouter(db *gorm.DB, cfg *config.Config, uploadService upload.UploadSer
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
 
-	h := handlers.NewAppHandler(db, cfg, plannerService, userService, itineraryService, communityService, uploadService)
-
-	hub := handlers.NewHub()
-	handlers.GlobalHub = hub
-	go hub.Run()
+	h := handlers.NewAppHandler(db, cfg, plannerService, userService, itineraryService, communityService, uploadService, redisClient)
 
 	mh := &handlers.PackagesHandler{DB: db, Cfg: cfg, PackageService: packageService, ItinerarySvc: itineraryService, UploadSvc: uploadService}
 
@@ -110,6 +104,11 @@ func SetupRouter(db *gorm.DB, cfg *config.Config, uploadService upload.UploadSer
 	{
 		auth.POST("/register", h.Register)
 		auth.POST("/login", h.Login)
+		auth.GET("/verify-email", h.VerifyEmail)
+		auth.POST("/resend-verification", h.ResendVerification)
+		auth.POST("/forgot-password", h.ForgotPassword)
+		auth.POST("/reset-password", h.ResetPassword)
+		auth.POST("/logout", h.Logout)
 	}
 
 	v1.GET("/packages", mh.GetPackagesFeed)
@@ -122,14 +121,15 @@ func SetupRouter(db *gorm.DB, cfg *config.Config, uploadService upload.UploadSer
 
 	// Protected routes
 	protected := v1.Group("")
-	protected.Use(middleware.JWTMiddleware(cfg.JWTSecret))
+	protected.Use(middleware.JWTMiddleware(cfg.JWTSecret, redisClient))
 	{
 		user := protected.Group("/user")
 		{
 			user.GET("/profile", h.GetProfile)
 			user.PATCH("/profile", h.UpdateProfile)
 			user.GET("/preferences", h.GetUserPreferences)
-			user.PUT("/preferences", h.UpdateUserPreferences)
+			user.PATCH("/preferences", h.UpdateUserPreferences)
+			user.POST("/change-password", h.ChangePassword)
 		}
 
 		// AI target limit
@@ -145,26 +145,22 @@ func SetupRouter(db *gorm.DB, cfg *config.Config, uploadService upload.UploadSer
 			itineraries.POST("", h.SaveItinerary)
 			itineraries.GET("/:id", h.GetItinerary)
 			itineraries.DELETE("/:id", h.DeleteItinerary)
-			itineraries.POST("/:id/activities", h.AddItineraryActivity)
 			itineraries.PATCH("/:id/activities", h.UpdateItineraryActivity)
-			itineraries.DELETE("/:id/activities/:activityId", h.DeleteItineraryActivity)
 		}
 
 		packages := protected.Group("/packages")
 		{
+			packages.GET("/me", mh.GetMyPackages)
 			packages.POST("", mh.CreatePackage)
 
 			pkg := packages.Group("/:id")
 			{
-				pkg.PATCH("", mh.UpdatePackage)
+			pkg.PATCH("", mh.UpdatePackage)
 				pkg.DELETE("", mh.ArchivePackage)
-				pkg.POST("/publish", mh.PublishPackage)
 				pkg.PATCH("/status", mh.UpdatePackageStatus)
 				pkg.POST("/reviews", mh.SubmitPackageReview)
+				pkg.DELETE("/reviews/:reviewId", mh.DeleteReview)
 				pkg.POST("/chat", mh.PostChatMessage)
-
-				// Keep ServeWS public in router but authenticate in handler itself? No, ServeWS extracts token from query params or header there. But since it's under protected, it needs header.
-				pkg.GET("/ws", handlers.ServeWS(hub, db, cfg.AllowedOrigins))
 			}
 		}
 
@@ -172,6 +168,7 @@ func SetupRouter(db *gorm.DB, cfg *config.Config, uploadService upload.UploadSer
 		{
 			posts.POST("", h.CreatePost)
 			posts.POST("/:id/comments", h.AddComment)
+			posts.DELETE("/comments/:commentId", h.DeleteComment)
 			posts.POST("/:id/like", h.ToggleLikePost)
 		}
 

@@ -2,30 +2,48 @@ package middleware
 
 import (
 	"fmt"
+	"log/slog"
 	"net/http"
 	"strings"
 
+	"github.com/Arsema-Zeweldi/africa-tourism-platform/backend/internal/cache"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 )
 
-func JWTMiddleware(jwtSecret string) gin.HandlerFunc {
+func JWTMiddleware(jwtSecret string, redis cache.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		var tokenString string
+
 		authHeader := c.GetHeader("Authorization")
-		if authHeader == "" {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization header is required"})
+		if authHeader != "" {
+			parts := strings.Fields(authHeader)
+			if len(parts) >= 2 && strings.ToLower(parts[0]) == "bearer" {
+				tokenString = strings.TrimSpace(parts[1])
+			}
+		}
+
+		// Fallback to query parameter for token (e.g. for WebSockets)
+		if tokenString == "" {
+			tokenString = strings.TrimSpace(c.Query("token"))
+		}
+
+		if tokenString == "" {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization token is required (header or query parameter)"})
 			c.Abort()
 			return
 		}
 
-		parts := strings.SplitN(authHeader, " ", 2)
-		if !(len(parts) == 2 && parts[0] == "Bearer") {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization header format must be Bearer {token}"})
-			c.Abort()
-			return
+		// Check if token is blacklisted in Redis
+		if redis != nil {
+			val, err := redis.Get(c.Request.Context(), "blacklist:"+tokenString)
+			if err == nil && val != "" {
+				slog.Info("Access blocked: token is blacklisted", "token_tail", tokenString[len(tokenString)-10:])
+				c.JSON(http.StatusUnauthorized, gin.H{"error": "Token has been invalidated (logged out)"})
+				c.Abort()
+				return
+			}
 		}
-
-		tokenString := parts[1]
 
 		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {

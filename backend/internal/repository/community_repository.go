@@ -17,6 +17,7 @@ type CommunityRepository interface {
 	AddComment(ctx context.Context, comment *models.CommunityPostComment) error
 	ListComments(ctx context.Context, postID uuid.UUID, params Pagination) ([]models.CommunityPostComment, int64, error)
 	ToggleLike(ctx context.Context, postID, userID uuid.UUID) (bool, error)
+	DeleteComment(ctx context.Context, commentID, userID uuid.UUID) error
 }
 
 // GormCommunityRepository is the GORM-based implementation.
@@ -55,7 +56,7 @@ func (r *GormCommunityRepository) ListPosts(ctx context.Context, params Paginati
 
 	if query, ok := filters["q"].(string); ok && query != "" {
 		like := "%" + query + "%"
-		q = q.Where("content ILIKE ? OR location ILIKE ? OR package_name ILIKE ?", like, like, like)
+		q = q.Where("content ILIKE ? OR location ILIKE ? OR package_name ILIKE ? OR tags::text ILIKE ?", like, like, like, like)
 	}
 
 	var total int64
@@ -166,4 +167,21 @@ func (r *GormCommunityRepository) ToggleLike(ctx context.Context, postID, userID
 		return nil
 	})
 	return liked, err
+}
+func (r *GormCommunityRepository) DeleteComment(ctx context.Context, commentID, userID uuid.UUID) error {
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var comment models.CommunityPostComment
+		if err := tx.Where("comment_id = ? AND user_id = ?", commentID, userID).First(&comment).Error; err != nil {
+			return err
+		}
+
+		if err := tx.Delete(&comment).Error; err != nil {
+			return err
+		}
+
+		// Decrement comments count on post
+		return tx.Model(&models.CommunityPost{}).
+			Where("post_id = ?", comment.PostID).
+			UpdateColumn("comments_count", gorm.Expr("comments_count - ?", 1)).Error
+	})
 }

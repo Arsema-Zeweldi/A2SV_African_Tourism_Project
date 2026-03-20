@@ -131,9 +131,7 @@ func (h *PackagesHandler) CreatePackage(c *gin.Context) {
 	if req.GroupSize != "" {
 		newPackage.GroupSize = req.GroupSize
 	}
-	if req.IsPublic != nil {
-		newPackage.IsPublic = *req.IsPublic
-	}
+	// Status defaults to 'private' at creation - use PATCH /status to change it
 
 	if err := h.PackageService.Create(c.Request.Context(), &newPackage, imageURL); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create package"})
@@ -172,6 +170,14 @@ func (h *PackagesHandler) PublishPackage(c *gin.Context) {
 		return
 	}
 
+	// If already public, return a friendly message instead of an error
+	if pkg.Status == StatusPublic {
+		c.JSON(http.StatusOK, gin.H{
+			"message": "Package is already published",
+			"package": pkg,
+		})
+		return
+	}
 	if !isValidTransition(pkg.Status, StatusPublic) {
 		c.JSON(http.StatusConflict, gin.H{
 			"error":          "Invalid status transition",
@@ -316,7 +322,7 @@ func (h *PackagesHandler) UpdatePackage(c *gin.Context) {
 
 	if req.Title == nil && req.Summary == nil && req.Description == nil && req.Price == nil &&
 		req.Country == nil && req.Location == nil && req.Currency == nil && req.ImageURL == nil &&
-		req.DurationDays == nil && req.Category == nil && req.GroupSize == nil && req.IsPublic == nil {
+		req.DurationDays == nil && req.Category == nil && req.GroupSize == nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "No fields provided to update"})
 		return
 	}
@@ -381,22 +387,17 @@ func (h *PackagesHandler) UpdatePackage(c *gin.Context) {
 	if req.GroupSize != nil {
 		updates["group_size"] = strings.TrimSpace(*req.GroupSize)
 	}
-	if req.IsPublic != nil {
-		updates["is_public"] = *req.IsPublic
-	}
+	// Status changes should go through PATCH /status endpoint
 
 	if err := h.PackageService.Update(c.Request.Context(), packageID, updates, imageURL); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update package"})
 		return
 	}
 
-	updated, err := h.PackageService.GetByID(c.Request.Context(), packageID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to load updated package"})
-		return
-	}
-
-	c.JSON(http.StatusOK, updated)
+	c.JSON(http.StatusOK, gin.H{
+		"message":    "Package updated successfully",
+		"package_id": packageID,
+	})
 }
 
 func (h *PackagesHandler) ArchivePackage(c *gin.Context) {
@@ -512,13 +513,69 @@ func (h *PackagesHandler) GetPackageReviews(c *gin.Context) {
 		return
 	}
 
-	reviews, _, err := h.PackageService.GetReviews(c.Request.Context(), packageID, packages.ReviewParams{Page: 1, PageSize: 50})
+	page := 1
+	pageSize := 50
+	if p, err := parseInt(c.Query("page")); err == nil && p > 0 {
+		page = p
+	}
+	if ps, err := parseInt(c.Query("page_size")); err == nil && ps > 0 && ps <= 100 {
+		pageSize = ps
+	}
+
+	reviews, total, err := h.PackageService.GetReviews(c.Request.Context(), packageID, packages.ReviewParams{Page: page, PageSize: pageSize})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch reviews"})
 		return
 	}
 
-	c.JSON(http.StatusOK, reviews)
+	if reviews == nil {
+		reviews = []models.PackageReview{}
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data": reviews,
+		"meta": gin.H{
+			"total":     total,
+			"page":      page,
+			"page_size": pageSize,
+		},
+	})
+}
+
+func (h *PackagesHandler) DeleteReview(c *gin.Context) {
+	userID, err := getUserID(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	packageID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid package ID"})
+		return
+	}
+
+	reviewID, err := uuid.Parse(c.Param("reviewId"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid review ID"})
+		return
+	}
+
+	if h.PackageService == nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Service not configured"})
+		return
+	}
+
+	if err := h.PackageService.DeleteReview(c.Request.Context(), reviewID, packageID, userID); err != nil {
+		if err.Error() == "review not found or you are not the author" {
+			c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete review"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Review deleted successfully"})
 }
 
 func (h *PackagesHandler) GetPackagesFeed(c *gin.Context) {
@@ -649,6 +706,51 @@ func (h *PackagesHandler) GetPackagesFeed(c *gin.Context) {
 			"total":     total,
 			"sort_by":   sortBy,
 			"order":     order,
+		},
+	})
+}
+
+// GetMyPackages fetches the packages crafted by the authenticated user
+func (h *PackagesHandler) GetMyPackages(c *gin.Context) {
+	userID, err := getUserID(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	page := 1
+	pageSize := 20
+	if p, err := parseInt(c.Query("page")); err == nil && p > 0 {
+		page = p
+	}
+	if ps, err := parseInt(c.Query("page_size")); err == nil && ps > 0 && ps <= 100 {
+		pageSize = ps
+	}
+	queryText := strings.TrimSpace(c.Query("q"))
+
+	if h.PackageService == nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Service not configured"})
+		return
+	}
+
+	packagesList, total, err := h.PackageService.GetFeed(c.Request.Context(), packages.FeedParams{
+		Page:      page,
+		PageSize:  pageSize,
+		CreatorID: &userID,
+		Query:     queryText,
+		Status:    "", // Empty status gets all active/owned statuses implicitly through repo
+	})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch your packages"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data": packagesList,
+		"meta": gin.H{
+			"total":     total,
+			"page":      page,
+			"page_size": pageSize,
 		},
 	})
 }

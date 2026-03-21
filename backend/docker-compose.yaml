@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  # ── PostgreSQL Database ─────────────────────────────────────
+  tourism-db:
+    image: postgres:16-alpine
+    container_name: tourism-db
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=Heny16psql
+      - POSTGRES_DB=africa_tourism
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: always
+
+  # ── Redis Cache ──────────────────────────────────────────────
+  tourism-redis:
+    image: redis:alpine
+    container_name: tourism-redis
+    ports:
+      - "46379:6379"
+    restart: always
+
+  # ── Go Backend ────────────────────────────────────────────────
+  backend:
+    build: .
+    container_name: tourism-app
+    ports:
+      - "8080:8080"
+    env_file: .env # Local .env is still used for individual API keys (Gemini/Cloudinary)
+    environment:
+      - DB_HOST=tourism-db
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=Heny16psql
+      - DB_NAME=africa_tourism
+      - DATABASE_URL=postgresql://postgres:Heny16psql@tourism-db:5432/africa_tourism?sslmode=disable
+      - REDIS_URL=redis://tourism-redis:6379
+    depends_on:
+      - tourism-db
+      - tourism-redis
+    restart: on-failure
+
+volumes:
+  postgres_data:

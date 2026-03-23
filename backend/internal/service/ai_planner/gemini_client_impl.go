@@ -31,8 +31,8 @@ func NewGeminiClientImpl(ctx context.Context, apiKey, model string) (*GeminiClie
 // GenerateItinerary calls the Gemini API with a 30-second timeout,
 // enforces JSON response mode, and parses the structured output.
 func (g *GeminiClientImpl) GenerateItinerary(ctx context.Context, req GenerateRequest) (*ItineraryResponse, error) {
-	// Hard 30-second timeout on the LLM call — PRD requires ≤4s total response
-	llmCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	//  120 second timeout
+	llmCtx, cancel := context.WithTimeout(ctx, 120*time.Second)
 	defer cancel()
 
 	prompt := BuildPrompt(req)

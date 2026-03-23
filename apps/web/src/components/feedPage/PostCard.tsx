@@ -1,24 +1,102 @@
 'use client'
 import React, { useRef, useState } from 'react'
 import { FaPlay, FaHeart, FaRegHeart, FaShareAlt } from 'react-icons/fa'
+import { IoSend } from 'react-icons/io5'
 import { MdRestaurant } from 'react-icons/md'
 import { IoChatbubbleSharp } from 'react-icons/io5'
 import { HiDotsHorizontal } from 'react-icons/hi'
-import { Post } from '@/app/feed/data'
+import { Post, Comment as PostComment } from '@/types/feed'
+import { getComments, toggleLike, postComment } from '@/services/feedServices'
 import Image from 'next/image'
+import { useEffect } from 'react'
 
 interface PostCardProps {
   post: Post
 }
 
 const PostCard = ({ post }: PostCardProps) => {
-  const [isLiked, setIsLiked] = useState(post.liked)
-  const [likesCount, setLikesCount] = useState(post.likesCount)
+  const [isLiked, setIsLiked] = useState(post.liked || false)
+  const [likesCount, setLikesCount] = useState(post.likes_count)
+  const [commentCount, setCommentCount] = useState(post.comments_count)
 
   const videoRef = useRef<HTMLVideoElement>(null)
   const [isPlaying, setIsPlaying] = useState(false)
 
+  const [comments, setComments] = useState<PostComment[]>([])
+
   const [showComments, setShowComments] = useState(false)
+
+  const [isLoadingComments, setIsLoadingComments] = useState(false)
+
+  const [newCommentText, setNewCommentText] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const handleAddComment = async () => {
+    if (!newCommentText.trim() || !post.post_id) return
+
+    setIsSubmitting(true)
+    try {
+      const savedComment = await postComment(post.post_id, newCommentText)
+
+      setComments((prev) => [savedComment, ...prev])
+      setCommentCount((prev) => {
+        const currentCount = prev ?? 0
+        return currentCount + 1
+      })
+      setNewCommentText('')
+    } catch (error) {
+      console.error('Comment failed:', error)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  useEffect(() => {
+    const fetchComments = async () => {
+      if (showComments && comments.length === 0 && post.post_id) {
+        setIsLoadingComments(true)
+        try {
+          const data = await getComments(post.post_id)
+          setComments(data)
+        } catch (error: unknown) {
+          console.error('Failed to load comments:', error)
+        } finally {
+          setIsLoadingComments(false)
+        }
+      }
+    }
+
+    fetchComments()
+  }, [showComments, post.post_id, comments.length])
+
+  const getElapsedTime = (createdAt: string | Date): string => {
+    const now = new Date()
+    const past = new Date(createdAt)
+    const diffInSeconds = Math.floor((now.getTime() - past.getTime()) / 1000)
+
+    // Fallback for future dates or clock desync
+    if (diffInSeconds < 5) return 'just now'
+
+    const units = [
+      { label: 'year', seconds: 31536000 },
+      { label: 'month', seconds: 2592000 },
+      { label: 'day', seconds: 86400 },
+      { label: 'hour', seconds: 3600 },
+      { label: 'minute', seconds: 60 },
+      { label: 'second', seconds: 1 },
+    ]
+
+    for (const unit of units) {
+      const interval = Math.floor(diffInSeconds / unit.seconds)
+      if (interval >= 1) {
+        return `${interval} ${unit.label}${interval > 1 ? 's' : ''} ago`
+      }
+    }
+
+    return 'just now'
+  }
+
+  const [isShowingAllComments, setIsShowingAllComments] = useState(false)
 
   const handlePlayToggle = (e: React.MouseEvent) => {
     e.stopPropagation()
@@ -33,13 +111,26 @@ const PostCard = ({ post }: PostCardProps) => {
     }
   }
 
-  const handleToggleLike = () => {
-    if (isLiked) {
-      setLikesCount((prev) => prev - 1)
-    } else {
-      setLikesCount((prev) => prev + 1)
-    }
+  const handleToggleLike = async () => {
+    if (!post.post_id) return
+
+    const previousIsLiked = isLiked
+    const previousLikesCount = likesCount
+
     setIsLiked(!isLiked)
+    setLikesCount((prev) => {
+      const currentCount = prev ?? 0
+      return isLiked ? currentCount - 1 : currentCount + 1
+    })
+
+    try {
+      await toggleLike(post.post_id)
+    } catch (error) {
+      console.error('Failed to sync like:', error)
+      setIsLiked(previousIsLiked)
+      setLikesCount(previousLikesCount)
+      alert('Could not update like. Please check your connection.')
+    }
   }
 
   return (
@@ -48,21 +139,29 @@ const PostCard = ({ post }: PostCardProps) => {
         <div className="flex items-center gap-3">
           <div className="relative size-10 rounded-full overflow-hidden bg-gray-200">
             <Image
-              src={post.userAvatar || '/default-avatar.png'} // Fallback to a local placeholder
+              src={post.user_avatar || '/images/user-icon.png'}
               alt="User Avatar"
               fill
               className="object-cover"
-              unoptimized={!post.userAvatar?.startsWith('http')} // Optional safety
+              unoptimized={!post.user_avatar?.startsWith('http')}
             />
           </div>
           <div className="flex flex-col">
             <div className="flex items-center gap-2">
+              <span className="text-red-500 text-[10px]">
+                <div className="bg-yellow-100 text-[10px] p-2 text-black">
+                  Name: {post.user_name || 'NULL'} | Content:{' '}
+                  {post.content || 'EMPTY'} | Media: {post.media_type || 'NONE'}
+                </div>
+              </span>
               <span className="font-bold text-text-main dark:text-white text-sm">
-                {post.userName}
+                {post.user_name}
               </span>
             </div>
             <span className="text-xs text-text-muted">
-              {post.timeAgo} • {post.location}
+              {post.created_at && getElapsedTime(post.created_at)}
+              {post.created_at && post.location && ' • '}
+              {post.location}
             </span>
           </div>
         </div>
@@ -72,18 +171,19 @@ const PostCard = ({ post }: PostCardProps) => {
       </div>
       <div className="relative w-full aspect-4/3 sm:aspect-video bg-gray-100 dark:bg-gray-800 group cursor-pointer">
         <div className="relative w-full h-full overflow-hidden">
-          {post.photo && (
+          {post.media_type === 'image' && post.media_url && (
             <Image
-              src={post.photo}
+              src={post.media_url}
               alt="User Post"
               fill
-              className="object-cover transition-transform duration-700 group-hover:scale-105"
+              className="object-cover"
+              unoptimized
             />
           )}
-          {post.video && (
+          {post.media_type === 'video' && (
             <video
               ref={videoRef}
-              src={post.video}
+              src={post.media_url}
               muted
               playsInline
               onEnded={() => setIsPlaying(false)}
@@ -91,7 +191,7 @@ const PostCard = ({ post }: PostCardProps) => {
             />
           )}
         </div>
-        {post.video && (
+        {post.media_type === 'video' && (
           <div
             onClick={handlePlayToggle}
             className={`absolute inset-0 flex items-center justify-center transition-colors ${
@@ -103,7 +203,6 @@ const PostCard = ({ post }: PostCardProps) => {
             {!isPlaying && (
               <div className="size-14 rounded-full bg-white/30 backdrop-blur-md flex items-center justify-center border border-white/50 text-white shadow-lg group-hover:scale-110 transition-transform">
                 <FaPlay size={23} className="ml-1" />{' '}
-                {/* ml-1 offsets play icon visually center */}
               </div>
             )}
           </div>
@@ -114,13 +213,10 @@ const PostCard = ({ post }: PostCardProps) => {
           href="#"
         >
           <MdRestaurant size={16} className="text-primary" />
-          Linked to: {post.packageName}
+          Linked to: {post.package_name}
         </a>
       </div>
       <div className="p-4">
-        {/* <h3 className="text-lg font-bold text-text-main dark:text-white mb-1">
-          Best Jollof in Town! 🍛
-        </h3> */}
         <p className="text-text-main dark:text-gray-300 leading-relaxed mb-4">
           {post.content}
         </p>
@@ -142,50 +238,104 @@ const PostCard = ({ post }: PostCardProps) => {
             className="flex items-center gap-2 text-text-muted hover:text-text-main dark:hover:text-white transition-colors group/btn"
           >
             <IoChatbubbleSharp className="text-primary cursor-pointer" />
-            <span className="text-sm font-medium">{post.commentsCount}</span>
+            <span className="text-sm font-medium">{commentCount}</span>
           </button>
           <button className="flex items-center gap-2 text-text-muted hover:text-text-main dark:hover:text-white transition-colors ml-auto">
             <FaShareAlt className="text-primary/70" size={20} />
           </button>
         </div>
-        {showComments && post.comments && (
+
+        {showComments && (
           <div className="mt-4 space-y-4 pt-3 border-t border-border-light dark:border-border-dark">
-            {post.comments.slice(0, 3).map((comment, index) => (
-              <div key={index} className="flex gap-3 items-start">
-                {/* Comment Author Avatar */}
-                <div className="relative size-8 shrink-0 rounded-full overflow-hidden bg-gray-200">
-                  <Image
-                    src={comment.authorAvatar || '/default-avatar.png'}
-                    alt={comment.authorAvatar}
-                    fill
-                    className="object-cover"
-                  />
-                </div>
-
-                {/* Comment Content */}
-                <div className="flex flex-col gap-0.5">
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-text-main dark:text-white text-sm">
-                      {comment.author}
-                    </span>
-                    <span className="text-[10px] text-text-muted">
-                      2h {/* Placeholder for comment timestamp */}
-                    </span>
-                  </div>
-                  <p className="text-sm text-text-main dark:text-gray-300">
-                    {comment.text}
-                  </p>
-                  <button className="text-[10px] font-bold text-text-muted hover:text-primary w-fit mt-1">
-                    Reply
-                  </button>
-                </div>
+            <div className="flex gap-3 items-center mb-6">
+              <div className="relative size-8 shrink-0 rounded-full overflow-hidden bg-gray-200">
+                <Image
+                  src="/images/user-icon.png"
+                  alt="My Avatar"
+                  fill
+                  className="object-cover"
+                />
               </div>
-            ))}
+              <div className="flex-1 relative group">
+                <input
+                  type="text"
+                  placeholder="Add a comment..."
+                  value={newCommentText}
+                  onChange={(e) => setNewCommentText(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleAddComment()}
+                  className="w-full bg-gray-100 dark:bg-zinc-900 border-none rounded-full py-2 px-4 pr-10 text-sm focus:ring-1 focus:ring-primary transition-all"
+                />
+                <button
+                  onClick={handleAddComment}
+                  disabled={!newCommentText.trim() || isSubmitting}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-primary disabled:opacity-30 cursor-pointer"
+                >
+                  <IoSend size={16} />
+                </button>
+              </div>
+            </div>
 
-            {post.comments.length > 3 && (
-              <button className="text-xs font-bold text-primary hover:underline mt-2 ml-11">
-                View all {post.commentsCount} comments
-              </button>
+            {isLoadingComments ? (
+              <div className="text-xs text-text-muted animate-pulse py-2 text-center">
+                Loading comments...
+              </div>
+            ) : (
+              <>
+                {(isShowingAllComments ? comments : comments.slice(0, 3)).map(
+                  (comment, index) => (
+                    <div
+                      key={comment.comment_id || index}
+                      className="flex gap-3 items-start"
+                    >
+                      <div className="relative size-8 shrink-0 rounded-full overflow-hidden bg-gray-200">
+                        <Image
+                          src={comment.user_avatar || '/default-avatar.png'}
+                          alt={`${comment.user_name}'s avatar`}
+                          fill
+                          className="object-cover"
+                        />
+                      </div>
+
+                      <div className="flex flex-col gap-0.5">
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-text-main dark:text-white text-sm">
+                            {comment.user_name}
+                          </span>
+                          <span className="text-[10px] text-text-muted">
+                            {getElapsedTime(comment.created_at)}
+                          </span>
+                        </div>
+                        <p className="text-sm text-text-main dark:text-gray-300">
+                          {comment.text}
+                        </p>
+                        <button className="text-[10px] font-bold text-text-muted hover:text-primary w-fit mt-1">
+                          Reply
+                        </button>
+                      </div>
+                    </div>
+                  )
+                )}
+
+                {/* Only show "View all" if we have more than 3 AND we aren't already showing them */}
+                {comments.length > 3 && !isShowingAllComments && (
+                  <button
+                    onClick={() => setIsShowingAllComments(true)}
+                    className="text-xs font-bold text-primary hover:underline mt-2 ml-11"
+                  >
+                    View all {commentCount} comments
+                  </button>
+                )}
+
+                {/* Optional: Add a "Show less" button */}
+                {isShowingAllComments && comments.length > 3 && (
+                  <button
+                    onClick={() => setIsShowingAllComments(false)}
+                    className="text-xs font-bold text-text-muted hover:underline mt-2 ml-11"
+                  >
+                    Show less
+                  </button>
+                )}
+              </>
             )}
           </div>
         )}

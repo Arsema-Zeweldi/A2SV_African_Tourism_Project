@@ -74,6 +74,13 @@ func (s *CommunityServiceImpl) AddComment(ctx context.Context, comment *models.C
 	return s.repo.AddComment(ctx, comment)
 }
 
+func (s *CommunityServiceImpl) GetComment(ctx context.Context, commentID uuid.UUID) (*models.CommunityPostComment, error) {
+	if commentID == uuid.Nil {
+		return nil, errors.New("comment_id is required")
+	}
+	return s.repo.GetComment(ctx, commentID)
+}
+
 func (s *CommunityServiceImpl) ListComments(ctx context.Context, postID uuid.UUID, params ListCommentsParams) ([]models.CommunityPostComment, int64, error) {
 	if postID == uuid.Nil {
 		return nil, 0, errors.New("post_id is required")

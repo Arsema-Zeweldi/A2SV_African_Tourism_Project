@@ -15,6 +15,7 @@ type CommunityRepository interface {
 	GetPost(ctx context.Context, postID uuid.UUID) (*models.CommunityPost, error)
 	ListPosts(ctx context.Context, params Pagination, filters map[string]interface{}) ([]models.CommunityPost, int64, error)
 	AddComment(ctx context.Context, comment *models.CommunityPostComment) error
+	GetComment(ctx context.Context, commentID uuid.UUID) (*models.CommunityPostComment, error)
 	ListComments(ctx context.Context, postID uuid.UUID, params Pagination) ([]models.CommunityPostComment, int64, error)
 	ToggleLike(ctx context.Context, postID, userID uuid.UUID) (bool, error)
 	DeleteComment(ctx context.Context, commentID, userID uuid.UUID) error
@@ -106,6 +107,16 @@ func (r *GormCommunityRepository) AddComment(ctx context.Context, comment *model
 			Where("post_id = ?", comment.PostID).
 			UpdateColumn("comments_count", gorm.Expr("comments_count + ?", 1)).Error
 	})
+}
+
+func (r *GormCommunityRepository) GetComment(ctx context.Context, commentID uuid.UUID) (*models.CommunityPostComment, error) {
+	var comment models.CommunityPostComment
+	if err := r.db.WithContext(ctx).
+		Preload("User").
+		First(&comment, "comment_id = ?", commentID).Error; err != nil {
+		return nil, err
+	}
+	return &comment, nil
 }
 
 func (r *GormCommunityRepository) ListComments(ctx context.Context, postID uuid.UUID, params Pagination) ([]models.CommunityPostComment, int64, error) {

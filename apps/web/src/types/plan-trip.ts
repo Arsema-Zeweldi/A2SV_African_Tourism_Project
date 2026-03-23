@@ -8,6 +8,7 @@ export interface TripFormData {
     vibes: string[]
     duration: number
     budget: number
+    groupSize: number
     notes: string
 }
 

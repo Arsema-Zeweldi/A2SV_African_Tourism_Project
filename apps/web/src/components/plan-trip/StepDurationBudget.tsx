@@ -1,6 +1,6 @@
 "use client"
 
-import { Calendar, Wallet } from "lucide-react"
+import { Calendar, Wallet, Users } from "lucide-react"
 import { Slider } from "@/components/ui/slider"
 import {
     DURATION_MIN,
@@ -8,6 +8,8 @@ import {
     BUDGET_MIN,
     BUDGET_MAX,
     BUDGET_STEP,
+    GROUP_SIZE_MIN,
+    GROUP_SIZE_MAX,
 } from "@/lib/plan-trip-data"
 
 interface StepDurationBudgetProps {
@@ -15,6 +17,8 @@ interface StepDurationBudgetProps {
     onDurationChange: (value: number) => void
     budget: number
     onBudgetChange: (value: number) => void
+    groupSize: number
+    onGroupSizeChange: (value: number) => void
 }
 
 export function StepDurationBudget({
@@ -22,6 +26,8 @@ export function StepDurationBudget({
     onDurationChange,
     budget,
     onBudgetChange,
+    groupSize,
+    onGroupSizeChange,
 }: StepDurationBudgetProps) {
     return (
         <div className="flex flex-col gap-8">
@@ -102,6 +108,44 @@ export function StepDurationBudget({
                     <span>$500</span>
                     <span>$5,000</span>
                     <span>$10,000+</span>
+                </div>
+            </div>
+
+            {/* Group Size */}
+            <div className="rounded-[24px] border border-white/40 bg-white/40 p-6 shadow-sm">
+                <div className="mb-6 flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                        <div className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-[12px] border border-white bg-[#F28A1E]/10">
+                            <Users className="h-5 w-5 text-[#F28A1E]" />
+                        </div>
+                        <div>
+                            <p className="text-[16px] font-bold text-[#1F160F]">Group Size</p>
+                            <p className="text-[13px] font-medium text-[#7A6B57]">
+                                How many travelers?
+                            </p>
+                        </div>
+                    </div>
+                    <span className="rounded-full bg-gradient-to-r from-[#F59A2B] to-[#ED7F12] px-5 py-2 text-[15px] font-bold text-white shadow-md shadow-[#F28A1E]/20">
+                        {groupSize}{" "}
+                        <span className="text-[11px] font-semibold tracking-wider">
+                            {groupSize === 1 ? "PERSON" : "PEOPLE"}
+                        </span>
+                    </span>
+                </div>
+
+                <Slider
+                    value={[groupSize]}
+                    onValueChange={([v]) => onGroupSizeChange(v)}
+                    min={GROUP_SIZE_MIN}
+                    max={GROUP_SIZE_MAX}
+                    step={1}
+                    className="trip-slider mb-3 py-2 cursor-pointer"
+                />
+
+                <div className="flex justify-between px-1 text-[11px] font-bold uppercase tracking-widest text-[#7A6B57]">
+                    <span>SOLO</span>
+                    <span>5</span>
+                    <span>10+</span>
                 </div>
             </div>
         </div>

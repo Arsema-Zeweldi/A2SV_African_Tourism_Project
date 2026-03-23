@@ -1,9 +1,11 @@
 "use client"
 
 import { useState, useCallback } from "react"
+import { useRouter } from "next/navigation"
 import Image from "next/image"
 import type { TripFormData } from "@/types/plan-trip"
 import { WIZARD_BG, TOTAL_STEPS } from "@/lib/plan-trip-data"
+import { generateItinerary, saveItinerary } from "@/actions/planner_actions"
 
 import { WizardHeader } from "./WizardHeader"
 import { WizardFooter } from "./WizardFooter"
@@ -20,12 +22,16 @@ const INITIAL_DATA: TripFormData = {
     vibes: [],
     duration: 14,
     budget: 4500,
+    groupSize: 1,
     notes: "",
 }
 
 export function TripWizard() {
+    const router = useRouter()
     const [currentStep, setCurrentStep] = useState(1)
     const [formData, setFormData] = useState<TripFormData>(INITIAL_DATA)
+    const [isSubmitting, setIsSubmitting] = useState(false)
+    const [error, setError] = useState<string | null>(null)
 
     /* ── Helpers ──────────────────────────────────── */
 
@@ -47,6 +53,36 @@ export function TripWizard() {
         if (typeof window !== "undefined") window.history.back()
     }
 
+    const handleGenerate = async () => {
+        setIsSubmitting(true)
+        setError(null)
+
+        try {
+            // Step 1: Generate itinerary via AI
+            const genResult = await generateItinerary(formData)
+
+            if (!genResult.success) {
+                setError(genResult.error)
+                setIsSubmitting(false)
+                return
+            }
+
+            // Step 2: Save the generated itinerary
+            const saveResult = await saveItinerary(genResult.data)
+
+            if (!saveResult.success) {
+                setError(saveResult.error)
+                setIsSubmitting(false)
+                return
+            }
+
+            // Step 3: Navigate to the new package builder
+            router.push(`/new-package/${saveResult.data.itinerary_id}`)
+        } catch {
+            setError("Something went wrong. Please try again.")
+            setIsSubmitting(false)
+        }
+    }
 
     const renderStep = () => {
         switch (currentStep) {
@@ -75,6 +111,8 @@ export function TripWizard() {
                         onDurationChange={(v) => updateField("duration", v)}
                         budget={formData.budget}
                         onBudgetChange={(v) => updateField("budget", v)}
+                        groupSize={formData.groupSize}
+                        onGroupSizeChange={(v) => updateField("groupSize", v)}
                     />
                 )
             case 4:
@@ -94,6 +132,7 @@ export function TripWizard() {
                             vibes: formData.vibes,
                             duration: formData.duration,
                             budget: formData.budget,
+                            groupSize: formData.groupSize,
                         }}
                         onGoToStep={goToStep}
                     />
@@ -126,12 +165,20 @@ export function TripWizard() {
 
                 <div className="relative z-10 flex-1 overflow-y-auto px-6 py-5 sm:px-12">
                     {renderStep()}
+
+                    {error && (
+                        <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-center text-[14px] font-medium text-red-700">
+                            {error}
+                        </div>
+                    )}
                 </div>
 
                 <WizardFooter
                     currentStep={currentStep}
                     onBack={back}
                     onNext={next}
+                    onSubmit={handleGenerate}
+                    isSubmitting={isSubmitting}
                 />
             </div>
         </div>

@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { userLoginInfo } from '@/types/auth'
 import { login } from '@/services/authService'
+import { setAuthCookie } from '@/actions/auth_actions'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { AxiosError } from 'axios'
@@ -36,9 +37,12 @@ const LoginPage = () => {
         password: data.password,
       }
 
-      console.log('Sending Payload:', payload)
+      const response = await login(payload)
 
-      await login(payload)
+      // Set httpOnly cookie so server actions can access the token
+      if (response.token) {
+        await setAuthCookie(response.token)
+      }
 
       router.push('/home')
     } catch (err) {

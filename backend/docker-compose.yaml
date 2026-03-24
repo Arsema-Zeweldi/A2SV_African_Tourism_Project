@@ -13,6 +13,11 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     restart: always
 
   # ── Redis Cache ──────────────────────────────────────────────
@@ -39,8 +44,10 @@ services:
       - DATABASE_URL=postgresql://postgres:Heny16psql@tourism-db:5432/africa_tourism?sslmode=disable
       - REDIS_URL=redis://tourism-redis:6379
     depends_on:
-      - tourism-db
-      - tourism-redis
+      tourism-db:
+        condition: service_healthy
+      tourism-redis:
+        condition: service_started
     restart: on-failure
 
 volumes:

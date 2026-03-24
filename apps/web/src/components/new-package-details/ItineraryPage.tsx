@@ -1,3 +1,4 @@
+"use client"
 
 import { useState } from "react";
 import { ItineraryData } from "../../types/new-package";

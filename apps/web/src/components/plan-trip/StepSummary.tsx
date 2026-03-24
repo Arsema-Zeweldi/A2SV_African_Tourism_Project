@@ -7,6 +7,7 @@ import {
     Compass,
     Calendar,
     Wallet,
+    Users,
     Globe,
 } from "lucide-react"
 import type { TripFormData, SummaryCard } from "@/types/plan-trip"
@@ -54,6 +55,12 @@ function buildSummaryCards(data: Omit<TripFormData, "notes">): SummaryCard[] {
             icon: Wallet,
             label: "Budget (USD)",
             value: `$${data.budget.toLocaleString()}`,
+            step: 3,
+        },
+        {
+            icon: Users,
+            label: "Group Size",
+            value: `${data.groupSize} ${data.groupSize === 1 ? "Person" : "People"}`,
             step: 3,
         },
     ]
@@ -127,7 +134,7 @@ export function StepSummary({ data, onGoToStep }: StepSummaryProps) {
                 ))}
             </div>
 
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:mx-20">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 {cards.slice(3).map((card) => (
                     <SummaryCardItem
                         key={card.label}

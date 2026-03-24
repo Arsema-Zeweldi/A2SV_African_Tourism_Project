@@ -1,14 +1,14 @@
 'use client';
 
 import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { Package } from '@/lib/marketplace-data';
+import { ApiPackage } from '@/services/packagesService';
 
 interface MarketplaceContextType {
-  wishlist: Package[];
-  cart: Package[];
-  toggleWishlist: (pkg: Package) => void;
+  wishlist: ApiPackage[];
+  cart: ApiPackage[];
+  toggleWishlist: (pkg: ApiPackage) => void;
   isInWishlist: (id: string) => boolean;
-  addToCart: (pkg: Package) => void;
+  addToCart: (pkg: ApiPackage) => void;
   removeFromCart: (id: string) => void;
   isInCart: (id: string) => boolean;
 }
@@ -16,46 +16,34 @@ interface MarketplaceContextType {
 const MarketplaceContext = createContext<MarketplaceContextType | undefined>(undefined);
 
 export function MarketplaceProvider({ children }: { children: ReactNode }) {
-  const [wishlist, setWishlist] = useState<Package[]>([]);
-  const [cart, setCart] = useState<Package[]>([]);
+  const [wishlist, setWishlist] = useState<ApiPackage[]>([]);
+  const [cart, setCart] = useState<ApiPackage[]>([]);
 
-  const toggleWishlist = (pkg: Package) => {
-    setWishlist(prev =>
-      prev.some(item => item.id === pkg.id)
-        ? prev.filter(item => item.id !== pkg.id)
+  const toggleWishlist = (pkg: ApiPackage) => {
+    setWishlist((prev) =>
+      prev.some((item) => item.package_id === pkg.package_id)
+        ? prev.filter((item) => item.package_id !== pkg.package_id)
         : [...prev, pkg]
     );
   };
 
-  const isInWishlist = (id: string) => {
-    return wishlist.some(item => item.id === id);
-  };
+  const isInWishlist = (id: string) => wishlist.some((item) => item.package_id === id);
 
-  const addToCart = (pkg: Package) => {
-    if (!cart.some(item => item.id === pkg.id)) {
-      setCart(prev => [...prev, pkg]);
+  const addToCart = (pkg: ApiPackage) => {
+    if (!cart.some((item) => item.package_id === pkg.package_id)) {
+      setCart((prev) => [...prev, pkg]);
     }
   };
 
   const removeFromCart = (id: string) => {
-    setCart(prev => prev.filter(item => item.id !== id));
+    setCart((prev) => prev.filter((item) => item.package_id !== id));
   };
 
-  const isInCart = (id: string) => {
-    return cart.some(item => item.id === id);
-  };
+  const isInCart = (id: string) => cart.some((item) => item.package_id === id);
 
   return (
     <MarketplaceContext.Provider
-      value={{
-        wishlist,
-        cart,
-        toggleWishlist,
-        isInWishlist,
-        addToCart,
-        removeFromCart,
-        isInCart,
-      }}
+      value={{ wishlist, cart, toggleWishlist, isInWishlist, addToCart, removeFromCart, isInCart }}
     >
       {children}
     </MarketplaceContext.Provider>

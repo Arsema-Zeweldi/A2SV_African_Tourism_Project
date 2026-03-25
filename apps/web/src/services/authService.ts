@@ -10,17 +10,11 @@ export const signup = async (userData: userSignupInfo) => {
 
 export const login = async (credentials: userLoginInfo) => {
   const response = await axios.post(`${API_URL}/login`, credentials)
-  if (response.data.token) {
-    localStorage.setItem('user_token', response.data.token)
-  }
   return response.data
 }
 
 export const logout = async () => {
   const response = await axios.post(`${API_URL}/logout`)
-  if (response.data.token) {
-    localStorage.setItem('user_token', response.data.token)
-  }
   return response.data
 }
 

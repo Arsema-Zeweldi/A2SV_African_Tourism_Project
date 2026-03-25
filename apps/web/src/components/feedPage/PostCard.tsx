@@ -148,12 +148,6 @@ const PostCard = ({ post }: PostCardProps) => {
           </div>
           <div className="flex flex-col">
             <div className="flex items-center gap-2">
-              <span className="text-red-500 text-[10px]">
-                <div className="bg-yellow-100 text-[10px] p-2 text-black">
-                  Name: {post.user_name || 'NULL'} | Content:{' '}
-                  {post.content || 'EMPTY'} | Media: {post.media_type || 'NONE'}
-                </div>
-              </span>
               <span className="font-bold text-text-main dark:text-white text-sm">
                 {post.user_name}
               </span>

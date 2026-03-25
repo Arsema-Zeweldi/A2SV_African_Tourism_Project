@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import { Package } from '@/types/feed'
-import { FaRegStar } from 'react-icons/fa'
+import { FaStar } from 'react-icons/fa'
 import { getTrending } from '@/services/feedServices'
 
 const TrendingNow = () => {
@@ -49,7 +49,7 @@ const TrendingNow = () => {
                 {pkg.title}
               </span>
               <span className="text-xs text-text-muted flex gap-3">
-                {pkg.rating_avg} <FaRegStar />
+                {pkg.rating_avg} <FaStar className="text-amber-400" />
               </span>
             </div>
           </a>

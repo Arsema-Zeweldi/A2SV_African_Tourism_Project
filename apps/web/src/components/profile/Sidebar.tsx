@@ -1,5 +1,5 @@
 'use client'
-
+import { clearAuthCookie } from '@/actions/auth_actions'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { User, Shield, SlidersHorizontal, Link2, LogOut } from 'lucide-react'
@@ -25,6 +25,8 @@ export default function ProfileSidebar() {
 
   const handleLogout = async () => {
     await logout()
+    await clearAuthCookie()
+    router.refresh()
     router.push('/')
   }
 

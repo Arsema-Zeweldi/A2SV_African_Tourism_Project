@@ -42,9 +42,9 @@ const LoginPage = () => {
       // Set httpOnly cookie so server actions can access the token
       if (response.token) {
         await setAuthCookie(response.token)
+        router.refresh()
+        router.push('/home')
       }
-
-      router.push('/home')
     } catch (err) {
       const error = err as AxiosError<{ error: string }>
 

@@ -42,21 +42,17 @@ const LoginPage = () => {
       // Set httpOnly cookie so server actions can access the token
       if (response.token) {
         await setAuthCookie(response.token)
+        router.refresh()
+        router.push('/home')
       }
-
-      router.push('/home')
     } catch (err) {
       const error = err as AxiosError<{ error: string }>
 
       const message =
-        error.response?.data?.error || 'Registration failed. Please try again.'
+        error.response?.data?.error || 'Login failed. Please try again.'
       setApiError(message)
 
-      console.error(
-        'Login Error Details:',
-        error.response?.status,
-        error.message
-      )
+      console.error('Login Error Details:', error.response?.status, apiError)
     }
   }
 

@@ -1,41 +1,55 @@
-"use client";
-
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { User, Shield, SlidersHorizontal, Link2, LogOut } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
+'use client'
+import { clearAuthCookie } from '@/actions/auth_actions'
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import { User, Shield, SlidersHorizontal, Link2, LogOut } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
+import { logout } from '@/services/authService'
+import { useRouter } from 'next/navigation'
 
 const SIDEBAR_ITEMS = [
-  { icon: User,               label: "Account Info",    href: "/profile"             },
-  { icon: Shield,             label: "Security",        href: "/profile/security"    },
-  { icon: SlidersHorizontal,  label: "Preferences",     href: "/profile/preferences" },
-  { icon: Link2,              label: "Linked Accounts", href: "/profile/linked"      },
-];
+  { icon: User, label: 'Account Info', href: '/profile' },
+  { icon: Shield, label: 'Security', href: '/profile/security' },
+  {
+    icon: SlidersHorizontal,
+    label: 'Preferences',
+    href: '/profile/preferences',
+  },
+  { icon: Link2, label: 'Linked Accounts', href: '/profile/linked' },
+]
 
 export default function ProfileSidebar() {
-  const pathname = usePathname();
+  const router = useRouter()
+  const pathname = usePathname()
+
+  const handleLogout = async () => {
+    await logout()
+    await clearAuthCookie()
+    router.refresh()
+    router.push('/')
+  }
 
   return (
-    <aside className="w-52 shrink-0 border-r border-stone-200 bg-white flex flex-col py-5">
+    <aside className="w-52 h-full shrink-0 border-r border-stone-200 bg-white flex flex-col py-5">
       <nav className="flex flex-col gap-0.5 px-3 flex-1">
         {SIDEBAR_ITEMS.map(({ icon: Icon, label, href }) => {
-          const active = pathname === href;
+          const active = pathname === href
           return (
             <Link
               key={label}
               href={href}
               className={cn(
-                "flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors",
+                'flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors',
                 active
-                  ? "bg-orange-500 text-white font-medium"
-                  : "text-stone-500 hover:bg-orange-50 hover:text-stone-900"
+                  ? 'bg-orange-500 text-white font-medium'
+                  : 'text-stone-500 hover:bg-orange-50 hover:text-stone-900'
               )}
             >
               <Icon className="h-4 w-4 shrink-0" />
               {label}
             </Link>
-          );
+          )
         })}
       </nav>
 
@@ -44,10 +58,11 @@ export default function ProfileSidebar() {
       <Button
         variant="ghost"
         className="mx-3 justify-start gap-2.5 text-stone-400 hover:text-red-500 hover:bg-red-50 text-sm font-normal"
+        onClick={handleLogout}
       >
         <LogOut className="h-4 w-4" />
         Log Out
       </Button>
     </aside>
-  );
+  )
 }

@@ -10,8 +10,39 @@ export const signup = async (userData: userSignupInfo) => {
 
 export const login = async (credentials: userLoginInfo) => {
   const response = await axios.post(`${API_URL}/login`, credentials)
-  if (response.data.token) {
-    localStorage.setItem('user_token', response.data.token)
-  }
+  return response.data
+}
+
+export const logout = async () => {
+  const response = await axios.post(`${API_URL}/logout`)
+  return response.data
+}
+
+export const forgotPassword = async (email: string) => {
+  const response = await axios.post(`${API_URL}/forgot-password`, {
+    email: email,
+  })
+
+  return response.data
+}
+
+// services/authService.ts
+
+export const resetPassword = async (
+  password: string,
+  password_confirm: string,
+  token: string | null
+) => {
+  const response = await axios.post(`${API_URL}/reset-password`, {
+    token,
+    password,
+    password_confirm,
+  })
+
+  return response.data
+}
+
+export const resendVerification = async (email: string) => {
+  const response = await axios.post(`${API_URL}/resend-verification`, { email })
   return response.data
 }

@@ -8,7 +8,7 @@ import {
   useCallback,
   type ReactNode,
 } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 import { clearAuthCookie } from "@/actions/auth_actions"
 
 interface AuthContextValue {
@@ -23,13 +23,15 @@ const AuthContext = createContext<AuthContextValue>({
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter()
+  const pathname = usePathname()
   const [isAuthenticated, setIsAuthenticated] = useState(false)
 
   useEffect(() => {
-    // Read the non-httpOnly flag cookie set during login
+    // Re-check on every route change so the navbar updates immediately after
+    // login/logout without requiring a hard refresh
     const hasAuth = document.cookie.includes("auth_status=1")
     setIsAuthenticated(hasAuth)
-  }, [])
+  }, [pathname])
 
   const logout = useCallback(async () => {
     // Clear client-side token

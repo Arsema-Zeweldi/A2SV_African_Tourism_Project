@@ -1,18 +1,47 @@
 // src/components/ItineraryHeader.tsx
+"use client"
 
-import { CalendarDays, Plus } from "lucide-react";
-import { ItineraryData } from "../../types/new-package";
+import { useRef, useState } from "react"
+import { CalendarDays, Plus } from "lucide-react"
+import { ItineraryData } from "../../types/new-package"
 
 interface ItineraryHeaderProps {
   data: Pick<
     ItineraryData,
     "title" | "tags" | "daysCount" | "nightsCount" | "budget"
-  >;
-  onAddTag?: () => void;
+  >
+  onAddTag?: (tag: string) => void
 }
 
 export function ItineraryHeader({ data, onAddTag }: ItineraryHeaderProps) {
-  const { title, tags, daysCount, nightsCount, budget } = data;
+  const { title, tags, daysCount, nightsCount, budget } = data
+  const [isAddingTag, setIsAddingTag] = useState(false)
+  const [tagInput, setTagInput] = useState("")
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  const openTagInput = () => {
+    setIsAddingTag(true)
+    // Wait for the input to mount, then focus
+    setTimeout(() => inputRef.current?.focus(), 30)
+  }
+
+  const commitTag = () => {
+    const trimmed = tagInput.trim()
+    if (trimmed) onAddTag?.(trimmed)
+    setTagInput("")
+    setIsAddingTag(false)
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault()
+      commitTag()
+    }
+    if (e.key === "Escape") {
+      setTagInput("")
+      setIsAddingTag(false)
+    }
+  }
 
   return (
     <div className="bg-white rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.07)] p-5">
@@ -34,7 +63,7 @@ export function ItineraryHeader({ data, onAddTag }: ItineraryHeaderProps) {
         </div>
       </div>
 
-      {/* Meta pills */}
+      {/* Meta pills + tags */}
       <div className="flex items-center gap-2 flex-wrap">
         <span className="flex items-center gap-1 bg-gray-50 border border-gray-200 rounded-full px-2.5 py-1 text-[11px] text-gray-600 font-medium">
           <CalendarDays size={11} />
@@ -50,14 +79,26 @@ export function ItineraryHeader({ data, onAddTag }: ItineraryHeaderProps) {
           </span>
         ))}
 
-        <button
-          onClick={onAddTag}
-          aria-label="Add tag"
-          className="w-6 h-6 rounded-full border border-gray-200 flex items-center justify-center text-gray-400 hover:bg-gray-50 transition-colors"
-        >
-          <Plus size={10} />
-        </button>
+        {isAddingTag ? (
+          <input
+            ref={inputRef}
+            value={tagInput}
+            onChange={(e) => setTagInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            onBlur={commitTag}
+            placeholder="Tag name..."
+            className="text-[11px] border border-orange-200 rounded-full px-2.5 py-1 w-24 focus:outline-none focus:ring-1 focus:ring-orange-300 bg-orange-50 text-orange-600 placeholder:text-orange-300"
+          />
+        ) : (
+          <button
+            onClick={openTagInput}
+            aria-label="Add tag"
+            className="w-6 h-6 rounded-full border border-gray-200 flex items-center justify-center text-gray-400 hover:bg-orange-50 hover:border-orange-200 hover:text-orange-400 transition-colors"
+          >
+            <Plus size={10} />
+          </button>
+        )}
       </div>
     </div>
-  );
+  )
 }

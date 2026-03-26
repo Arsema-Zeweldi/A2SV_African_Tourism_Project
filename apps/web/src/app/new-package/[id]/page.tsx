@@ -42,7 +42,7 @@ export default async function Page({ params }: PageProps) {
   return (
     <div className="min-h-screen">
       <Navbar />
-      <ItineraryPage data={itineraryData} />
+      <ItineraryPage data={itineraryData} itineraryId={id} />
       <Desclaimer />
       <FooterSimple />
     </div>

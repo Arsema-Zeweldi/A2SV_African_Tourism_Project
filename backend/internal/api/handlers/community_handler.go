@@ -191,16 +191,12 @@ func (h *AppHandler) AddComment(c *gin.Context) {
 		return
 	}
 
-	// Fetch minimal author info for the response
-	resp := mapCommentToResponse(comment)
-	if h.UserService != nil {
-		if profile, err := h.UserService.GetProfile(c.Request.Context(), userID.String()); err == nil {
-			resp.UserName = profile.FirstName + " " + profile.LastName
-			resp.UserAvatar = profile.AvatarURL
-		}
+	// Re-fetch the comment with the User preloaded so user_name and user_avatar are populated
+	if full, err := h.CommunitySvc.GetComment(c.Request.Context(), comment.CommentID); err == nil {
+		comment = *full
 	}
 
-	c.JSON(http.StatusCreated, resp)
+	c.JSON(http.StatusCreated, mapCommentToResponse(comment))
 }
 
 func (h *AppHandler) ToggleLikePost(c *gin.Context) {
@@ -306,11 +302,21 @@ func (h *AppHandler) DeleteComment(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Comment deleted successfully"})
 }
 
+// buildDisplayName combines first and last name, trimmed.
+// Falls back to "Anonymous" when both are empty (e.g. user registered without a name).
+func buildDisplayName(firstName, lastName string) string {
+	name := strings.TrimSpace(firstName + " " + lastName)
+	if name == "" {
+		return "Anonymous"
+	}
+	return name
+}
+
 func mapPostToResponse(p models.CommunityPost) PostResponse {
 	return PostResponse{
 		PostID:        p.PostID,
 		UserID:        p.UserID,
-		UserName:      p.User.FirstName + " " + p.User.LastName,
+		UserName:      buildDisplayName(p.User.FirstName, p.User.LastName),
 		UserAvatar:    p.User.AvatarURL,
 		Content:       p.Content,
 		MediaURL:      p.MediaURL,
@@ -330,7 +336,7 @@ func mapCommentToResponse(c models.CommunityPostComment) CommentResponse {
 		CommentID:  c.CommentID,
 		PostID:     c.PostID,
 		UserID:     c.UserID,
-		UserName:   c.User.FirstName + " " + c.User.LastName,
+		UserName:   buildDisplayName(c.User.FirstName, c.User.LastName),
 		UserAvatar: c.User.AvatarURL,
 		Text:       c.Text,
 		CreatedAt:  c.CreatedAt.Format(time.RFC3339),

@@ -154,7 +154,7 @@ type CommunityPost struct {
 	Tags          json.RawMessage `gorm:"type:jsonb" json:"tags"`
 	CreatedAt     time.Time       `gorm:"default:now()" json:"created_at"`
 	Status        string          `gorm:"type:package_status_enum;default:'public';index" json:"status"`
-	User          User      `gorm:"foreignKey:UserID" json:"user,omitempty"`
+	User          User            `gorm:"foreignKey:UserID;references:UserID" json:"user,omitempty"`
 }
 
 type CommunityPostComment struct {
@@ -163,7 +163,7 @@ type CommunityPostComment struct {
 	UserID    uuid.UUID `gorm:"type:uuid;not null" json:"user_id"`
 	Text      string    `gorm:"text;not null" json:"text"`
 	CreatedAt time.Time `gorm:"default:now()" json:"created_at"`
-	User      User      `gorm:"foreignKey:UserID" json:"user,omitempty"`
+	User      User      `gorm:"foreignKey:UserID;references:UserID" json:"user,omitempty"`
 }
 
 type CommunityPostLike struct {

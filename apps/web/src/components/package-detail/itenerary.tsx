@@ -1,9 +1,9 @@
 import React from 'react'
 import { Bus, Calendar } from 'lucide-react';
-import { Itinerary } from '@/app/package-details/data';
+import type { Itinerary as PackageDetailsItineraryItem } from '@/types/package-details';
 
 interface ItineraryProps {
-    props: Itinerary[];
+    props: PackageDetailsItineraryItem[];
 }
 
 const TimelineItem = ({

@@ -4,10 +4,33 @@ import MyPackagesSidebar from "@/components/my-packages/sidebar";
 import MyPackagesToolbar from "@/components/my-packages/toolbar";
 import PackageCard from "@/components/my-packages/packageCard";
 import Recommendations from "@/components/my-packages/recommendations";
-import { myPackagesPageData } from "./data";
+import { getMyPackagesPageData } from "@/lib/package-data";
+import type { MyPackagesPageData } from "@/types/my-packages";
 
-const MyPackagesPage = () => {
-  const details = myPackagesPageData;
+const MyPackagesPage = async () => {
+  const details = await getMyPackagesPageData().catch(
+    (): MyPackagesPageData => ({
+    title: "My Packages",
+    description: "Sign in to load the packages you have created.",
+    sidebar: {
+      dashboardItems: [
+        { label: "Current Packages", icon: "package", active: true },
+        { label: "Saved for Later", icon: "bookmark" },
+        { label: "Past Trips", icon: "history" },
+      ],
+      preferenceItems: [
+        { label: "Account Settings", icon: "settings" },
+        { label: "Support Center", icon: "support" },
+      ],
+      tipCard: {
+        title: "Travel Tip",
+        description: "Create and publish packages from saved itineraries after signing in.",
+      },
+    },
+    packages: [],
+    recommendations: [],
+    }),
+  );
 
   return (
     <div className="min-h-screen bg-[#FCFAF8] font-sans text-slate-900">
@@ -34,14 +57,24 @@ const MyPackagesPage = () => {
             <MyPackagesToolbar />
           </div>
 
-          <div className="grid gap-6 xl:grid-cols-3">
-            {details.packages.map((item) => (
-              <PackageCard key={item.title} item={item} />
-            ))}
-          </div>
+          {details.packages.length > 0 ? (
+            <div className="grid gap-6 xl:grid-cols-3">
+              {details.packages.map((item) => (
+                <PackageCard key={item.id} item={item} />
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-dashed border-[#DDD2CA] bg-white px-6 py-12 text-center text-[#7A716D]">
+              No packages found yet.
+            </div>
+          )}
 
-          <div className="mt-10 border-t border-dashed border-[#DDD2CA]" />
-          <Recommendations items={details.recommendations} />
+          {details.recommendations.length > 0 ? (
+            <>
+              <div className="mt-10 border-t border-dashed border-[#DDD2CA]" />
+              <Recommendations items={details.recommendations} />
+            </>
+          ) : null}
         </section>
       </main>
 

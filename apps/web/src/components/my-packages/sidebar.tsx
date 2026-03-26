@@ -6,7 +6,7 @@ import {
   Settings,
   UserRoundCog,
 } from "lucide-react";
-import type { SidebarItem, TipCard } from "@/app/my-packages/data";
+import type { SidebarItem, TipCard } from "@/types/my-packages";
 
 const sidebarIcons = {
   package: Package2,

@@ -1,10 +1,33 @@
 import 'package:mobile/features/plan_trip/presentation/pages/trip_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 import 'package:mobile/core/widgets/malak/trip_bottom_nav.dart';
+import 'package:mobile/features/planner/presentation/bloc/planner_bloc.dart';
+import 'package:mobile/features/planner/presentation/bloc/planner_event.dart';
+import 'package:mobile/features/planner/presentation/bloc/planner_state.dart';
+import 'package:mobile/features/planner/domain/entities/planner_entity.dart';
 
 class PlanTripSummaryScreen extends StatelessWidget {
-  const PlanTripSummaryScreen({super.key});
+  final String? destination;
+  final String? climatePref;
+  final int? durationDays;
+  final List<String>? vibeTags;
+  final double? budget;
+  final String? budgetLevel;
+  final String? notes;
+
+  const PlanTripSummaryScreen({
+    super.key,
+    this.destination,
+    this.climatePref,
+    this.durationDays,
+    this.vibeTags,
+    this.budget,
+    this.budgetLevel,
+    this.notes,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -153,8 +176,35 @@ class PlanTripSummaryScreen extends StatelessWidget {
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 20),
+                    BlocListener<PlannerBloc, PlannerState>(
+                      listener: (context, state) {
+                        if (state is ItineraryGenerated) {
+                          context.push('/itinerary-result');
+                        } else if (state is PlannerError) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(state.message), backgroundColor: Colors.red),
+                          );
+                        }
+                      },
+                      child: const SizedBox.shrink(),
+                    ),
                     GestureDetector(
                       onTap: () {
+                        final dest = destination ?? 'Maasai Mara, Kenya';
+                        final days = durationDays ?? 10;
+                        context.read<PlannerBloc>().add(
+                          GenerateItineraryRequested(
+                            GeneratePlanRequest(
+                              destination: dest,
+                              durationDays: days,
+                              budget: budget,
+                              budgetLevel: budgetLevel,
+                              vibeTags: vibeTags ?? [],
+                              climatePref: climatePref,
+                              notes: notes,
+                            ),
+                          ),
+                        );
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: const Row(

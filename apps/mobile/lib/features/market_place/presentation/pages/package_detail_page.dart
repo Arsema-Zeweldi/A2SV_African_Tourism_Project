@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/features/packages/presentation/bloc/package_bloc.dart';
+import 'package:mobile/features/packages/presentation/bloc/package_event.dart';
+import 'package:mobile/features/packages/presentation/bloc/package_state.dart';
 
-class PackageDetailPage extends StatelessWidget {
+class PackageDetailPage extends StatefulWidget {
+  final String? packageId;
   final String title;
   final String location;
   final String price;
@@ -10,10 +15,12 @@ class PackageDetailPage extends StatelessWidget {
   final String groupType;
   final String category;
   final String description;
-  final String imagePath;
+  final String? imagePath;
+  final String? imageUrl;
 
   const PackageDetailPage({
     super.key,
+    this.packageId,
     required this.title,
     required this.location,
     required this.price,
@@ -23,71 +30,148 @@ class PackageDetailPage extends StatelessWidget {
     required this.groupType,
     required this.category,
     required this.description,
-    required this.imagePath,
+    this.imagePath,
+    this.imageUrl,
   });
+
+  @override
+  State<PackageDetailPage> createState() => _PackageDetailPageState();
+}
+
+class _PackageDetailPageState extends State<PackageDetailPage> {
+  @override
+  void initState() {
+    super.initState();
+    if (widget.packageId != null) {
+      context.read<PackageBloc>().add(LoadPackageDetail(widget.packageId!));
+    }
+  }
+
+  Widget _buildHeroImage(String? url, String? assetPath) {
+    if (url != null && url.isNotEmpty) {
+      return Image.network(
+        url,
+        fit: BoxFit.cover,
+        width: double.infinity,
+        errorBuilder: (_, __, ___) => Container(
+          color: Colors.grey[200],
+          child: const Icon(Icons.image, size: 64, color: Colors.grey),
+        ),
+      );
+    }
+    if (assetPath != null && assetPath.isNotEmpty) {
+      return Image.asset(assetPath, fit: BoxFit.cover, width: double.infinity);
+    }
+    return Container(
+      color: Colors.grey[200],
+      child: const Icon(Icons.image, size: 64, color: Colors.grey),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: Stack(
-        children: [
-          CustomScrollView(
-            slivers: [
-              SliverAppBar(
-                expandedHeight: 400,
-                pinned: true,
-                leading: const BackButton(color: Colors.white),
-                actions: [
-                  IconButton(
-                    onPressed: () {},
-                    icon: const Icon(Icons.share, color: Colors.white),
+      body: BlocBuilder<PackageBloc, PackageState>(
+        buildWhen: (prev, curr) => curr is PackageDetailLoaded || curr is PackageLoading || curr is PackageError,
+        builder: (context, state) {
+          // Use loaded detail data if available, otherwise fall back to constructor props
+          String displayTitle = widget.title;
+          String displayLocation = widget.location;
+          String displayPrice = widget.price;
+          String displayRating = widget.rating;
+          String displayReviewsCount = widget.reviewsCount;
+          String displayDuration = widget.duration;
+          String displayGroupType = widget.groupType;
+          String displayCategory = widget.category;
+          String displayDescription = widget.description;
+          String? displayImageUrl = widget.imageUrl;
+          String? displayImagePath = widget.imagePath;
+          List<_ItineraryDay> itineraryDays = [];
+
+          if (state is PackageDetailLoaded) {
+            final pkg = state.package;
+            displayTitle = pkg.title;
+            displayLocation = pkg.location.isNotEmpty ? pkg.location : pkg.country;
+            displayPrice = pkg.price.toStringAsFixed(0);
+            displayRating = pkg.ratingAvg.toStringAsFixed(1);
+            displayReviewsCount = pkg.reviewsCount.toString();
+            displayDuration = '${pkg.durationDays} Days';
+            displayGroupType = pkg.groupSize.isNotEmpty ? pkg.groupSize : 'All Ages';
+            displayCategory = pkg.category.isNotEmpty ? pkg.category : 'Travel';
+            displayDescription = pkg.description.isNotEmpty ? pkg.description : pkg.summary;
+            displayImageUrl = pkg.imageUrl;
+
+            // Build itinerary from real data
+            if (pkg.itinerary != null) {
+              final activitiesByDay = <int, List<String>>{};
+              for (final a in pkg.itinerary!.activities) {
+                activitiesByDay.putIfAbsent(a.dayNumber, () => []);
+                activitiesByDay[a.dayNumber]!.add(a.title + (a.description.isNotEmpty ? ': ${a.description}' : ''));
+              }
+              final sortedDays = activitiesByDay.keys.toList()..sort();
+              itineraryDays = sortedDays.map((d) => _ItineraryDay(
+                title: 'Day $d',
+                description: activitiesByDay[d]!.join('\n'),
+              )).toList();
+            }
+          }
+
+          return Stack(
+            children: [
+              CustomScrollView(
+                slivers: [
+                  SliverAppBar(
+                    expandedHeight: 400,
+                    pinned: true,
+                    leading: const BackButton(color: Colors.white),
+                    actions: [
+                      IconButton(
+                        onPressed: () {},
+                        icon: const Icon(Icons.share, color: Colors.white),
+                      ),
+                      IconButton(
+                        onPressed: () {},
+                        icon: const Icon(Icons.favorite_border, color: Colors.white),
+                      ),
+                    ],
+                    flexibleSpace: FlexibleSpaceBar(
+                      background: _buildHeroImage(displayImageUrl, displayImagePath),
+                    ),
                   ),
-                  IconButton(
-                    onPressed: () {},
-                    icon:
-                        const Icon(Icons.favorite_border, color: Colors.white),
+                  SliverToBoxAdapter(
+                    child: Container(
+                      padding: const EdgeInsets.all(20),
+                      color: Colors.white,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildHeaderSection(displayTitle, displayLocation, displayRating, displayReviewsCount),
+                          const SizedBox(height: 20),
+                          _buildHighlightsSection(displayDuration, displayGroupType, displayCategory),
+                          const SizedBox(height: 20),
+                          _buildDescriptionSection(displayDescription),
+                          const SizedBox(height: 20),
+                          _buildItinerarySection(itineraryDays),
+                          const SizedBox(height: 100),
+                        ],
+                      ),
+                    ),
                   ),
                 ],
-                flexibleSpace: FlexibleSpaceBar(
-                  background: Image.asset(
-                    imagePath,
-                    fit: BoxFit.cover,
-                    width: double.infinity,
-                  ),
-                ),
               ),
-              SliverToBoxAdapter(
-                child: Container(
-                  padding: const EdgeInsets.all(20),
-                  color: Colors.white,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildHeaderSection(),
-                      const SizedBox(height: 20),
-                      _buildHighlightsSection(),
-                      const SizedBox(height: 20),
-                      _buildDescriptionSection(),
-                      const SizedBox(height: 20),
-                      _buildItinerarySection(),
-                      const SizedBox(height: 100),
-                    ],
-                  ),
-                ),
+              Align(
+                alignment: Alignment.bottomCenter,
+                child: _buildBottomAction(context, displayPrice),
               ),
             ],
-          ),
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: _buildBottomAction(context),
-          ),
-        ],
+          );
+        },
       ),
     );
   }
 
-  Widget _buildHeaderSection() {
+  Widget _buildHeaderSection(String displayTitle, String displayLocation, String displayRating, String displayReviewsCount) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -95,33 +179,33 @@ class PackageDetailPage extends StatelessWidget {
           children: [
             const Icon(Icons.star, color: Colors.orange, size: 18),
             const SizedBox(width: 4),
-            Text("$rating ($reviewsCount Reviews)",
+            Text("$displayRating ($displayReviewsCount Reviews)",
                 style: const TextStyle(fontWeight: FontWeight.bold)),
           ],
         ),
         const SizedBox(height: 8),
         Text(
-          title,
+          displayTitle,
           style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
         Row(
           children: [
             Icon(Icons.location_on, color: Colors.grey[600], size: 16),
-            Text(" $location", style: const TextStyle(color: Colors.grey)),
+            Text(" $displayLocation", style: const TextStyle(color: Colors.grey)),
           ],
         ),
       ],
     );
   }
 
-  Widget _buildHighlightsSection() {
+  Widget _buildHighlightsSection(String displayDuration, String displayGroupType, String displayCategory) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        _highlightItem('⌚', "DURATION", duration),
-        _highlightItem('👥', "GROUP", groupType),
-        _highlightItem('⛰️', "TYPE", category),
+        _highlightItem('⌚', "DURATION", displayDuration),
+        _highlightItem('👥', "GROUP", displayGroupType),
+        _highlightItem('⛰️', "TYPE", displayCategory),
       ],
     );
   }
@@ -146,7 +230,7 @@ class PackageDetailPage extends StatelessWidget {
     );
   }
 
-  Widget _buildDescriptionSection() {
+  Widget _buildDescriptionSection(String displayDescription) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -154,7 +238,7 @@ class PackageDetailPage extends StatelessWidget {
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
         const SizedBox(height: 8),
         Text(
-          description,
+          displayDescription,
           style: const TextStyle(color: Colors.black87, height: 1.5),
         ),
         const SizedBox(height: 4),
@@ -165,7 +249,16 @@ class PackageDetailPage extends StatelessWidget {
     );
   }
 
-  Widget _buildItinerarySection() {
+  Widget _buildItinerarySection(List<_ItineraryDay> itineraryDays) {
+    // Fall back to placeholder if no real itinerary data
+    final days = itineraryDays.isNotEmpty
+        ? itineraryDays
+        : [
+            const _ItineraryDay(title: "Day 1: Arrival", description: "Welcome! Airport pickup and transfer to your hotel for orientation and dinner."),
+            const _ItineraryDay(title: "Day 2–3: Exploration", description: "Guided tours and activities based on your itinerary."),
+            const _ItineraryDay(title: "Day 4+: Adventure Continues", description: ""),
+          ];
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -179,13 +272,10 @@ class PackageDetailPage extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 16),
-        _buildItineraryDay("Day 1: Arrival in Arusha",
-            "Welcome to Tanzania. Airport pickup and transfer to your luxury boutique hotel for orientation and dinner."),
-        const SizedBox(height: 16),
-        _buildItineraryDay("Day 2–3: Central Serengeti",
-            "First game drive in Seronera Valley. Spot big cats and the heart of the resident wildlife."),
-        const SizedBox(height: 16),
-        _buildItineraryDay("Day 4–7: Following the Migration", ""),
+        ...days.map((day) => Padding(
+          padding: const EdgeInsets.only(bottom: 16),
+          child: _buildItineraryDay(day.title, day.description),
+        )),
         const SizedBox(height: 8),
         Container(
           padding: const EdgeInsets.all(12),
@@ -232,7 +322,7 @@ class PackageDetailPage extends StatelessWidget {
     );
   }
 
-  Widget _buildBottomAction(BuildContext context) {
+  Widget _buildBottomAction(BuildContext context, String displayPrice) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
       decoration: const BoxDecoration(
@@ -252,7 +342,7 @@ class PackageDetailPage extends StatelessWidget {
               children: [
                 const Text("TOTAL PRICE",
                     style: TextStyle(fontSize: 10, color: Colors.grey)),
-                Text("\$$price / person",
+                Text("\$$displayPrice / person",
                     style: const TextStyle(
                         fontSize: 20, fontWeight: FontWeight.bold)),
               ],
@@ -275,4 +365,10 @@ class PackageDetailPage extends StatelessWidget {
       ),
     );
   }
+}
+
+class _ItineraryDay {
+  final String title;
+  final String description;
+  const _ItineraryDay({required this.title, required this.description});
 }

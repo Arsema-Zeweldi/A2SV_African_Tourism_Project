@@ -1,47 +1,52 @@
-// hooks/useProfile.ts
-// ─────────────────────────────────────────────────────────────
-// Single source of truth for profile data & mutations.
-// To connect a real API:
-//   1. Replace MOCK_PROFILE with a useSWR / React Query call
-//   2. Replace saveChanges body with your PATCH /api/profile call
-//   3. Replace handleAvatarUpload with your POST /api/profile/avatar call
-// ─────────────────────────────────────────────────────────────
+"use client"
 
-"use client";
+import { useState, useEffect, useCallback } from "react"
+import {
+  fetchProfile,
+  fetchPreferences,
+  updateProfileFields,
+  updatePreferences,
+  uploadAvatar,
+} from "@/actions/profile_actions"
 
-import { useState } from "react";
+// ── Types ─────────────────────────────────────────────────────────
 
 export interface Profile {
-  fullName: string;
-  email: string;
-  bio: string;
-  avatarUrl: string | null;
-  defaultClimate: string;
-  preferredLanguage: string;
-  travelVibes: string[];
+  firstName: string
+  lastName: string
+  email: string
+  bio: string
+  country: string
+  avatarUrl: string | null
+  defaultClimate: string
+  preferredLanguage: string
+  travelVibes: string[]
 }
 
 export interface SelectOption {
-  value: string;
-  label: string;
+  value: string
+  label: string
 }
 
-// ── Static config (move to a constants file if preferred) ────
+// ── Static config ─────────────────────────────────────────────────
+// Values must match backend enum constraints exactly
 export const CLIMATE_OPTIONS: SelectOption[] = [
-  { value: "arid-desert",   label: "Arid & Desert" },
-  { value: "tropical",      label: "Tropical" },
-  { value: "mediterranean", label: "Mediterranean" },
-  { value: "savanna",       label: "Savanna" },
-  { value: "highland",      label: "Highland" },
-];
+  { value: "tropical",  label: "Tropical"  },
+  { value: "desert",    label: "Desert"    },
+  { value: "coastal",   label: "Coastal"   },
+  { value: "highland",  label: "Highland"  },
+  { value: "temperate", label: "Temperate" },
+  { value: "any",       label: "Any"       },
+]
 
 export const LANGUAGE_OPTIONS: SelectOption[] = [
-  { value: "english",    label: "English" },
-  { value: "french",     label: "French" },
-  { value: "swahili",    label: "Swahili" },
-  { value: "arabic",     label: "Arabic" },
+  { value: "english",    label: "English"    },
+  { value: "french",     label: "French"     },
+  { value: "swahili",    label: "Swahili"    },
+  { value: "arabic",     label: "Arabic"     },
   { value: "portuguese", label: "Portuguese" },
-];
+  { value: "any",        label: "Any"        },
+]
 
 export const ALL_VIBES = [
   "Safari",
@@ -53,61 +58,150 @@ export const ALL_VIBES = [
   "Eco Tourism",
   "Food & Culinary",
   "Wellness & Spa",
-];
+]
 
-// ── Mock seed data ────────────────────────────────────────────
-const MOCK_PROFILE: Profile = {
-  fullName: "Kwame Mensah",
-  email: "kwame.m@travelafrica.com",
-  bio: "Avid explorer of the Sahel and passionate about sustainable tourism in West Africa.",
+const EMPTY_PROFILE: Profile = {
+  firstName: "",
+  lastName: "",
+  email: "",
+  bio: "",
+  country: "",
   avatarUrl: null,
-  defaultClimate: "arid-desert",
+  defaultClimate: "any",
   preferredLanguage: "english",
-  travelVibes: ["Safari", "Backpacking", "Photography"],
-};
+  travelVibes: [],
+}
 
-// ── Hook ──────────────────────────────────────────────────────
+// ── Hook ──────────────────────────────────────────────────────────
+
 export function useProfile() {
-  // Replace with: const { data: profile, mutate } = useSWR<Profile>('/api/profile', fetcher);
-  const [profile, setProfile] = useState<Profile>(MOCK_PROFILE);
-  const [isSaving, setIsSaving]     = useState(false);
-  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [profile, setProfile] = useState<Profile>(EMPTY_PROFILE)
+  const [isLoading, setIsLoading]     = useState(true)
+  const [isSaving, setIsSaving]       = useState(false)
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false)
+  const [saveSuccess, setSaveSuccess] = useState(false)
+  const [error, setError]             = useState<string | null>(null)
 
-  const updateField = <K extends keyof Profile>(field: K, value: Profile[K]) =>
-    setProfile((prev) => ({ ...prev, [field]: value }));
+  // ── Initial fetch ──────────────────────────────────────────────
+  useEffect(() => {
+    let cancelled = false
 
-  const toggleVibe = (vibe: string) =>
+    async function load() {
+      setIsLoading(true)
+      setError(null)
+
+      const [profileRes, prefsRes] = await Promise.all([
+        fetchProfile(),
+        fetchPreferences(),
+      ])
+
+      if (cancelled) return
+
+      if (!profileRes.success) {
+        setError(profileRes.error)
+        setIsLoading(false)
+        return
+      }
+
+      const p = profileRes.data
+      const prefs = prefsRes.success ? prefsRes.data : {}
+
+      setProfile({
+        firstName: p.first_name ?? "",
+        lastName: p.last_name ?? "",
+        email: p.email ?? "",
+        bio: p.bio ?? "",
+        country: p.country ?? "",
+        avatarUrl: p.avatar_url ?? null,
+        defaultClimate: prefs.preferred_climate || "any",
+        preferredLanguage: prefs.preferred_language || "english",
+        // Travel vibes are stored in preferred_activities on the backend
+        travelVibes: prefs.preferred_activities ?? [],
+      })
+
+      setIsLoading(false)
+    }
+
+    load()
+    return () => { cancelled = true }
+  }, [])
+
+  // ── Field updater ──────────────────────────────────────────────
+  const updateField = useCallback(
+    <K extends keyof Profile>(field: K, value: Profile[K]) =>
+      setProfile((prev) => ({ ...prev, [field]: value })),
+    [],
+  )
+
+  // ── Toggle travel vibe ─────────────────────────────────────────
+  const toggleVibe = useCallback((vibe: string) =>
     setProfile((prev) => ({
       ...prev,
       travelVibes: prev.travelVibes.includes(vibe)
         ? prev.travelVibes.filter((v) => v !== vibe)
         : [...prev.travelVibes, vibe],
-    }));
+    })),
+    [],
+  )
 
-  const saveChanges = async () => {
-    setIsSaving(true);
-    setSaveSuccess(false);
-    try {
-      // Replace with:
-      // await fetch('/api/profile', {
-      //   method: 'PATCH',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(profile),
-      // });
-      await new Promise((r) => setTimeout(r, 900)); // simulate network
-      setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 2500);
-    } finally {
-      setIsSaving(false);
+  // ── Avatar upload (immediate on file pick) ─────────────────────
+  const handleAvatarUpload = useCallback(async (file: File) => {
+    setIsUploadingAvatar(true)
+    const fd = new FormData()
+    fd.append("avatar", file)
+    const result = await uploadAvatar(fd)
+    setIsUploadingAvatar(false)
+    if (result.success && result.data) {
+      setProfile((prev) => ({ ...prev, avatarUrl: result.data }))
     }
-  };
+    return result
+  }, [])
+
+  // ── Save all changes ───────────────────────────────────────────
+  const saveChanges = useCallback(async () => {
+    setIsSaving(true)
+    setSaveSuccess(false)
+    setError(null)
+
+    const [profileResult, prefsResult] = await Promise.all([
+      updateProfileFields({
+        first_name: profile.firstName,
+        last_name: profile.lastName,
+        country: profile.country,
+        bio: profile.bio,
+      }),
+      updatePreferences({
+        preferred_climate: profile.defaultClimate,
+        preferred_language: profile.preferredLanguage,
+        preferred_activities: profile.travelVibes,
+      }),
+    ])
+
+    setIsSaving(false)
+
+    if (!profileResult.success) {
+      setError(profileResult.error)
+      return
+    }
+    if (!prefsResult.success) {
+      setError(prefsResult.error)
+      return
+    }
+
+    setSaveSuccess(true)
+    setTimeout(() => setSaveSuccess(false), 2500)
+  }, [profile])
 
   return {
     profile,
+    isLoading,
+    isSaving,
+    isUploadingAvatar,
+    saveSuccess,
+    error,
     updateField,
     toggleVibe,
+    handleAvatarUpload,
     saveChanges,
-    isSaving,
-    saveSuccess,
-  };
+  }
 }

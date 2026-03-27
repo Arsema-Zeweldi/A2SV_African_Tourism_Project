@@ -1,23 +1,32 @@
-// profile/page.tsx
-// Composes sections; wires useProfile hook.
+"use client"
 
-"use client";
-
-import { Loader2, Check } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { useProfile } from "@/hooks/useProfile";
-import PersonalInfoSection from "@/components/profile/PersonalInfoSection";
-import TravelPreferencesSection from "@/components/profile/TravelPreferencesSection";
+import { Loader2, Check, AlertCircle } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { useProfile } from "@/hooks/useProfile"
+import PersonalInfoSection from "@/components/profile/PersonalInfoSection"
+import TravelPreferencesSection from "@/components/profile/TravelPreferencesSection"
 
 export default function ProfilePage() {
   const {
     profile,
+    isLoading,
+    isSaving,
+    isUploadingAvatar,
+    saveSuccess,
+    error,
     updateField,
     toggleVibe,
+    handleAvatarUpload,
     saveChanges,
-    isSaving,
-    saveSuccess,
-  } = useProfile();
+  } = useProfile()
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <Loader2 className="h-6 w-6 animate-spin text-orange-500" />
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
@@ -31,8 +40,21 @@ export default function ProfilePage() {
         </p>
       </div>
 
+      {/* Error banner */}
+      {error && (
+        <div className="flex items-center gap-2.5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <AlertCircle className="h-4 w-4 shrink-0" />
+          {error}
+        </div>
+      )}
+
       {/* Sections */}
-      <PersonalInfoSection profile={profile} updateField={updateField} />
+      <PersonalInfoSection
+        profile={profile}
+        isUploadingAvatar={isUploadingAvatar}
+        updateField={updateField}
+        onAvatarUpload={handleAvatarUpload}
+      />
       <TravelPreferencesSection
         profile={profile}
         updateField={updateField}
@@ -41,12 +63,17 @@ export default function ProfilePage() {
 
       {/* Actions */}
       <div className="flex justify-end gap-3">
-        <Button variant="outline" className="border-stone-200 text-stone-600">
+        <Button
+          variant="outline"
+          className="border-stone-200 text-stone-600"
+          onClick={() => window.location.reload()}
+          disabled={isSaving}
+        >
           Cancel
         </Button>
         <Button
           onClick={saveChanges}
-          disabled={isSaving}
+          disabled={isSaving || isUploadingAvatar}
           className={
             saveSuccess
               ? "bg-green-600 hover:bg-green-700 text-white"
@@ -72,11 +99,8 @@ export default function ProfilePage() {
       {/* Promo banner */}
       <div
         className="relative rounded-xl overflow-hidden min-h-28 flex items-end p-6"
-        style={{
-          background: "linear-gradient(135deg, #1c1917 50%, #292524)",
-        }}
+        style={{ background: "linear-gradient(135deg, #1c1917 50%, #292524)" }}
       >
-        {/* Background image overlay */}
         <div
           className="absolute inset-0 bg-cover bg-center opacity-20"
           style={{
@@ -92,5 +116,5 @@ export default function ProfilePage() {
         </div>
       </div>
     </div>
-  );
+  )
 }

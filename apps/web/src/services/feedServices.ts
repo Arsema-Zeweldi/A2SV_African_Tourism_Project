@@ -1,11 +1,15 @@
 import axios from 'axios'
 import { Comment as PostComment, Post, Package } from '@/types/feed'
 
+interface LikeResponse {
+  liked: boolean
+  message: string
+}
+
 const API_URL = 'http://localhost:8080/api/v1/posts'
 
-// Create an axios instance to avoid repeating configuration
 const api = axios.create({
-  withCredentials: true, // Crucial: This tells the browser to send cookies
+  withCredentials: true,
 })
 
 export const getAllPosts = async () => {
@@ -23,7 +27,7 @@ export const newPost = async (postInfo: Post) => {
   return response.data
 }
 
-export const toggleLike = async (postId: string): Promise<void> => {
+export const toggleLike = async (postId: string): Promise<LikeResponse> => {
   const response = await api.post(`${API_URL}/${postId}/like`, {})
   return response.data
 }

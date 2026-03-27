@@ -1,61 +1,90 @@
 # 🌍 Africa Tourism Platform - Backend
 
-Welcome to the backend repository for the Africa Tourism Platform. This is a Go-based modular monolith designed for scalability, security, and AI-driven travel intelligence.
+Welcome to the backend repository for the Africa Tourism Platform. This is a production-grade Go backend designed for intra-African travel intelligence, featuring AI-assisted planning, community-driven itineraries, and real-time travel alerts.
 
-## 🚀 Quick Start
+## 🚀 Quick Start (For Frontend & Team)
+
+The easiest way to run the entire backend stack (Go + Redis + PostgreSQL) is using Docker Compose.
 
 ### 1. Prerequisites
-- **Go**: 1.22+
-- **PostgreSQL**: 15+
+- **Docker & Docker Compose** installed.
 
-### 2. Database Setup (Local PostgreSQL)
-1. Ensure your local PostgreSQL service is running.
-2. Create a database named `africa_tourism`.
-3. Apply the initial schema:
-   ```bash
-    psql -U postgres -d africa_tourism -f migrations/001_init_schema.sql
-   ```
+### 2. Setup
+1.  **Navigate to directory**:
+    ```bash
+    cd backend
+    ```
+2.  **Environment Configuration**:
+    Create a `.env` file by copying the example:
+    ```bash
+    cp .env.example .env
+    ```
+3.  **Add Shared API Keys**:
+    Open the `.env` file and fill in the shared keys for:
+    - `GEMINI_API_KEY` (AI Planning)
+    - `CLOUDINARY_URL` (Image/Video Uploads)
 
-### 3. Environment Configuration
-Create a `.env` file in this directory (`backend/`) using your local credentials:
-
-```env
-SERVER_PORT=8080
-DATABASE_URL=postgresql://postgres:<password>@localhost:5432/africa_tourism?sslmode=disable
-JWT_SECRET=your_super_secret_jwt_key
-GEMINI_API_KEY=your_google_gemini_api_key
-```
-
-Notes:
-- `DATABASE_URL` is required for database connectivity.
-- `sslmode=disable` is typically used for local development.
-
-### 4. Running the Server
+### 3. Launch
+Run the following command to build and start all services:
 ```bash
-go mod tidy
-go run cmd/main.go
+docker-compose up --build -d
 ```
+*Note: The first run will automatically initialize the database and run all migrations.*
 
-## 🏗️ Project Structure
-- `cmd/main.go`: Application entry point.
-- `internal/api/`: Routing and HTTP handlers.
-    - `handlers/`: Request/Response logic.
-    - `middleware/`: Auth (JWT), Logging, etc.
-- `internal/models/`: GORM database models.
-- `internal/database/`: DB connection & auto-migrations.
-- `internal/config/`: Environment variable loader.
-- `migrations/`: Raw SQL schema definitions.
+### 4. Access API Documentation
+Once the server is running, you can access the interactive Swagger UI here:
+👉 **[http://localhost:8080/docs](http://localhost:8080/docs)**
 
-## 🔐 Authentication & Security
-The API uses **JWT (JSON Web Tokens)** for secure access.
-- **Register**: `POST /api/v1/auth/register`
-- **Login**: `POST /api/v1/auth/login` (returns JWT)
-- **Protected Routes**: Include `Authorization: Bearer <your_token>` in the header.
-
-## 🤝 Backend Team Guidelines
-- **Branch Strategy**: Work exclusively on the `backend` branch for features and fixes.
-- **Commit Messages**: Follow standard semantic commit messages (e.g., `feat: add discovery search logic`).
-- **Development**: Ensure all new endpoints are registered in `internal/api/router.go` and follow the established modular structure.
+> [!TIP]
+> **Data Formats**: The API supports both `application/json` and `multipart/form-data`. 
+> - Routes like `POST /packages`, `POST /posts`, and `PATCH /user/profile` accept **Multipart** to support direct image/video uploads.
+> - The documentation indicates supported formats for each endpoint.
 
 ---
-*Built with ❤️ for the A2SV African Tourism Project.*
+
+## 🛠️ Developer Setup (Manual)
+
+If you prefer to run the services individually without Docker:
+
+### 1. Prerequisites
+- **Go**: 1.23+
+- **PostgreSQL**: 16+
+- **Redis**: 6.x+
+
+### 2. Database Migrations
+We use versioned migrations. Ensure your `DATABASE_URL` is set in `.env` and run:
+```bash
+migrate -path migrations -database "$DATABASE_URL" up
+```
+*Warning: Running `go run cmd/migrate/main.go` will WIPE the entire database.*
+
+### 3. Running Locally
+```bash
+go mod tidy
+go run cmd/server/main.go
+```
+
+---
+
+## 🏗️ Production Features
+- **AI Planning**: Deterministic caching with Redis + Google Gemini integration.
+- **Media Storage**: Cloudinary integration for secure image (JPEG, PNG, WEBP, GIF) and video (MP4, WEBM) storage.
+- **Security**: RBAC middleware, Redis-backed rate limiting, JWT authentication, and Bcrypt encryption.
+- **Cross-Origin**: Secure, origin-validated CORS implementation.
+- **Resilience**: 30s Graceful shutdown, database connection pooling, and Redis-Noop fallback.
+
+## 🧪 Testing
+Run all unit tests:
+```bash
+go test ./...
+```
+
+## 📂 Architecture
+- `internal/api/`: Routing, Handlers, and Middlewares.
+- `internal/service/`: Business logic.
+- `internal/repository/`: Data access layer (GORM).
+- `internal/api/openapi.yaml`: OpenAPI 3.0 specification.
+- `docker-compose.yaml`: Full-stack orchestration (App, Redis, DB).
+
+---
+*Built for the A2SV African Tourism Project. Mobile-First • Africa-First.*

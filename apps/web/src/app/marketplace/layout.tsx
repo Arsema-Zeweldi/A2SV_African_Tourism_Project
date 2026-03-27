@@ -1,21 +1,17 @@
 import { MarketplaceProvider } from '../../context/marketplace-context'
-import Navbar from '../../components/navbar'
-import Footer from '../../components/footer'
+import Navbar from '@/components/navbar'
+import FooterSimple from '@/components/footerSimple'
 
-export default function RootLayout({
+export default function MarketplaceLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
-      <body className="font-sans antialiased">
-        <MarketplaceProvider>
-          <Navbar />
-          {children}
-          <Footer />
-        </MarketplaceProvider>
-      </body>
-    </html>
+    <>
+      <Navbar />
+      <MarketplaceProvider>{children}</MarketplaceProvider>
+      <FooterSimple />
+    </>
   )
 }

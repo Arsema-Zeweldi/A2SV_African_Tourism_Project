@@ -18,6 +18,7 @@ apps/web/.next/
 apps/web/out/
 apps/web/build/
 .next/
+.claude/
 
 # Mobile (Flutter)
 .dart_tool/

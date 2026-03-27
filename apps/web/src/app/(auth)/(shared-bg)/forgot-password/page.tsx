@@ -7,27 +7,64 @@ import Link from 'next/link'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
+import { forgotPassword } from '@/services/authService'
+import { toast } from 'sonner'
 
 const ForgotPasswordPage = () => {
+  const [email, setEmail] = useState('')
   const [isSending, setIsSending] = useState(false)
+  const [isSubmitted, setIsSubmitted] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (isSending) return
+
     setIsSending(true)
     try {
-      // simulate async send — replace with real API call
-      await new Promise((res) => setTimeout(res, 1400))
+      await forgotPassword(email)
+
+      setIsSubmitted(true)
+      toast.success('Reset link sent! Check your inbox.')
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : 'Something went wrong. Please try again.'
+
+      toast.error(errorMessage)
     } finally {
       setIsSending(false)
     }
+  }
+
+  // Optional: Success View
+  if (isSubmitted) {
+    return (
+      <LoginForgotLayout>
+        <div className="w-full max-w-125 mt-10 bg-white/70 rounded-2xl p-8 text-center shadow-2xl md:ml-[90%] lg:ml-[110%]">
+          <h2 className="text-3xl font-bold text-slate-900 mb-4">
+            Check your email
+          </h2>
+          <p className="text-slate-700 mb-8">
+            We've sent a password reset link to{' '}
+            <span className="font-bold">{email}</span>.
+          </p>
+          <Link
+            href="/login"
+            className="inline-flex items-center gap-2 text-orange-500 font-bold hover:underline"
+          >
+            <MdArrowBack /> Back to Login
+          </Link>
+        </div>
+      </LoginForgotLayout>
+    )
   }
 
   return (
     <LoginForgotLayout>
       <div
         className="w-full max-w-125 overflow-hidden
-         flex flex-col justify-center mt-10 bg-white/70 rounded-2xl items-center md:items-center md:ml-[90%] lg:ml-[110%]"
+          flex flex-col justify-center mt-10 bg-white/70 rounded-2xl items-center md:items-center md:ml-[90%] lg:ml-[110%]"
       >
         <div className="glass-effect rounded-lg p-8 md:p-12 w-full shadow-2xl">
           <div className="max-w-md w-full mx-auto">
@@ -40,6 +77,7 @@ const ForgotPasswordPage = () => {
                 password.
               </p>
             </div>
+
             <form onSubmit={handleSubmit} className="space-y-8">
               <div className="space-y-2">
                 <Label
@@ -58,38 +96,21 @@ const ForgotPasswordPage = () => {
                     placeholder="name@example.com"
                     required
                     type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="pl-12" // Add padding to make room for the icon
                   />
                 </div>
               </div>
+
               <Button
-                className={`w-full text-white rounded-full font-bold ${isSending ? 'opacity-70 cursor-not-allowed' : ''}`}
+                className={`w-full text-white bg-orange-500 hover:bg-orange-600 rounded-full font-bold h-12 flex items-center justify-center gap-2 ${isSending ? 'opacity-70 cursor-not-allowed' : ''}`}
                 type="submit"
                 disabled={isSending}
-                aria-busy={isSending}
               >
                 {isSending ? (
                   <>
-                    <svg
-                      className="animate-spin -ml-1 mr-2 h-5 w-5 text-white"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      aria-hidden="true"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      ></circle>
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                      ></path>
-                    </svg>
+                    <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                     <span>Sending</span>
                   </>
                 ) : (
@@ -100,9 +121,10 @@ const ForgotPasswordPage = () => {
                 )}
               </Button>
             </form>
+
             <div className="mt-8 text-center">
               <Link
-                className="inline-flex items-center gap-2 text-slate-800  font-bold hover:text-primary transition-colors group"
+                className="inline-flex items-center gap-2 text-slate-800 font-bold hover:text-orange-500 transition-colors group"
                 href="/login"
               >
                 <MdArrowBack />

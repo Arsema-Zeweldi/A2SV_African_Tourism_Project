@@ -34,7 +34,7 @@ const TrendingNow = () => {
           <a
             key={pkg.package_id}
             className="flex items-center gap-3 group"
-            href={`/packages/${pkg.package_id}`}
+            href={`/package-details/${pkg.package_id}`}
           >
             <div className="relative size-12 rounded-lg overflow-hidden shrink-0 group-hover:brightness-110 transition-all shadow-sm">
               <Image

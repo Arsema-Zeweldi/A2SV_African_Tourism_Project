@@ -187,3 +187,49 @@ export interface PackageResponse {
   updated_at: string
   itinerary?: ItineraryResponse
 }
+
+export interface PackagesFeedResponse {
+  data: PackageResponse[]
+  meta: {
+    page: number
+    page_size: number
+    total: number
+    sort_by?: string
+    order?: string
+  }
+}
+
+export interface PackageReviewResponse {
+  review_id: string
+  package_id: string
+  user_id: string
+  rating: number
+  comment: string
+  created_at: string
+}
+
+export interface PackageReviewsResponse {
+  data: PackageReviewResponse[]
+  meta: {
+    total: number
+    page: number
+    page_size: number
+  }
+}
+
+export interface PackageChatResponse {
+  chat_id: string
+  package_id: string
+  user_id: string
+  message: string
+  created_at: string
+}
+
+export interface PackageChatHistoryResponse {
+  data: PackageChatResponse[]
+  meta: {
+    total: number
+    page: number
+    page_size: number
+  }
+}

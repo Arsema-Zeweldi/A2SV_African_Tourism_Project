@@ -237,9 +237,8 @@ func sendVerificationEmail(h *AppHandler, userID uuid.UUID, userEmail, firstName
 		return
 	}
 	backendURL := "http://localhost:8080"
-	if h.Cfg.FrontendURL != "" {
-		// Use backend URL for verification endpoint
-		backendURL = "http://localhost:8080"
+	if h.Cfg != nil && h.Cfg.BackendURL != "" {
+		backendURL = h.Cfg.BackendURL
 	}
 	verifyURL := fmt.Sprintf("%s/api/v1/auth/verify-email?token=%s", backendURL, tok.Token)
 	svc := email.NewService(h.Cfg.BrevoAPIURL, h.Cfg.BrevoAPIKey, h.Cfg.EmailFrom, h.Cfg.EmailFromName)

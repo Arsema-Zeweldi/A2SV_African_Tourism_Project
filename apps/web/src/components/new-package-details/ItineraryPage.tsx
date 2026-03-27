@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import type { Activity, ItineraryData } from "@/types/new-package"
 import { useToast } from "@/hooks/useToast"
 import { syncAddActivity, syncDeleteActivity } from "@/actions/itinerary_actions"
@@ -28,6 +29,7 @@ export function ItineraryPage({ data, itineraryId }: ItineraryPageProps) {
   const [addActivityDayId, setAddActivityDayId] = useState<string | null>(null)
   const [expandedActivity, setExpandedActivity] = useState<Activity | null>(null)
   const [showPublishModal, setShowPublishModal] = useState(false)
+  const router = useRouter()
   const { toasts, show: toast, dismiss } = useToast()
 
   const totalActivities = days.reduce((sum, d) => sum + d.activities.length, 0)
@@ -106,9 +108,10 @@ export function ItineraryPage({ data, itineraryId }: ItineraryPageProps) {
     setIsSaving(true)
     try {
       // The itinerary is already persisted on the backend from the plan-trip flow.
-      // Local adds/deletes are synced in real-time, so saving here is a confirmation.
-      await new Promise((r) => setTimeout(r, 500))
-      toast("Trip saved successfully!", "success")
+      // Local adds/deletes are synced in real-time. "Save" confirms and navigates.
+      await new Promise((r) => setTimeout(r, 400))
+      toast("Trip saved! Taking you to My Trips…", "success")
+      setTimeout(() => router.push("/my-trips"), 1000)
     } finally {
       setIsSaving(false)
     }

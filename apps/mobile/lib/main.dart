@@ -1,10 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/constants/app_colors.dart';
-import 'package:mobile/features/generated_itinerary/presentation/pages/itinerary_result_screen.dart';
-import 'package:mobile/features/post/presentation/pages/new_post_screen.dart';
-import 'package:mobile/main_screen.dart';
+import 'package:mobile/core/router/app_router.dart';
+import 'package:mobile/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:mobile/features/auth/presentation/bloc/auth_event.dart';
+import 'package:mobile/injection_container.dart' as di;
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize all dependencies (SharedPreferences, ApiClient, BLoC, etc.)
+  await di.init();
+
   runApp(const MyApp());
 }
 
@@ -13,18 +20,27 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      routes: {
-        '/new-post': (context) => const NewPostScreen(),
-        '/itinerary-result-screen': (context) => const ItineraryResultScreen(),
-      },
-      theme: ThemeData(
-        // scaffoldBackgroundColor: const Color(0xFFF8F7F5),
-        scaffoldBackgroundColor: AppColors.scaffoldBackground,
-        // scaffoldBackgroundColor: Colors.blue,
+    // Create the AuthBloc from the DI container and immediately check
+    // if the user has an existing session (cached token/user).
+    final authBloc = di.sl<AuthBloc>()..add(CheckAuthStatusRequested());
+
+    return BlocProvider<AuthBloc>(
+      create: (_) => authBloc,
+      child: Builder(
+        builder: (context) {
+          // GoRouter is created here so it can reference the AuthBloc
+          // for redirect logic (e.g., send unauthenticated users to login).
+          final router = createRouter(context.read<AuthBloc>());
+
+          return MaterialApp.router(
+            routerConfig: router,
+            theme: ThemeData(
+              scaffoldBackgroundColor: AppColors.scaffoldBackground,
+            ),
+            debugShowCheckedModeBanner: false,
+          );
+        },
       ),
-      home: const MainScreen(),
-      debugShowCheckedModeBanner: false,
     );
   }
 }

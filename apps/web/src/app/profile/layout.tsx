@@ -10,13 +10,18 @@ export default function ProfileLayout({
   children: React.ReactNode
 }) {
   return (
-    <div className="flex min-h-screen flex-col bg-stone-100">
+    <div className="flex h-screen flex-col overflow-hidden bg-stone-100">
       <Navbar />
-      <div className="flex flex-1">
+
+      <div className="flex flex-1 overflow-hidden">
         <Sidebar />
-        <main className="flex-1 min-w-0 px-8 py-8">{children}</main>
+
+        <main className="flex-1 overflow-y-auto min-w-0 px-8 py-8 bg-stone-50">
+          {children}
+
+          <FooterSimple />
+        </main>
       </div>
-      <FooterSimple />
     </div>
   )
 }

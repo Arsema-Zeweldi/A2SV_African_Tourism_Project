@@ -1,23 +1,53 @@
 import { Card, CardContent } from "@/components/ui/card"
-import { tripStats } from "@/lib/my-trips-data"
-import { CalendarRange, Gem, MapPinned } from "lucide-react"
+import { CalendarRange, Moon, MapPinned } from "lucide-react"
 
-const statIcons = {
-  map: MapPinned,
-  calendar: CalendarRange,
-  gem: Gem,
+interface TripsOverviewProps {
+  total: number
+  totalDays: number
+  totalNights: number
 }
 
 const toneStyles: Record<string, string> = {
-  neutral: "bg-[#e8f2ff] text-[#3b82f6]", // Changed to blue to match design
+  neutral: "bg-[#e8f2ff] text-[#3b82f6]",
   orange: "bg-[#fff3e8] text-[#ec6d13]",
   green: "bg-[#ecfaf0] text-[#3aa76d]",
 }
 
-export function TripsOverview() {
+export function TripsOverview({
+  total,
+  totalDays,
+  totalNights,
+}: TripsOverviewProps) {
+  const stats = [
+    {
+      id: "trips",
+      label: "Saved Itineraries",
+      value: String(total),
+      suffix: total === 1 ? "Adventure" : "Adventures",
+      Icon: MapPinned,
+      tone: "neutral",
+    },
+    {
+      id: "days",
+      label: "Days Planned",
+      value: String(totalDays),
+      suffix: "Days",
+      Icon: CalendarRange,
+      tone: "orange",
+    },
+    {
+      id: "nights",
+      label: "Nights Planned",
+      value: String(totalNights),
+      suffix: "Nights",
+      Icon: Moon,
+      tone: "green",
+    },
+  ]
+
   return (
     <div className="grid gap-4 md:grid-cols-3">
-      {tripStats.map((stat) => (
+      {stats.map((stat) => (
         <Card
           key={stat.id}
           className="rounded-[28px] border-0 bg-white shadow-[0_20px_40px_rgba(48,35,11,0.02)]"
@@ -27,10 +57,7 @@ export function TripsOverview() {
               <div
                 className={`flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-[14px] ${toneStyles[stat.tone]}`}
               >
-                {(() => {
-                  const Icon = statIcons[stat.icon as keyof typeof statIcons]
-                  return <Icon className="h-6 w-6 stroke-[1.5]" />
-                })()}
+                <stat.Icon className="h-6 w-6 stroke-[1.5]" />
               </div>
               <div className="flex flex-col items-start min-w-0">
                 <p className="text-[12px] font-medium text-[#8d98a6] mb-1">

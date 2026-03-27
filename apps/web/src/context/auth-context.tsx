@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import {
   createContext,
@@ -7,9 +7,11 @@ import {
   useEffect,
   useCallback,
   type ReactNode,
-} from "react"
-import { useRouter } from "next/navigation"
-import { clearAuthCookie } from "@/actions/auth_actions"
+} from 'react'
+import { useRouter } from 'next/navigation'
+import { clearAuthCookie } from '@/actions/auth_actions'
+import { usePathname } from 'next/navigation'
+import { logout as authLogout } from '@/services/authService'
 
 interface AuthContextValue {
   isAuthenticated: boolean
@@ -23,26 +25,28 @@ const AuthContext = createContext<AuthContextValue>({
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter()
+  const pathname = usePathname()
   const [isAuthenticated, setIsAuthenticated] = useState(false)
 
   useEffect(() => {
-    // Read the non-httpOnly flag cookie set during login
-    const hasAuth = document.cookie.includes("auth_status=1")
-    setIsAuthenticated(hasAuth)
-  }, [])
+    const checkAuth = () => {
+      const hasStatusCookie = document.cookie.includes('auth_status=1')
+      setIsAuthenticated(hasStatusCookie)
+    }
+
+    checkAuth()
+  }, [pathname])
 
   const logout = useCallback(async () => {
-    // Clear client-side token
-    localStorage.removeItem("user_token")
+    document.cookie = 'auth_status=; path=/; max-age=0; SameSite=Lax;'
 
-    // Clear the non-httpOnly flag cookie
-    document.cookie = "auth_status=; path=/; max-age=0"
+    await authLogout()
 
-    // Clear the httpOnly cookie via server action
     await clearAuthCookie()
 
     setIsAuthenticated(false)
-    router.push("/")
+    router.refresh()
+    router.push('/')
   }, [router])
 
   return (

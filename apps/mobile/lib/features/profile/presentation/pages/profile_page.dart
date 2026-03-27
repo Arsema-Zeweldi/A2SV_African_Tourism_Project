@@ -4,10 +4,24 @@ import 'package:go_router/go_router.dart';
 import 'package:mobile/core/widgets/logo_header.dart';
 import 'package:mobile/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:mobile/features/auth/presentation/bloc/auth_event.dart';
+import 'package:mobile/features/profile/presentation/bloc/profile_bloc.dart';
+import 'package:mobile/features/profile/presentation/bloc/profile_event.dart';
+import 'package:mobile/features/profile/presentation/bloc/profile_state.dart';
 import 'package:mobile/features/profile/presentation/widgets/profile_status_card.dart';
 
-class ProfilePage extends StatelessWidget {
+class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
+
+  @override
+  State<ProfilePage> createState() => _ProfilePageState();
+}
+
+class _ProfilePageState extends State<ProfilePage> {
+  @override
+  void initState() {
+    super.initState();
+    context.read<ProfileBloc>().add(const LoadProfile());
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -20,40 +34,70 @@ class ProfilePage extends StatelessWidget {
               child: LogoHeader(),
             ),
           ),
-          
+
           _buildCustomAppBar(context),
-          
+
           Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                children: [
-                  const CircleAvatar(
-                      radius: 60, backgroundColor: Color(0xFFF4C2C2)),
-                  const SizedBox(height: 16),
-                  const Text("Amara Okafor",
-                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-                  const Text("Nairobi, Kenya",
-                      style: TextStyle(color: Colors.orange)),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
-                    child: Text(
-                      "Safari enthusiast & photographer. Documenting the beauty of the Serengeti and beyond. 🦁📸",
-                      textAlign: TextAlign.center,
-                      style: TextStyle(color: Colors.grey[600]),
-                    ),
+            child: BlocBuilder<ProfileBloc, ProfileState>(
+              builder: (context, state) {
+                String fullName = 'Amara Okafor';
+                String country = 'Nairobi, Kenya';
+                String bio = "Safari enthusiast & photographer. Documenting the beauty of the Serengeti and beyond. 🦁📸";
+                String? avatarUrl;
+
+                if (state is ProfileLoading) {
+                  return const Center(child: CircularProgressIndicator(color: Colors.orange));
+                }
+
+                if (state is ProfileLoaded) {
+                  fullName = state.profile.fullName.isNotEmpty ? state.profile.fullName : fullName;
+                  country = state.profile.country.isNotEmpty ? state.profile.country : country;
+                  bio = state.profile.bio.isNotEmpty ? state.profile.bio : bio;
+                  avatarUrl = state.profile.avatarUrl.isNotEmpty ? state.profile.avatarUrl : null;
+                }
+
+                if (state is ProfileUpdated) {
+                  fullName = state.profile.fullName.isNotEmpty ? state.profile.fullName : fullName;
+                  country = state.profile.country.isNotEmpty ? state.profile.country : country;
+                  bio = state.profile.bio.isNotEmpty ? state.profile.bio : bio;
+                  avatarUrl = state.profile.avatarUrl.isNotEmpty ? state.profile.avatarUrl : null;
+                }
+
+                return SingleChildScrollView(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    children: [
+                      CircleAvatar(
+                        radius: 60,
+                        backgroundColor: const Color(0xFFF4C2C2),
+                        backgroundImage: avatarUrl != null ? NetworkImage(avatarUrl) : null,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(fullName,
+                          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                      Text(country,
+                          style: const TextStyle(color: Colors.orange)),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+                        child: Text(
+                          bio,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: Colors.grey[600]),
+                        ),
+                      ),
+                      const SizedBox(height: 32),
+                      const SummaryCard(trips: "24", posts: "142"),
+                      const SizedBox(height: 24),
+                      _buildEditButton(context),
+                      const SizedBox(height: 12),
+                      _buildLogoutButton(context),
+                      const SizedBox(height: 24),
+                      _buildTabBar(),
+                      _buildPostsGrid(),
+                    ],
                   ),
-                  const SizedBox(height: 32),
-                  const SummaryCard(trips: "24", posts: "142"),
-                  const SizedBox(height: 24),
-                  _buildEditButton(context),
-                  const SizedBox(height: 12),
-                  _buildLogoutButton(context),
-                  const SizedBox(height: 24),
-                  _buildTabBar(),
-                  _buildPostsGrid(),
-                ],
-              ),
+                );
+              },
             ),
           ),
         ],

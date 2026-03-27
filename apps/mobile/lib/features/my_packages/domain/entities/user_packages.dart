@@ -2,12 +2,13 @@ enum PackageStatus { upcoming, completed }
 
 class UserPackage {
   final String title;
-  final String duration; 
-  final String dateRange; 
+  final String duration;
+  final String dateRange;
   final String imagePath;
   final PackageStatus status;
   final bool isPublic;
-  final double? rating; 
+  final double? rating;
+  final String? imageUrl;
 
   UserPackage({
     required this.title,
@@ -17,5 +18,6 @@ class UserPackage {
     required this.status,
     required this.isPublic,
     this.rating,
+    this.imageUrl,
   });
 }

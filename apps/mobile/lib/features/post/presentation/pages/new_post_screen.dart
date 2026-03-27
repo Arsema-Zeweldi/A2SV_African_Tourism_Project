@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/constants/app_colors.dart';
 import 'package:mobile/core/widgets/logo_header.dart';
+import 'package:mobile/features/feed/presentation/bloc/feed_bloc.dart';
+import 'package:mobile/features/feed/presentation/bloc/feed_event.dart';
+import 'package:mobile/features/feed/presentation/bloc/feed_state.dart';
 import 'package:mobile/features/post/presentation/widgets/post_description_field.dart';
 import 'package:mobile/features/post/presentation/widgets/post_toolbar.dart';
 import 'package:mobile/features/post/presentation/widgets/trip_selector_item.dart';
@@ -120,20 +124,39 @@ class _NewPostScreenState extends State<NewPostScreen> {
               fontSize: 18,
             ),
           ),
-          ElevatedButton(
-            onPressed: () {},
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.orange,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
+          BlocListener<FeedBloc, FeedState>(
+            listener: (context, state) {
+              if (state is PostCreated) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Post created!'), backgroundColor: Colors.green),
+                );
+                context.read<FeedBloc>().add(const LoadPosts());
+                context.pop();
+              } else if (state is FeedError) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(state.message), backgroundColor: Colors.red),
+                );
+              }
+            },
+            child: ElevatedButton(
+              onPressed: () {
+                if (_controller.text.trim().isNotEmpty) {
+                  context.read<FeedBloc>().add(CreateNewPost(content: _controller.text.trim()));
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.orange,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
               ),
-            ),
-            child: const Text(
-              "Post",
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
+              child: const Text(
+                "Post",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ),

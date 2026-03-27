@@ -4,6 +4,13 @@ import 'package:mobile/core/constants/app_colors.dart';
 import 'package:mobile/core/router/app_router.dart';
 import 'package:mobile/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:mobile/features/auth/presentation/bloc/auth_event.dart';
+import 'package:mobile/features/packages/presentation/bloc/package_bloc.dart';
+import 'package:mobile/features/packages/presentation/bloc/package_event.dart';
+import 'package:mobile/features/feed/presentation/bloc/feed_bloc.dart';
+import 'package:mobile/features/feed/presentation/bloc/feed_event.dart';
+import 'package:mobile/features/planner/presentation/bloc/planner_bloc.dart';
+import 'package:mobile/features/profile/presentation/bloc/profile_bloc.dart';
+import 'package:mobile/features/profile/presentation/bloc/profile_event.dart';
 import 'package:mobile/injection_container.dart' as di;
 
 void main() async {
@@ -24,8 +31,22 @@ class MyApp extends StatelessWidget {
     // if the user has an existing session (cached token/user).
     final authBloc = di.sl<AuthBloc>()..add(CheckAuthStatusRequested());
 
-    return BlocProvider<AuthBloc>(
-      create: (_) => authBloc,
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider<AuthBloc>(create: (_) => authBloc),
+        BlocProvider<PackageBloc>(
+          create: (_) => di.sl<PackageBloc>()..add(const LoadPackagesFeed(sortBy: 'rating_avg', order: 'desc')),
+        ),
+        BlocProvider<FeedBloc>(
+          create: (_) => di.sl<FeedBloc>()..add(const LoadPosts()),
+        ),
+        BlocProvider<PlannerBloc>(
+          create: (_) => di.sl<PlannerBloc>(),
+        ),
+        BlocProvider<ProfileBloc>(
+          create: (_) => di.sl<ProfileBloc>()..add(const LoadProfile()),
+        ),
+      ],
       child: Builder(
         builder: (context) {
           // GoRouter is created here so it can reference the AuthBloc

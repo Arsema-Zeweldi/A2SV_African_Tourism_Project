@@ -1,49 +1,8 @@
 "use server"
 
 import { apiFetch } from "@/lib/api"
-import type {
-  ActionResult,
-  ItineraryActivityResponse,
-  ItineraryListResponse,
-} from "@/types/api"
+import type { ActionResult, ItineraryActivityResponse } from "@/types/api"
 import type { Activity } from "@/types/new-package"
-
-/**
- * Fetches all itineraries belonging to the authenticated user.
- * Route: GET /itineraries
- */
-export async function fetchUserItineraries(): Promise<
-  ActionResult<ItineraryListResponse>
-> {
-  try {
-    const data = await apiFetch<ItineraryListResponse>("/itineraries")
-    return { success: true, data }
-  } catch (e) {
-    return {
-      success: false,
-      error:
-        e instanceof Error ? e.message : "Failed to fetch itineraries",
-    }
-  }
-}
-
-/**
- * Permanently deletes an itinerary.
- * Route: DELETE /itineraries/:id
- */
-export async function deleteItinerary(
-  id: string,
-): Promise<ActionResult<null>> {
-  try {
-    await apiFetch(`/itineraries/${id}`, { method: "DELETE" })
-    return { success: true, data: null }
-  } catch (e) {
-    return {
-      success: false,
-      error: e instanceof Error ? e.message : "Failed to delete itinerary",
-    }
-  }
-}
 
 /** Maps frontend display types → backend accepted types */
 const FRONTEND_TO_BACKEND_TYPE: Record<string, string> = {

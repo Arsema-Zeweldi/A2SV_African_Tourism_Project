@@ -30,7 +30,6 @@ const PostCard = ({ post }: PostCardProps) => {
 
   const [newCommentText, setNewCommentText] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isLikePending, setIsLikePending] = useState(false)
 
   const handleAddComment = async () => {
     if (!newCommentText.trim() || !post.post_id) return
@@ -113,7 +112,7 @@ const PostCard = ({ post }: PostCardProps) => {
   }
 
   const handleToggleLike = async () => {
-    if (!post.post_id || isLikePending) return
+    if (!post.post_id) return
 
     const previousIsLiked = isLiked
     const previousLikesCount = likesCount
@@ -123,19 +122,14 @@ const PostCard = ({ post }: PostCardProps) => {
       const currentCount = prev ?? 0
       return isLiked ? currentCount - 1 : currentCount + 1
     })
-    setIsLikePending(true)
 
     try {
-      const response = await toggleLike(post.post_id)
-
-      setIsLiked(response.liked)
+      await toggleLike(post.post_id)
     } catch (error) {
       console.error('Failed to sync like:', error)
       setIsLiked(previousIsLiked)
       setLikesCount(previousLikesCount)
       alert('Could not update like. Please check your connection.')
-    } finally {
-      setIsLikePending(false)
     }
   }
 
@@ -289,7 +283,7 @@ const PostCard = ({ post }: PostCardProps) => {
                     >
                       <div className="relative size-8 shrink-0 rounded-full overflow-hidden bg-gray-200">
                         <Image
-                          src={comment.user_avatar || '/images/user-icon.png'}
+                          src={comment.user_avatar || '/default-avatar.png'}
                           alt={`${comment.user_name}'s avatar`}
                           fill
                           className="object-cover"

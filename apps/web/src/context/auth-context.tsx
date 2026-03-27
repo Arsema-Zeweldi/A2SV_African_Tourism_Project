@@ -25,8 +25,8 @@ const AuthContext = createContext<AuthContextValue>({
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter()
-  const pathname = usePathname()
   const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const pathname = usePathname()
 
   useEffect(() => {
     const checkAuth = () => {

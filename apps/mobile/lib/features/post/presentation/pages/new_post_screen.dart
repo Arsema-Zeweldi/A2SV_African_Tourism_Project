@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mobile/core/constants/app_colors.dart';
 import 'package:mobile/core/widgets/logo_header.dart';
 import 'package:mobile/features/post/presentation/widgets/post_description_field.dart';
@@ -105,7 +106,7 @@ class _NewPostScreenState extends State<NewPostScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => context.pop(),
             child: const Text(
               "Cancel",
               style: TextStyle(color: Colors.blueGrey, fontSize: 16),

@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mobile/core/widgets/logo_header.dart';
+import 'package:mobile/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:mobile/features/auth/presentation/bloc/auth_event.dart';
 import 'package:mobile/features/profile/presentation/widgets/profile_status_card.dart';
-import 'edit_profile_screen.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
@@ -44,6 +47,8 @@ class ProfilePage extends StatelessWidget {
                   const SummaryCard(trips: "24", posts: "142"),
                   const SizedBox(height: 24),
                   _buildEditButton(context),
+                  const SizedBox(height: 12),
+                  _buildLogoutButton(context),
                   const SizedBox(height: 24),
                   _buildTabBar(),
                   _buildPostsGrid(),
@@ -66,7 +71,7 @@ class ProfilePage extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.arrow_back_ios_new,
                 color: Colors.black, size: 20),
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => context.pop(),
           ),
           const Text(
             "Profile",
@@ -88,13 +93,51 @@ class ProfilePage extends StatelessWidget {
       height: 50,
       
       child: ElevatedButton.icon(
-        onPressed: () => Navigator.push(context,
-            MaterialPageRoute(builder: (_) => const EditProfileScreen())),
+        onPressed: () => context.push('/edit-profile'),
         icon: const Icon(Icons.edit, size: 18),
         label: const Text("Edit Profile"),
         style: OutlinedButton.styleFrom(
           foregroundColor: Colors.white,
           backgroundColor: Colors.orange,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLogoutButton(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      height: 50,
+      child: OutlinedButton.icon(
+        onPressed: () {
+          showDialog(
+            context: context,
+            builder: (dialogContext) => AlertDialog(
+              title: const Text('Logout'),
+              content: const Text('Are you sure you want to logout?'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(dialogContext);
+                    context.read<AuthBloc>().add(LogoutRequested());
+                  },
+                  child: const Text('Logout', style: TextStyle(color: Colors.red)),
+                ),
+              ],
+            ),
+          );
+        },
+        icon: const Icon(Icons.logout, size: 18),
+        label: const Text("Logout"),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: Colors.red,
+          side: const BorderSide(color: Colors.red),
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
         ),

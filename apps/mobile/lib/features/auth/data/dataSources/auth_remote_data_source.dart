@@ -70,6 +70,13 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         },
       );
 
+      // BUG FIX: Save the JWT token from the response so subsequent
+      // API calls include it in the Authorization header.
+      final token = response.data['token'];
+      if (token != null) {
+        await apiClient.sharedPreferences.setString('AUTH_TOKEN', token);
+      }
+
       if (response.data['user'] != null) {
         return UserModel.fromJson(response.data['user']);
       } else if (response.data['data'] != null) {
@@ -160,11 +167,17 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       final response = await apiClient.post(
         ApiEndpoints.signUp,
         data: {
-          'fullName': fullName,
+          'name': fullName, // Backend expects 'name', not 'fullName'
           'email': email,
           'password': password,
         },
       );
+
+      // BUG FIX: Save the JWT token so the user is authenticated immediately.
+      final token = response.data['token'];
+      if (token != null) {
+        await apiClient.sharedPreferences.setString('AUTH_TOKEN', token);
+      }
 
       if (response.data['user'] != null) {
         return UserModel.fromJson(response.data['user']);

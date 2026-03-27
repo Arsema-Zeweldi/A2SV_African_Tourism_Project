@@ -8,7 +8,7 @@ class ApiInterceptor extends Interceptor  {
 
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
-    final token = sharedPreferences.getString('auth_token');
+    final token = sharedPreferences.getString('AUTH_TOKEN');
     if (token != null) {
       options.headers['Authorization'] = 'Bearer $token';
     }

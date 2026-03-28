@@ -1,6 +1,7 @@
 import React from "react";
+import Link from "next/link";
 import { Clock3, Heart } from "lucide-react";
-import type { PackageCard as PackageCardType } from "@/app/my-packages/data";
+import type { PackageCard as MyPackageCard } from "@/types/my-packages";
 
 const statusClasses = {
   success: "bg-[#2CC75A] text-white",
@@ -18,7 +19,7 @@ const actionClasses = {
 };
 
 interface PackageCardProps {
-  item: PackageCardType;
+  item: MyPackageCard;
 }
 
 const PackageCard = ({ item }: PackageCardProps) => {
@@ -106,12 +107,13 @@ const PackageCard = ({ item }: PackageCardProps) => {
 
         <div className={`grid gap-3 ${item.actions.length > 1 ? "grid-cols-2" : "grid-cols-1"}`}>
           {item.actions.map((action) => (
-            <button
+            <Link
               key={action.label}
+              href={action.href ?? "#"}
               className={`h-11 rounded-xl px-2 text-[14px] font-semibold transition-colors ${actionClasses[action.variant]}`}
             >
               {action.label}
-            </button>
+            </Link>
           ))}
         </div>
       </div>

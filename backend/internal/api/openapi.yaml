@@ -5,6 +5,9 @@ info:
   description: API documentation for the Africa Tourism Platform backend.
 servers:
   - url: http://localhost:8080
+    description: Development server
+  - url: https://africa-tourism-backend.onrender.com
+    description: Production server
 tags:
   - name: Health
     description: Service health and readiness

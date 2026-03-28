@@ -2,18 +2,55 @@ import 'package:flutter/material.dart';
 import 'package:mobile/features/market_place/presentation/pages/package_detail_page.dart';
 
 class MarketPackageCard extends StatelessWidget {
-  final String title, price, image, rating, duration;
+  final String? packageId;
+  final String title, price, rating, duration;
+  final String? image;
+  final String? imageUrl;
   final String? label;
+  final String? location;
+  final String? description;
+  final String? reviewsCount;
+  final String? groupType;
+  final String? category;
 
   const MarketPackageCard({
     super.key,
+    this.packageId,
     required this.title,
     required this.price,
-    required this.image,
+    this.image,
+    this.imageUrl,
     required this.rating,
     required this.duration,
     this.label,
+    this.location,
+    this.description,
+    this.reviewsCount,
+    this.groupType,
+    this.category,
   });
+
+  Widget _buildCardImage() {
+    if (imageUrl != null && imageUrl!.isNotEmpty) {
+      return Image.network(
+        imageUrl!,
+        height: 160,
+        width: double.infinity,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => Container(
+          height: 160,
+          color: Colors.grey[200],
+          child: const Icon(Icons.image, size: 32, color: Colors.grey),
+        ),
+      );
+    }
+    return Image.asset(
+      image ?? 'assets/images/top_rated1.png',
+      height: 160,
+      width: double.infinity,
+      fit: BoxFit.cover,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -22,17 +59,19 @@ class MarketPackageCard extends StatelessWidget {
         Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => const PackageDetailPage(
-                title: "Serengeti Great Migration Safari",
-                location: "Serengeti National Park, Tanzania",
-                price: "2,450",
-                rating: "4.9",
-                reviewsCount: "124",
-                duration: "7 Days",
-                groupType: "EVERYONE",
-                category: "SAFARI",
-                imagePath: 'assets/images/top_rated3.png',
-                description: "Witness the earth's greatest spectacle...",
+              builder: (context) => PackageDetailPage(
+                packageId: packageId,
+                title: title,
+                location: location ?? '',
+                price: price,
+                rating: rating,
+                reviewsCount: reviewsCount ?? '0',
+                duration: duration,
+                groupType: groupType ?? 'All Ages',
+                category: category ?? 'Travel',
+                imageUrl: imageUrl,
+                imagePath: image,
+                description: description ?? '',
               ),
             ));
       },
@@ -43,8 +82,7 @@ class MarketPackageCard extends StatelessWidget {
             children: [
               ClipRRect(
                 borderRadius: BorderRadius.circular(25),
-                child: Image.asset(image,
-                    height: 160, width: double.infinity, fit: BoxFit.cover),
+                child: _buildCardImage(),
               ),
               const Positioned(
                   top: 12,

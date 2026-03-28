@@ -57,7 +57,7 @@ func SetupRouter(db *gorm.DB, cfg *config.Config, uploadService upload.UploadSer
 	packageService := packages.NewPackageService(packageRepo)
 	itineraryService := itinerary.NewService(itineraryRepo)
 	communityService := community.NewCommunityService(communityRepo)
-	geminiClient, err := ai_planner.NewGeminiClientImpl(context.Background(), cfg.GeminiAPIKey, cfg.GeminiModel)
+	geminiClient, err := ai_planner.NewGeminiClientImpl(context.Background(), cfg.GeminiAPIKey, cfg.GeminiModel, cfg.GeminiTimeout)
 	if err == nil {
 		// We use new GenerateItinerary interface, so InterviewService wrapping is fine
 		// because we added GenerateItinerary method to InterviewService.
@@ -70,6 +70,11 @@ func SetupRouter(db *gorm.DB, cfg *config.Config, uploadService upload.UploadSer
 	// 4. Initialize Handlers
 	r := gin.New()
 	registerDocs(r)
+
+	// Redirect root to docs
+	r.GET("/", func(c *gin.Context) {
+		c.Redirect(http.StatusMovedPermanently, "/docs")
+	})
 
 	// Global Middlewares
 	r.Use(middleware.CORSMiddleware(cfg.AllowedOrigins))

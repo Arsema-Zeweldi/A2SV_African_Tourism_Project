@@ -3,27 +3,38 @@ import 'package:flutter/material.dart';
 class FeedPostItem extends StatelessWidget {
   final String userName,
       location,
-      userImage,
-      postImage,
       likes,
       comments,
       description;
+  final String? userImage;
+  final String? userImageUrl;
+  final String? postImage;
+  final String? postImageUrl;
+  final String? timeAgo;
+  final String? postId;
+  final VoidCallback? onLike;
+
   const FeedPostItem(
       {super.key,
       required this.userName,
       required this.location,
-      required this.userImage,
-      required this.postImage,
+      this.userImage,
+      this.userImageUrl,
+      this.postImage,
+      this.postImageUrl,
       required this.likes,
       required this.comments,
-      required this.description});
+      required this.description,
+      this.timeAgo,
+      this.postId,
+      this.onLike});
 
   @override
   Widget build(BuildContext context) {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       ListTile(
         leading: CircleAvatar(
-          backgroundImage: AssetImage(userImage),
+          backgroundImage: _buildAvatarImage(),
         ),
         title:
             Text(userName, style: const TextStyle(fontWeight: FontWeight.bold)),
@@ -37,11 +48,7 @@ class FeedPostItem extends StatelessWidget {
         ),
         trailing: const Icon(Icons.more_horiz),
       ),
-      Image.asset(
-        postImage,
-        width: double.infinity,
-        fit: BoxFit.cover,
-      ),
+      _buildPostImage(),
       Padding(
         padding: const EdgeInsets.all(12.0),
         child: Column(
@@ -52,9 +59,12 @@ class FeedPostItem extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    const Icon(
-                      Icons.favorite,
-                      color: Colors.red,
+                    GestureDetector(
+                      onTap: onLike,
+                      child: const Icon(
+                        Icons.favorite,
+                        color: Colors.red,
+                      ),
                     ),
                     const SizedBox(width: 5),
                     Text(likes,
@@ -93,13 +103,35 @@ class FeedPostItem extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
-              "2 HOURS AGO",
-              style: TextStyle(color: Colors.grey, fontSize: 10),
+            Text(
+              timeAgo ?? "JUST NOW",
+              style: const TextStyle(color: Colors.grey, fontSize: 10),
             ),
           ],
         ),
       )
     ]);
+  }
+
+  ImageProvider _buildAvatarImage() {
+    if (userImageUrl != null && userImageUrl!.isNotEmpty) {
+      return NetworkImage(userImageUrl!);
+    }
+    return AssetImage(userImage ?? 'assets/images/user1.png');
+  }
+
+  Widget _buildPostImage() {
+    if (postImageUrl != null && postImageUrl!.isNotEmpty) {
+      return Image.network(
+        postImageUrl!,
+        width: double.infinity,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => const SizedBox(height: 200, child: Center(child: Icon(Icons.broken_image, color: Colors.grey))),
+      );
+    }
+    if (postImage != null && postImage!.isNotEmpty) {
+      return Image.asset(postImage!, width: double.infinity, fit: BoxFit.cover);
+    }
+    return const SizedBox.shrink();
   }
 }

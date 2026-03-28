@@ -12,12 +12,13 @@ import (
 
 // GeminiClientImpl is the production Gemini API client.
 type GeminiClientImpl struct {
-	client *genai.Client
-	model  string
+	client  *genai.Client
+	model   string
+	timeout time.Duration
 }
 
 // NewGeminiClientImpl initialises the Gemini client with the given API key.
-func NewGeminiClientImpl(ctx context.Context, apiKey, model string) (*GeminiClientImpl, error) {
+func NewGeminiClientImpl(ctx context.Context, apiKey, model string, timeout int) (*GeminiClientImpl, error) {
 	client, err := genai.NewClient(ctx, option.WithAPIKey(apiKey))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create Gemini client: %w", err)
@@ -25,14 +26,21 @@ func NewGeminiClientImpl(ctx context.Context, apiKey, model string) (*GeminiClie
 	if model == "" {
 		model = "gemini-1.5-flash-latest"
 	}
-	return &GeminiClientImpl{client: client, model: model}, nil
+	if timeout <= 0 {
+		timeout = 120
+	}
+	return &GeminiClientImpl{
+		client:  client,
+		model:   model,
+		timeout: time.Duration(timeout) * time.Second,
+	}, nil
 }
 
 // GenerateItinerary calls the Gemini API with a 30-second timeout,
 // enforces JSON response mode, and parses the structured output.
 func (g *GeminiClientImpl) GenerateItinerary(ctx context.Context, req GenerateRequest) (*ItineraryResponse, error) {
-	//  120 second timeout
-	llmCtx, cancel := context.WithTimeout(ctx, 120*time.Second)
+	// use configured timeout
+	llmCtx, cancel := context.WithTimeout(ctx, g.timeout)
 	defer cancel()
 
 	prompt := BuildPrompt(req)

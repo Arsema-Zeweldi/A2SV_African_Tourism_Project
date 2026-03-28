@@ -3,6 +3,7 @@ import 'package:mobile/core/error/failures.dart';
 import 'package:mobile/core/network/exceptions.dart';
 import 'package:mobile/features/auth/data/dataSources/auth_local_data_source_data.dart';
 import 'package:mobile/features/auth/data/dataSources/auth_remote_data_source.dart';
+import 'package:mobile/features/auth/data/models/user_model.dart';
 import 'package:mobile/features/auth/domain/entities/user.dart';
 import 'package:mobile/features/auth/domain/repositories/auth_repository.dart';
 
@@ -17,14 +18,8 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<Either<Failure, User?>> getCurrentUser() async {
     try {
       final user = await remoteDataSource.getCurrentUser();
-
-      if (user != null) {
-        await localDataSource.cacheUser(user);
-        return Right(user);
-      }
-
-      final cachedUser = await localDataSource.getCachedUser();
-      return Right(cachedUser);
+      await localDataSource.cacheUser(user);
+      return Right(user);
     } on NetworkException catch (_) {
       // If network error, fallback to cache
       final cachedUser = await localDataSource.getCachedUser();
@@ -51,12 +46,22 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<Either<Failure, User>> logIn(
       {required String email, required String password}) async {
     try {
-      final user =
-          await remoteDataSource.logIn(email: email, password: password);
+      final loginResult = await remoteDataSource.logIn(email: email, password: password);
 
-      await localDataSource.cacheUser(user);
+    // 2. Try to fetch full profile; if it fails, build a minimal user from login response
+      UserModel? user;
+      try {
+        user = await remoteDataSource.getCurrentUser();
+      } catch (e) {
+        // Fallback: create a UserModel from login data
+        user = UserModel.fromJson({
+          'id': loginResult.userId,
+          'email': loginResult.email,
+        });
+      }
 
-      return Right(user);
+    await localDataSource.cacheUser(user);
+    return Right(user);
     } on NetworkException catch (e) {
       return Left(NetworkFailure(e.message));
     } on TimeoutException catch (e) {
@@ -134,17 +139,15 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<Either<Failure, User>> signUp(
+  Future<Either<Failure, Unit>> signUp(
       {required String fullName,
       required String email,
       required String password}) async {
     try {
-      final user = await remoteDataSource.signUp(
+      await remoteDataSource.signUp(
           fullName: fullName, email: email, password: password);
-
-      await localDataSource.cacheUser(user);
-
-      return Right(user);
+    
+      return const Right(unit);
     } on NetworkException catch (e) {
       return Left(NetworkFailure(e.message));
     } on TimeoutException catch (e) {

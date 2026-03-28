@@ -7,15 +7,15 @@
 class ApiEndpoints {
   // ── Base URL ─────────────────────────────────────────────────
   // TODO: Replace with your actual deployed backend URL.
-  static const String baseUrl = 'http://10.0.2.2:8080/api/v1';
+  static const String baseUrl = 'http://localhost:8080/api/v1/';
 
   // ── Auth ─────────────────────────────────────────────────────
-  static const String signUp = '/auth/register'; // Backend uses /register not /signup
+  static const String signUp = '/auth/register';
   static const String login = '/auth/login';
   static const String logout = '/auth/logout';
   static const String googleSignIn = '/auth/google';
   static const String getCurrentUser = '/user/profile';
-  static const String resetPassword = '/auth/reset-password';
+  static const String resetPassword = '/auth/forgot-password';
 
   // ── User Profile ─────────────────────────────────────────────
   static const String profile = '/user/profile';

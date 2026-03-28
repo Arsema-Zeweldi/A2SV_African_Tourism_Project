@@ -6,7 +6,7 @@ import 'package:mobile/features/auth/domain/entities/user.dart';
 
 abstract class AuthRepository {
   // SIGN UP
-  Future<Either<Failure, User>> signUp({
+  Future<Either<Failure, Unit>> signUp({
     required String fullName,
     required String email,
     required String password,

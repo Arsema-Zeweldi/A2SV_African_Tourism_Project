@@ -1,7 +1,16 @@
 import 'package:flutter/material.dart';
 
 class MarketPlaceHeader extends StatelessWidget {
-  const MarketPlaceHeader({super.key});
+  final TextEditingController searchController;
+  final VoidCallback onFilterPressed;
+  final ValueChanged<String> onSearchSubmitted;
+
+  const MarketPlaceHeader({
+    super.key,
+    required this.searchController,
+    required this.onFilterPressed,
+    required this.onSearchSubmitted,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -10,14 +19,18 @@ class MarketPlaceHeader extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            IconButton(icon: const Icon(Icons.arrow_back), onPressed: () {}),
+            // IconButton(
+            //   icon: const Icon(Icons.arrow_back),
+            //   onPressed: () => Navigator.push(context, MaterialPageRoute(builder: MyP)),
+            // ),
             const Text(
               "Market Place",
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             IconButton(
-                icon: const Icon(Icons.shopping_bag_outlined),
-                onPressed: () {}),
+              icon: const Icon(Icons.shopping_bag_outlined),
+              onPressed: () {},
+            ),
           ],
         ),
         const SizedBox(height: 16),
@@ -25,6 +38,7 @@ class MarketPlaceHeader extends StatelessWidget {
           children: [
             Expanded(
               child: TextField(
+                controller: searchController,
                 decoration: InputDecoration(
                   hintText: "Where to next?",
                   hintStyle: const TextStyle(color: Colors.grey),
@@ -36,19 +50,21 @@ class MarketPlaceHeader extends StatelessWidget {
                     borderSide: BorderSide.none,
                   ),
                 ),
+                onSubmitted: onSearchSubmitted,
               ),
             ),
-            const SizedBox(
-              width: 12,
-            ),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF39233),
-                borderRadius: BorderRadius.circular(15),
+            const SizedBox(width: 12),
+            GestureDetector(
+              onTap: onFilterPressed,
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF39233),
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                child: const Icon(Icons.tune, color: Colors.white),
               ),
-              child: const Icon(Icons.tune, color: Colors.white),
-            )
+            ),
           ],
         ),
       ],

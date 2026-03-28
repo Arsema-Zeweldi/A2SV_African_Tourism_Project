@@ -4,13 +4,13 @@ import 'package:mobile/core/network/exceptions.dart';
 import 'package:mobile/features/auth/data/models/user_model.dart';
 
 abstract class AuthRemoteDataSource {
-  Future<UserModel> signUp({
+  Future<void> signUp({
     required String fullName,
     required String email,
     required String password,
   });
 
-  Future<UserModel> logIn({
+  Future<({String token, String userId, String email, String status})> logIn({
     required String email,
     required String password,
   });
@@ -21,7 +21,7 @@ abstract class AuthRemoteDataSource {
 
   Future<UserModel> signInWithGoogle();
 
-  Future<UserModel?> getCurrentUser();
+  Future<UserModel> getCurrentUser();
 }
 
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
@@ -30,24 +30,20 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   AuthRemoteDataSourceImpl({required this.apiClient});
 
   @override
-  Future<UserModel?> getCurrentUser() async {
+  Future<UserModel> getCurrentUser() async {
     try {
       final response = await apiClient.get(ApiEndpoints.getCurrentUser);
-      if (response.statusCode == 200) {
-        if (response.data['user'] != null) {
-          return UserModel.fromJson(response.data['user']);
-        } else if (response.data['data'] != null) {
-          return UserModel.fromJson(response.data['data']);
-        } else {
-          return UserModel.fromJson(response.data);
-        }
+      final userJson = response.data['user'] ?? response.data['data'] ?? response.data;
+      if (userJson == null) {
+        throw ApiException(message: 'User data not found in response');
       }
-      return null;
+      return UserModel.fromJson(userJson);
+
     } on UnauthorizedException catch (_) {
-      return null;
+      rethrow;
     } on ApiException catch (e) {
       if (e.statusCode == 401) {
-        return null;
+        rethrow;
       }
       rethrow;
     } on NetworkException {
@@ -59,7 +55,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   }
 
   @override
-  Future<UserModel> logIn(
+  Future<({String token, String userId, String email, String status})> logIn(
       {required String email, required String password}) async {
     try {
       final response = await apiClient.post(
@@ -72,18 +68,15 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
 
       // BUG FIX: Save the JWT token from the response so subsequent
       // API calls include it in the Authorization header.
-      final token = response.data['token'];
-      if (token != null) {
-        await apiClient.sharedPreferences.setString('AUTH_TOKEN', token);
-      }
+      final token = response.data['token'] as String;
+      final user = response.data['user'] as Map<String, dynamic>;
+      final userId = user['id'] as String? ?? '';
+      final emailAddr = user['email'] as String? ?? '';
+      final status = response.data['status'] as String? ?? '';
 
-      if (response.data['user'] != null) {
-        return UserModel.fromJson(response.data['user']);
-      } else if (response.data['data'] != null) {
-        return UserModel.fromJson(response.data['data']);
-      } else {
-        return UserModel.fromJson(response.data);
-      }
+      await apiClient.sharedPreferences.setString('AUTH_TOKEN', token);
+
+      return (token: token, userId: userId, email: emailAddr, status: status);
     } on UnauthorizedException {
       rethrow;
     } on ApiException {
@@ -159,33 +152,25 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   }
 
   @override
-  Future<UserModel> signUp(
+  Future<void> signUp(
       {required String fullName,
       required String email,
       required String password}) async {
     try {
+      final nameParts = fullName.trim().split(' ');
+      final firstName = nameParts.first;
+      final lastName = nameParts.length > 1 ? nameParts.sublist(1).join(' '): '';
       final response = await apiClient.post(
         ApiEndpoints.signUp,
         data: {
-          'name': fullName, // Backend expects 'name', not 'fullName'
+          'first_name': firstName,
+          'last_name': lastName,
           'email': email,
           'password': password,
         },
       );
 
-      // BUG FIX: Save the JWT token so the user is authenticated immediately.
-      final token = response.data['token'];
-      if (token != null) {
-        await apiClient.sharedPreferences.setString('AUTH_TOKEN', token);
-      }
-
-      if (response.data['user'] != null) {
-        return UserModel.fromJson(response.data['user']);
-      } else if (response.data['data'] != null) {
-        return UserModel.fromJson(response.data['data']);
-      } else {
-        return UserModel.fromJson(response.data);
-      }
+      
     } on UnauthorizedException {
       rethrow;
     } on ApiException {

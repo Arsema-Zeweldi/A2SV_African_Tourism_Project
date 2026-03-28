@@ -5,6 +5,13 @@ import 'package:mobile/core/widgets/user_profile_bar.dart';
 class Header extends StatelessWidget {
   const Header({super.key});
 
+  String _getGreeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) return 'Good Morning';
+    if (hour < 17) return 'Good Afternoon';
+    return 'Good Evening';
+  }
+
   @override
   Widget build(BuildContext context) {
     return const Padding(

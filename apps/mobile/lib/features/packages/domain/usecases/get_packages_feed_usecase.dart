@@ -15,6 +15,7 @@ class GetPackagesFeedUsecase implements UseCase<PaginatedPackages, PackageFeedPa
       sortBy: params.sortBy,
       order: params.order,
       query: params.query,
+      category: params.category,
       page: params.page,
       pageSize: params.pageSize,
     );
@@ -25,6 +26,7 @@ class PackageFeedParams {
   final String? sortBy;
   final String? order;
   final String? query;
+  final String? category;
   final int page;
   final int pageSize;
 
@@ -32,6 +34,7 @@ class PackageFeedParams {
     this.sortBy,
     this.order,
     this.query,
+    this.category,
     this.page = 1,
     this.pageSize = 20,
   });

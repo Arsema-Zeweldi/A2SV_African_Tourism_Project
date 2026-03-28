@@ -39,6 +39,7 @@ class PackageBloc extends Bloc<PackageEvent, PackageState> {
       sortBy: event.sortBy,
       order: event.order,
       query: event.query,
+      category: event.category,
       page: event.page,
     ));
 
@@ -48,6 +49,10 @@ class PackageBloc extends Bloc<PackageEvent, PackageState> {
         packages: paginated.packages,
         total: paginated.total,
         page: paginated.page,
+        sortBy: event.sortBy,
+        order: event.order,
+        query: event.query,
+        category: event.category,
       )),
     );
   }
@@ -120,4 +125,5 @@ class PackageBloc extends Bloc<PackageEvent, PackageState> {
       (_) => emit(PackageStatusUpdated()),
     );
   }
+ 
 }

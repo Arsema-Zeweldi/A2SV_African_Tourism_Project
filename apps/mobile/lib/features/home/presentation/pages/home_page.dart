@@ -5,12 +5,16 @@ import 'package:mobile/core/constants/app_colors.dart';
 import 'package:mobile/core/widgets/category_toggle.dart';
 import 'package:mobile/core/widgets/headers_widget.dart';
 import 'package:mobile/core/widgets/plan_trip_button.dart';
+import 'package:mobile/features/feed/presentation/bloc/feed_bloc.dart';
+import 'package:mobile/features/feed/presentation/bloc/feed_event.dart';
+import 'package:mobile/features/home/presentation/pages/top_rated_packages.dart';
 import 'package:mobile/features/home/presentation/widgets/community_card.dart';
 import 'package:mobile/features/home/presentation/widgets/package_card.dart';
 import 'package:mobile/features/market_place/presentation/pages/package_detail_page.dart';
 import 'package:mobile/features/packages/presentation/bloc/package_bloc.dart';
 import 'package:mobile/features/packages/presentation/bloc/package_event.dart';
 import 'package:mobile/features/packages/presentation/bloc/package_state.dart';
+import 'package:mobile/features/plan_trip/presentation/pages/plan_your_trip_1.dart';
 
 class HomePage extends StatefulWidget {
   final VoidCallback onFeedClick;
@@ -25,11 +29,22 @@ class _HomePageState extends State<HomePage> {
   bool showPackages = true;
 
   @override
+  void initState() {
+    super.initState();
+    // Load feed posts for the community card after the first frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<FeedBloc>().add(const LoadPosts(page: 1));
+    });
+  }
+  
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color.fromRGBO(248, 247, 245, 1.0),
       floatingActionButton: PlanTripButton(onPressed: () {
-        context.push('/plan-trip');
+        Navigator.push(context,
+            MaterialPageRoute(builder: (_) => const PlanTripStep1Screen()));
       }),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -38,18 +53,26 @@ class _HomePageState extends State<HomePage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Header(),
-
               CategoryToggle(onFeedTap: widget.onFeedClick),
               const SizedBox(height: 24),
-
               if (showPackages) ...[
-                const Row(
+                Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text("Top-Rated Packages",
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                    Text("See All",
-                        style: TextStyle(color: AppColors.primaryOrange)),
+                    const Text("Top-Rated Packages",
+                        style: TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.bold)),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => const TopRatedPackagesPage()),
+                        );
+                      },
+                      child: const Text("See All",
+                          style: TextStyle(color: AppColors.primaryOrange)),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 16),
@@ -58,19 +81,23 @@ class _HomePageState extends State<HomePage> {
                 BlocBuilder<PackageBloc, PackageState>(
                   builder: (context, state) {
                     if (state is PackageLoading) {
-                      return const Center(child: CircularProgressIndicator(color: AppColors.primaryOrange));
+                      return const Center(
+                          child: CircularProgressIndicator(
+                              color: AppColors.primaryOrange));
                     }
 
                     if (state is PackageError) {
                       return Center(
                         child: Column(
                           children: [
-                            Text(state.message, style: const TextStyle(color: Colors.red)),
+                            Text(state.message,
+                                style: const TextStyle(color: Colors.red)),
                             const SizedBox(height: 8),
                             TextButton(
                               onPressed: () => context.read<PackageBloc>().add(
-                                const LoadPackagesFeed(sortBy: 'rating_avg', order: 'desc'),
-                              ),
+                                    const LoadPackagesFeed(
+                                        sortBy: 'rating_avg', order: 'desc'),
+                                  ),
                               child: const Text('Retry'),
                             ),
                           ],
@@ -101,14 +128,22 @@ class _HomePageState extends State<HomePage> {
                                   builder: (_) => PackageDetailPage(
                                     packageId: pkg.id,
                                     title: pkg.title,
-                                    location: pkg.location.isNotEmpty ? pkg.location : pkg.country,
+                                    location: pkg.location.isNotEmpty
+                                        ? pkg.location
+                                        : pkg.country,
                                     price: pkg.price.toStringAsFixed(0),
                                     rating: pkg.ratingAvg.toStringAsFixed(1),
                                     reviewsCount: pkg.reviewsCount.toString(),
                                     duration: '${pkg.durationDays} Days',
-                                    groupType: pkg.groupSize.isNotEmpty ? pkg.groupSize : 'All Ages',
-                                    category: pkg.category.isNotEmpty ? pkg.category : 'Travel',
-                                    description: pkg.description.isNotEmpty ? pkg.description : pkg.summary,
+                                    groupType: pkg.groupSize.isNotEmpty
+                                        ? pkg.groupSize
+                                        : 'All Ages',
+                                    category: pkg.category.isNotEmpty
+                                        ? pkg.category
+                                        : 'Travel',
+                                    description: pkg.description.isNotEmpty
+                                        ? pkg.description
+                                        : pkg.summary,
                                     imageUrl: pkg.imageUrl,
                                   ),
                                 ),
@@ -119,11 +154,17 @@ class _HomePageState extends State<HomePage> {
                               rating: pkg.ratingAvg,
                               title: pkg.title,
                               price: pkg.price.toStringAsFixed(0),
-                              location: pkg.location.isNotEmpty ? pkg.location : pkg.country,
-                              categoryName: pkg.category.isNotEmpty ? pkg.category : 'Travel',
+                              location: pkg.location.isNotEmpty
+                                  ? pkg.location
+                                  : pkg.country,
+                              categoryName: pkg.category.isNotEmpty
+                                  ? pkg.category
+                                  : 'Travel',
                               categoryColor: Colors.orange,
                               duration: '${pkg.durationDays} Days',
-                              targetAudience: pkg.groupSize.isNotEmpty ? pkg.groupSize : 'All Ages',
+                              targetAudience: pkg.groupSize.isNotEmpty
+                                  ? pkg.groupSize
+                                  : 'All Ages',
                               isBestSeller: index == 0,
                             ),
                           );

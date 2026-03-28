@@ -20,47 +20,55 @@ class UserModel extends User {
   /// Handles two backend response shapes:
   ///   1. Auth response (minimal): { "id": "...", "email": "..." }
   ///   2. Profile response (full):  { "user_id": "...", "first_name": "...", ... }
-  factory UserModel.fromJson(Map<String, dynamic> json) {
-    // The backend uses 'user_id' in profile responses, 'id' in auth responses.
-    final id = json['id']?.toString() ??
-        json['user_id']?.toString() ??
-        '';
+ factory UserModel.fromJson(Map<String, dynamic> json) {
+  // ID
+  final id = (json['user_id'] ?? json['id'] ?? '').toString();
 
-    // Build full name from available fields.
-    final fullName = json['fullName'] ??
-        _buildFullName(json['first_name'], json['last_name']) ??
-        json['name'] ??
-        '';
+  // Email
+  final email = (json['email'] ?? '').toString();
 
-    final email = json['email'] ?? '';
-
-    // Parse createdAt if present, otherwise default to now.
-    DateTime createdAt;
-    if (json['createdAt'] != null) {
-      createdAt = DateTime.parse(json['createdAt']);
-    } else if (json['created_at'] != null) {
-      createdAt = DateTime.parse(json['created_at']);
-    } else {
-      createdAt = DateTime.now();
-    }
-
-    final profilePictureUrl =
-        json['profilePictureUrl'] ?? json['profile_image_url'];
-
-    return UserModel(
-      id: id,
-      fullName: fullName,
-      email: email,
-      createdAt: createdAt,
-      profilePictureUrl: profilePictureUrl,
-    );
+  // Full name: try various fields, fall back to email or default
+  String fullName = '';
+  if (json['fullName'] != null && json['fullName'].toString().isNotEmpty) {
+    fullName = json['fullName'].toString();
+  } else if (json['first_name'] != null && json['last_name'] != null) {
+    fullName = '${json['first_name']} ${json['last_name']}'.trim();
+  } else if (json['first_name'] != null) {
+    fullName = json['first_name'].toString();
+  } else if (json['last_name'] != null) {
+    fullName = json['last_name'].toString();
+  } else if (email.isNotEmpty) {
+    fullName = email; // fallback to email
+  } else {
+    fullName = 'User'; // ultimate fallback
   }
+
+  // Created at
+  DateTime createdAt;
+  if (json['createdAt'] != null) {
+    createdAt = DateTime.parse(json['createdAt'].toString());
+  } else if (json['created_at'] != null) {
+    createdAt = DateTime.parse(json['created_at'].toString());
+  } else {
+    createdAt = DateTime.now();
+  }
+
+  final profilePictureUrl = json['profilePictureUrl'] ?? json['profile_image_url'];
+
+  return UserModel(
+    id: id,
+    fullName: fullName,
+    email: email,
+    createdAt: createdAt,
+    profilePictureUrl: profilePictureUrl is String ? profilePictureUrl : null,
+  );
+}
 
   /// Helper to combine first + last name.
-  static String? _buildFullName(dynamic firstName, dynamic lastName) {
-    if (firstName == null && lastName == null) return null;
-    return '${firstName ?? ''} ${lastName ?? ''}'.trim();
-  }
+  // static String? _buildFullName(dynamic firstName, dynamic lastName) {
+  //   if (firstName == null && lastName == null) return null;
+  //   return '${firstName ?? ''} ${lastName ?? ''}'.trim();
+  // }
 
   Map<String, dynamic> toJson() {
     return {

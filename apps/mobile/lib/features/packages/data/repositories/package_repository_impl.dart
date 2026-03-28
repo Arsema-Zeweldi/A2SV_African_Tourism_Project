@@ -15,6 +15,7 @@ class PackageRepositoryImpl implements PackageRepository {
     String? sortBy,
     String? order,
     String? query,
+    String? category,
     int page = 1,
     int pageSize = 20,
   }) async {
@@ -39,7 +40,8 @@ class PackageRepositoryImpl implements PackageRepository {
     } on ApiException catch (e) {
       return Left(ServerFailure(e.message));
     } catch (e) {
-      return Left(ServerFailure('An unexpected error occurred. Please try again.'));
+      return Left(
+          ServerFailure('An unexpected error occurred. Please try again.'));
     }
   }
 
@@ -55,7 +57,8 @@ class PackageRepositoryImpl implements PackageRepository {
     } on ApiException catch (e) {
       return Left(ServerFailure(e.message));
     } catch (e) {
-      return Left(ServerFailure('An unexpected error occurred. Please try again.'));
+      return Left(
+          ServerFailure('An unexpected error occurred. Please try again.'));
     }
   }
 
@@ -84,12 +87,14 @@ class PackageRepositoryImpl implements PackageRepository {
     } on ApiException catch (e) {
       return Left(ServerFailure(e.message));
     } catch (e) {
-      return Left(ServerFailure('An unexpected error occurred. Please try again.'));
+      return Left(
+          ServerFailure('An unexpected error occurred. Please try again.'));
     }
   }
 
   @override
-  Future<Either<Failure, List<PackageReview>>> getPackageReviews(String packageId) async {
+  Future<Either<Failure, List<PackageReview>>> getPackageReviews(
+      String packageId) async {
     try {
       final result = await remoteDataSource.getPackageReviews(packageId);
       return Right(result);
@@ -100,7 +105,8 @@ class PackageRepositoryImpl implements PackageRepository {
     } on ApiException catch (e) {
       return Left(ServerFailure(e.message));
     } catch (e) {
-      return Left(ServerFailure('An unexpected error occurred. Please try again.'));
+      return Left(
+          ServerFailure('An unexpected error occurred. Please try again.'));
     }
   }
 
@@ -111,7 +117,8 @@ class PackageRepositoryImpl implements PackageRepository {
     String comment = '',
   }) async {
     try {
-      await remoteDataSource.submitReview(packageId, rating: rating, comment: comment);
+      await remoteDataSource.submitReview(packageId,
+          rating: rating, comment: comment);
       return const Right(null);
     } on NetworkException catch (e) {
       return Left(NetworkFailure(e.message));
@@ -120,12 +127,14 @@ class PackageRepositoryImpl implements PackageRepository {
     } on ApiException catch (e) {
       return Left(ServerFailure(e.message));
     } catch (e) {
-      return Left(ServerFailure('An unexpected error occurred. Please try again.'));
+      return Left(
+          ServerFailure('An unexpected error occurred. Please try again.'));
     }
   }
 
   @override
-  Future<Either<Failure, void>> updatePackageStatus(String packageId, String status) async {
+  Future<Either<Failure, void>> updatePackageStatus(
+      String packageId, String status) async {
     try {
       await remoteDataSource.updatePackageStatus(packageId, status);
       return const Right(null);
@@ -136,7 +145,24 @@ class PackageRepositoryImpl implements PackageRepository {
     } on ApiException catch (e) {
       return Left(ServerFailure(e.message));
     } catch (e) {
-      return Left(ServerFailure('An unexpected error occurred. Please try again.'));
+      return Left(
+          ServerFailure('An unexpected error occurred. Please try again.'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> savePackage(String packageId) async {
+    try {
+      await remoteDataSource.savePackage(packageId);
+      return const Right(null);
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
+    } on TimeoutException catch (e) {
+      return Left(TimeoutFailure(e.message));
+    } on ApiException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure('Failed to save package: ${e.toString()}'));
     }
   }
 }

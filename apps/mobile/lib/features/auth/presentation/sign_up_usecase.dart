@@ -1,16 +1,15 @@
 import 'package:dartz/dartz.dart';
 import 'package:mobile/core/error/failures.dart';
 import 'package:mobile/core/usecases/usecase.dart';
-import 'package:mobile/features/auth/domain/entities/user.dart';
 import 'package:mobile/features/auth/domain/repositories/auth_repository.dart';
 
-class SignUpUsecase implements UseCase<User, SignUpParams> {
+class SignUpUsecase implements UseCase<Unit, SignUpParams> {
   final AuthRepository repository;
 
   SignUpUsecase(this.repository);
 
   @override
-  Future<Either<Failure, User>> call(SignUpParams params) {
+  Future<Either<Failure, Unit>> call(SignUpParams params) {
     final validationFailure = params.validate();
     if (validationFailure != null) {
       return Future.value(Left(validationFailure));

@@ -12,17 +12,19 @@ class LoadPackagesFeed extends PackageEvent {
   final String? sortBy;
   final String? order;
   final String? query;
+  final String? category;
   final int page;
 
   const LoadPackagesFeed({
     this.sortBy,
     this.order,
     this.query,
+    this.category,
     this.page = 1,
   });
 
   @override
-  List<Object?> get props => [sortBy, order, query, page];
+  List<Object?> get props => [sortBy, order, query, category, page];
 }
 
 /// Load a single package's full details.
@@ -71,4 +73,13 @@ class UpdatePackageStatus extends PackageEvent {
 
   @override
   List<Object?> get props => [packageId, status];
+}
+
+class SavePackage extends PackageEvent {
+  final String packageId;
+
+  const SavePackage({required this.packageId});
+
+  @override
+  List<Object?> get props => [packageId];
 }

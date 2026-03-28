@@ -13,7 +13,7 @@ class SendPasswordResetEmailUsecase implements UseCase<void, SendPasswordResetEm
   Future<Either<Failure, void>> call(SendPasswordResetEmailParams params) {
 
     if(!params.isValidEmail) {
-      return Future.value(Left(InvalidEmailFailure()));
+      return Future.value(const Left(InvalidEmailFailure()));
     }
     return repository.sendPasswordResetEmail(email: params.email);
   }

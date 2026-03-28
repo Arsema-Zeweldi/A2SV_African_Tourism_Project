@@ -7,6 +7,7 @@ abstract class PackageRepository {
     String? sortBy,
     String? order,
     String? query,
+    String? category,
     int page = 1,
     int pageSize = 20,
   });
@@ -28,4 +29,6 @@ abstract class PackageRepository {
   });
 
   Future<Either<Failure, void>> updatePackageStatus(String packageId, String status);
+
+  Future<Either<Failure, void>> savePackage(String packageId);
 }

@@ -1,5 +1,7 @@
 import 'package:get_it/get_it.dart';
 import 'package:internet_connection_checker/internet_connection_checker.dart';
+import 'package:mobile/features/packages/data/dataSources/saved_package_local_data_source.dart';
+import 'package:mobile/features/packages/domain/usecases/save_package_usecase.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:mobile/core/network/api_client.dart';
@@ -91,6 +93,12 @@ Future<void> init() async {
     () => AuthLocalDataSoureImpl(sharedPreferences: sl<SharedPreferences>()),
   );
 
+  // ── Saved Packages Local Data Source ─────────────────────────────
+  sl.registerLazySingleton<SavedPackagesLocalDataSource>(
+    () => SavedPackagesLocalDataSource(sl<SharedPreferences>()),
+  );
+  
+
   // ── Repository ────────────────────────────────────────────────
 
   sl.registerLazySingleton<AuthRepository>(
@@ -99,6 +107,7 @@ Future<void> init() async {
       localDataSource: sl<AuthLocalDataSource>(),
     ),
   );
+
 
   // ── Use Cases ─────────────────────────────────────────────────
 
@@ -134,6 +143,8 @@ Future<void> init() async {
   sl.registerLazySingleton<PackageRemoteDataSource>(
     () => PackageRemoteDataSourceImpl(apiClient: sl<ApiClient>()),
   );
+
+  
 
   // ── Repository ────────────────────────────────────────────────
 

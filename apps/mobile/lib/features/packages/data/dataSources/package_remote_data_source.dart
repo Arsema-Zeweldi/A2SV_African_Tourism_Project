@@ -31,6 +31,8 @@ abstract class PackageRemoteDataSource {
 
   /// PATCH /packages/:id/status
   Future<void> updatePackageStatus(String packageId, String status);
+
+  Future<void> savePackage(String packageId);
 }
 
 class PackageRemoteDataSourceImpl implements PackageRemoteDataSource {
@@ -43,6 +45,7 @@ class PackageRemoteDataSourceImpl implements PackageRemoteDataSource {
     String? sortBy,
     String? order,
     String? query,
+    String? category,
     int page = 1,
     int pageSize = 20,
   }) async {
@@ -53,7 +56,8 @@ class PackageRemoteDataSourceImpl implements PackageRemoteDataSource {
       };
       if (sortBy != null) queryParams['sort_by'] = sortBy;
       if (order != null) queryParams['order'] = order;
-      if (query != null && query.isNotEmpty) queryParams['q'] = query;
+      if (category != null && category.isNotEmpty) queryParams['category'] = category;
+      if (query != null && query.isNotEmpty) queryParams['q'] = query;      
 
       final response = await apiClient.get(
         ApiEndpoints.packages,
@@ -195,4 +199,17 @@ class PackageRemoteDataSourceImpl implements PackageRemoteDataSource {
       throw ApiException(message: 'Failed to update status: ${e.toString()}');
     }
   }
+
+    @override
+  Future<void> savePackage(String packageId) async {
+    try {
+      await apiClient.post('${ApiEndpoints.packages}/$packageId/save');
+    } on ApiException {
+      rethrow;
+    } on NetworkException {
+      rethrow;
+    } catch (e) {
+      throw ApiException(message: 'Failed to save package: ${e.toString()}');
+    }
+}
 }

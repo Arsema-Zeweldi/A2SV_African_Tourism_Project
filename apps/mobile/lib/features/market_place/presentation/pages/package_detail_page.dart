@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/features/packages/data/dataSources/saved_package_local_data_source.dart';
 import 'package:mobile/features/packages/presentation/bloc/package_bloc.dart';
 import 'package:mobile/features/packages/presentation/bloc/package_event.dart';
 import 'package:mobile/features/packages/presentation/bloc/package_state.dart';
+import 'package:mobile/injection_container.dart' as di;
 
 class PackageDetailPage extends StatefulWidget {
   final String? packageId;
@@ -39,11 +41,30 @@ class PackageDetailPage extends StatefulWidget {
 }
 
 class _PackageDetailPageState extends State<PackageDetailPage> {
+  bool _isSaved = false;
   @override
   void initState() {
     super.initState();
     if (widget.packageId != null) {
       context.read<PackageBloc>().add(LoadPackageDetail(widget.packageId!));
+    }
+    _checkIfSaved();
+  }
+
+  Future<void> _checkIfSaved() async {
+    final savedDS = di.sl<SavedPackagesLocalDataSource>();
+    final saved = await savedDS.isSaved(widget.packageId!);
+    if (mounted) setState(() => _isSaved = saved);
+  }
+
+  Future<void> _savePackage() async {
+    final savedDS = di.sl<SavedPackagesLocalDataSource>();
+    await savedDS.addSavedPackage(widget.packageId!);
+    if (mounted) {
+      setState(() => _isSaved = true);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Package saved to My Packages!')),
+      );
     }
   }
 
@@ -72,50 +93,74 @@ class _PackageDetailPageState extends State<PackageDetailPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: BlocBuilder<PackageBloc, PackageState>(
-        buildWhen: (prev, curr) => curr is PackageDetailLoaded || curr is PackageLoading || curr is PackageError,
-        builder: (context, state) {
-          // Use loaded detail data if available, otherwise fall back to constructor props
-          String displayTitle = widget.title;
-          String displayLocation = widget.location;
-          String displayPrice = widget.price;
-          String displayRating = widget.rating;
-          String displayReviewsCount = widget.reviewsCount;
-          String displayDuration = widget.duration;
-          String displayGroupType = widget.groupType;
-          String displayCategory = widget.category;
-          String displayDescription = widget.description;
-          String? displayImageUrl = widget.imageUrl;
-          String? displayImagePath = widget.imagePath;
-          List<_ItineraryDay> itineraryDays = [];
-
-          if (state is PackageDetailLoaded) {
-            final pkg = state.package;
-            displayTitle = pkg.title;
-            displayLocation = pkg.location.isNotEmpty ? pkg.location : pkg.country;
-            displayPrice = pkg.price.toStringAsFixed(0);
-            displayRating = pkg.ratingAvg.toStringAsFixed(1);
-            displayReviewsCount = pkg.reviewsCount.toString();
-            displayDuration = '${pkg.durationDays} Days';
-            displayGroupType = pkg.groupSize.isNotEmpty ? pkg.groupSize : 'All Ages';
-            displayCategory = pkg.category.isNotEmpty ? pkg.category : 'Travel';
-            displayDescription = pkg.description.isNotEmpty ? pkg.description : pkg.summary;
-            displayImageUrl = pkg.imageUrl;
-
-            // Build itinerary from real data
-            if (pkg.itinerary != null) {
-              final activitiesByDay = <int, List<String>>{};
-              for (final a in pkg.itinerary!.activities) {
-                activitiesByDay.putIfAbsent(a.dayNumber, () => []);
-                activitiesByDay[a.dayNumber]!.add(a.title + (a.description.isNotEmpty ? ': ${a.description}' : ''));
-              }
-              final sortedDays = activitiesByDay.keys.toList()..sort();
-              itineraryDays = sortedDays.map((d) => _ItineraryDay(
-                title: 'Day $d',
-                description: activitiesByDay[d]!.join('\n'),
-              )).toList();
-            }
+      body: BlocListener<PackageBloc, PackageState>(
+        listener: (context, state) {
+          if (state is PackageSaved) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Package saved to My Packages!')),
+            );
+          } else if (state is PackageError && state.message.contains('save')) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Failed to save: ${state.message}'), backgroundColor: Colors.red),
+            );
           }
+      },
+      child: BlocBuilder<PackageBloc, PackageState>(
+        builder: (context, state) {
+          final bool isLoading =
+              state is PackageLoading && widget.packageId != null;
+          final bool hasError =
+              state is PackageError && widget.packageId != null;
+
+          final bool isSaving = state is PackageLoading && 
+              (state).event is SavePackage;              
+
+          final isLoaded = state is PackageDetailLoaded;
+          final pkg = isLoaded ? state.package : null;
+
+          final displayTitle = pkg?.title ?? widget.title;
+          final displayLocation = (pkg?.location.isNotEmpty == true)
+              ? pkg!.location
+              : (pkg?.country ?? widget.location);
+          final displayPrice =
+              pkg != null ? pkg.price.toStringAsFixed(0) : widget.price;
+          final displayRating =
+              pkg != null ? pkg.ratingAvg.toStringAsFixed(1) : widget.rating;
+          final displayReviewsCount =
+              pkg != null ? pkg.reviewsCount.toString() : widget.reviewsCount;
+          final displayDuration =
+              pkg != null ? '${pkg.durationDays} Days' : widget.duration;
+          final displayGroupType = (pkg?.groupSize.isNotEmpty == true)
+              ? pkg!.groupSize
+              : widget.groupType;
+          final displayCategory = (pkg?.category.isNotEmpty == true)
+              ? pkg!.category
+              : widget.category;
+          final displayDescription = (pkg?.description.isNotEmpty == true)
+              ? pkg!.description
+              : (pkg?.summary ?? widget.description);
+          final displayImageUrl = pkg?.imageUrl ?? widget.imageUrl;
+          final displayImagePath =
+              widget.imagePath;
+
+          List<_ItineraryDay> itineraryDays = [];
+          if (pkg?.itinerary != null) {
+            final activitiesByDay = <int, List<String>>{};
+            for (final a in pkg!.itinerary!.activities) {
+              activitiesByDay.putIfAbsent(a.dayNumber, () => []);
+              activitiesByDay[a.dayNumber]!.add(a.title +
+                  (a.description.isNotEmpty ? ': ${a.description}' : ''));
+            }
+            final sortedDays = activitiesByDay.keys.toList()..sort();
+            itineraryDays = sortedDays
+                .map((d) => _ItineraryDay(
+                      title: 'Day $d',
+                      description: activitiesByDay[d]!.join('\n'),
+                    ))
+                .toList();
+          }
+
+
 
           return Stack(
             children: [
@@ -132,11 +177,13 @@ class _PackageDetailPageState extends State<PackageDetailPage> {
                       ),
                       IconButton(
                         onPressed: () {},
-                        icon: const Icon(Icons.favorite_border, color: Colors.white),
+                        icon: const Icon(Icons.favorite_border,
+                            color: Colors.white),
                       ),
                     ],
                     flexibleSpace: FlexibleSpaceBar(
-                      background: _buildHeroImage(displayImageUrl, displayImagePath),
+                      background:
+                          _buildHeroImage(displayImageUrl, displayImagePath),
                     ),
                   ),
                   SliverToBoxAdapter(
@@ -146,14 +193,41 @@ class _PackageDetailPageState extends State<PackageDetailPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _buildHeaderSection(displayTitle, displayLocation, displayRating, displayReviewsCount),
-                          const SizedBox(height: 20),
-                          _buildHighlightsSection(displayDuration, displayGroupType, displayCategory),
-                          const SizedBox(height: 20),
-                          _buildDescriptionSection(displayDescription),
-                          const SizedBox(height: 20),
-                          _buildItinerarySection(itineraryDays),
-                          const SizedBox(height: 100),
+                          if (isLoading)
+                            const Center(child: CircularProgressIndicator())
+                          else if (hasError)
+                            Center(
+                              child: Column(
+                                children: [
+                                  Text(
+                                    (state as PackageError).message,
+                                    style: const TextStyle(color: Colors.red),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  ElevatedButton(
+                                    onPressed: () {
+                                      context.read<PackageBloc>().add(
+                                            LoadPackageDetail(
+                                                widget.packageId!),
+                                          );
+                                    },
+                                    child: const Text('Retry'),
+                                  ),
+                                ],
+                              ),
+                            )
+                          else ...[
+                            _buildHeaderSection(displayTitle, displayLocation,
+                                displayRating, displayReviewsCount),
+                            const SizedBox(height: 20),
+                            _buildHighlightsSection(displayDuration,
+                                displayGroupType, displayCategory),
+                            const SizedBox(height: 20),
+                            _buildDescriptionSection(displayDescription),
+                            const SizedBox(height: 20),
+                            _buildItinerarySection(itineraryDays),
+                            const SizedBox(height: 100),
+                          ],
                         ],
                       ),
                     ),
@@ -162,16 +236,22 @@ class _PackageDetailPageState extends State<PackageDetailPage> {
               ),
               Align(
                 alignment: Alignment.bottomCenter,
-                child: _buildBottomAction(context, displayPrice),
+                child: _buildBottomAction(context, displayPrice, _isSaved),
               ),
             ],
           );
+          
         },
+        
       ),
+      
+      ),
+      
     );
   }
 
-  Widget _buildHeaderSection(String displayTitle, String displayLocation, String displayRating, String displayReviewsCount) {
+  Widget _buildHeaderSection(String displayTitle, String displayLocation,
+      String displayRating, String displayReviewsCount) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -192,14 +272,16 @@ class _PackageDetailPageState extends State<PackageDetailPage> {
         Row(
           children: [
             Icon(Icons.location_on, color: Colors.grey[600], size: 16),
-            Text(" $displayLocation", style: const TextStyle(color: Colors.grey)),
+            Text(" $displayLocation",
+                style: const TextStyle(color: Colors.grey)),
           ],
         ),
       ],
     );
   }
 
-  Widget _buildHighlightsSection(String displayDuration, String displayGroupType, String displayCategory) {
+  Widget _buildHighlightsSection(
+      String displayDuration, String displayGroupType, String displayCategory) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -250,13 +332,19 @@ class _PackageDetailPageState extends State<PackageDetailPage> {
   }
 
   Widget _buildItinerarySection(List<_ItineraryDay> itineraryDays) {
-    // Fall back to placeholder if no real itinerary data
     final days = itineraryDays.isNotEmpty
         ? itineraryDays
         : [
-            const _ItineraryDay(title: "Day 1: Arrival", description: "Welcome! Airport pickup and transfer to your hotel for orientation and dinner."),
-            const _ItineraryDay(title: "Day 2–3: Exploration", description: "Guided tours and activities based on your itinerary."),
-            const _ItineraryDay(title: "Day 4+: Adventure Continues", description: ""),
+            const _ItineraryDay(
+                title: "Day 1: Arrival",
+                description:
+                    "Welcome! Airport pickup and transfer to your hotel for orientation and dinner."),
+            const _ItineraryDay(
+                title: "Day 2–3: Exploration",
+                description:
+                    "Guided tours and activities based on your itinerary."),
+            const _ItineraryDay(
+                title: "Day 4+: Adventure Continues", description: ""),
           ];
 
     return Column(
@@ -273,9 +361,9 @@ class _PackageDetailPageState extends State<PackageDetailPage> {
         ),
         const SizedBox(height: 16),
         ...days.map((day) => Padding(
-          padding: const EdgeInsets.only(bottom: 16),
-          child: _buildItineraryDay(day.title, day.description),
-        )),
+              padding: const EdgeInsets.only(bottom: 16),
+              child: _buildItineraryDay(day.title, day.description),
+            )),
         const SizedBox(height: 8),
         Container(
           padding: const EdgeInsets.all(12),
@@ -322,7 +410,8 @@ class _PackageDetailPageState extends State<PackageDetailPage> {
     );
   }
 
-  Widget _buildBottomAction(BuildContext context, String displayPrice) {
+
+  Widget _buildBottomAction(BuildContext context, String displayPrice, bool isSaved) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
       decoration: const BoxDecoration(
@@ -348,7 +437,7 @@ class _PackageDetailPageState extends State<PackageDetailPage> {
               ],
             ),
             ElevatedButton(
-              onPressed: () {},
+              onPressed: isSaved ? null : _savePackage,
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.orange,
                 padding:
@@ -356,8 +445,8 @@ class _PackageDetailPageState extends State<PackageDetailPage> {
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(15)),
               ),
-              child: const Text("Use Package",
-                  style: TextStyle(
+              child: Text(_isSaved ? "Saved" : "Use Package",
+                  style: const TextStyle(
                       color: Colors.white, fontWeight: FontWeight.bold)),
             ),
           ],

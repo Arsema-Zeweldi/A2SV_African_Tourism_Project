@@ -39,3 +39,7 @@ class AuthError extends AuthState {
 
 /// Password reset email was sent successfully.
 class PasswordResetSent extends AuthState {}
+
+class RegistrationSuccess extends AuthState {} 
+
+class ForgotPasswordEmailSent extends AuthState {} // af

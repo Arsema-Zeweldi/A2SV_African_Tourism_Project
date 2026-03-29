@@ -96,11 +96,11 @@ function MarketplaceContent() {
       />
 
       <div className="max-w-6xl mx-auto px-4 pb-12">
-        <div className="flex gap-6 mt-6">
+        <div className="flex flex-col gap-6 mt-6 md:flex-row">
           {/* Left Filter Panel */}
           {filtersOpen && (
-            <div className="w-64 shrink-0">
-              <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm sticky top-6">
+            <div className="w-full md:w-64 md:shrink-0">
+              <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm md:sticky md:top-6">
                 <Filters
                   selectedCategory={selectedCategory}
                   onCategoryChange={handleCategoryChange}
@@ -126,7 +126,7 @@ function MarketplaceContent() {
           </div>
         ) : packages.length > 0 ? (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 md:gap-8">
               {packages.map((pkg) => (
                 <PackageCard key={pkg.package_id} pkg={pkg} />
               ))}

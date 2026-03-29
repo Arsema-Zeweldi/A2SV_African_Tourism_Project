@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { MarketplaceHeader } from '../../components/marketplace/marketplace-header';
 import { PackageCard } from '../../components/marketplace/package_cards';
 import { Filters } from '../../components/marketplace/filters';
@@ -16,7 +17,9 @@ const SORT_MAP: Record<string, { sort_by: string; order: string }> = {
 
 const PAGE_SIZE = 9;
 
-export default function MarketplacePage() {
+function MarketplaceContent() {
+  const searchParams = useSearchParams();
+
   const [sortBy, setSortBy] = useState('featured');
   const [currentPage, setCurrentPage] = useState(1);
   const [packages, setPackages] = useState<ApiPackage[]>([]);
@@ -24,12 +27,14 @@ export default function MarketplacePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Filter panel
-  const [filtersOpen, setFiltersOpen] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [minPrice, setMinPrice] = useState(0);
-  const [maxPrice, setMaxPrice] = useState(Infinity);
-  const [minRating, setMinRating] = useState(0);
+  // Filter panel — pre-filled from URL query params (e.g. coming from Plan Your Trip)
+  const [filtersOpen, setFiltersOpen] = useState(() => {
+    return !!searchParams.get('q') || !!searchParams.get('min_price') || !!searchParams.get('max_price') || !!searchParams.get('min_rating');
+  });
+  const [selectedCategory, setSelectedCategory] = useState(searchParams.get('q') || 'all');
+  const [minPrice, setMinPrice] = useState(Number(searchParams.get('min_price')) || 0);
+  const [maxPrice, setMaxPrice] = useState(Number(searchParams.get('max_price')) || Infinity);
+  const [minRating, setMinRating] = useState(Number(searchParams.get('min_rating')) || 0);
 
   useEffect(() => {
     setLoading(true);
@@ -82,7 +87,7 @@ export default function MarketplacePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50"> 
       <MarketplaceHeader
         packageCount={total}
         sortValue={sortBy}
@@ -190,5 +195,13 @@ export default function MarketplacePage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function MarketplacePage() {
+  return (
+    <Suspense fallback={<div className="flex justify-center items-center min-h-screen"><div className="w-10 h-10 border-4 border-orange-500 border-t-transparent rounded-full animate-spin" /></div>}>
+      <MarketplaceContent />
+    </Suspense>
   );
 }

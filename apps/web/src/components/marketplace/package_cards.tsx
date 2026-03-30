@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Image from 'next/image';
 import { ApiPackage } from '../../services/packagesService';
 import { useMarketplace } from '../../context/marketplace-context';
@@ -25,7 +26,7 @@ export function PackageCard({ pkg }: PackageCardProps) {
     return categoryMap[category] || category.toUpperCase();
   };
 
-  const imageSrc = pkg.image_url || '/images/lion.png';
+  const [imgSrc, setImgSrc] = useState(pkg.image_url || '/images/lion.png');
   const location = pkg.location || pkg.country || 'Africa';
   const duration = pkg.duration_days ? `${pkg.duration_days} days` : 'N/A';
 
@@ -34,8 +35,9 @@ export function PackageCard({ pkg }: PackageCardProps) {
       {/* Image Container */}
       <div className="relative overflow-hidden bg-muted h-64 w-full group">
         <Image
-          src={imageSrc}
+          src={imgSrc}
           alt={pkg.title}
+          onError={() => setImgSrc('/images/lion.png')}
           fill
           className="object-cover transition-transform duration-500 ease-in-out group-hover:scale-110"
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"

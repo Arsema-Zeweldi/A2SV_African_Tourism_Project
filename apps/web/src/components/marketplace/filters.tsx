@@ -6,7 +6,7 @@ const CATEGORIES = [
   { id: 'all', label: 'All Categories' },
   { id: 'safari', label: 'Safari' },
   { id: 'beach', label: 'Beach' },
-  { id: 'culture', label: 'Cultural' },
+  { id: 'culture', label: 'Culture' },
   { id: 'adventure', label: 'Adventure' },
   { id: 'extreme', label: 'Extreme' },
 ];

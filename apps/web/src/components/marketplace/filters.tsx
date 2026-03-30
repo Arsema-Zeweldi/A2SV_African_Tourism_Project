@@ -1,7 +1,15 @@
 'use client';
 
 import { Button } from '../ui/button';
-import { CATEGORIES } from '../../lib/marketplace-data';
+
+const CATEGORIES = [
+  { id: 'all', label: 'All Categories' },
+  { id: 'safari', label: 'Safari' },
+  { id: 'beach', label: 'Beach' },
+  { id: 'culture', label: 'Culture' },
+  { id: 'adventure', label: 'Adventure' },
+  { id: 'extreme', label: 'Extreme' },
+];
 
 interface FiltersProps {
   selectedCategory: string;

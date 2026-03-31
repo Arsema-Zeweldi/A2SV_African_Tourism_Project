@@ -83,8 +83,8 @@ export async function syncAddActivity(
           image_url: activity.imageUrl ?? "",
           ai_pick: activity.aiPick ?? false,
           requirement: "",
-          latitude: 0,
-          longitude: 0,
+          latitude: activity.latitude ?? 0,
+          longitude: activity.longitude ?? 0,
         },
       },
     )

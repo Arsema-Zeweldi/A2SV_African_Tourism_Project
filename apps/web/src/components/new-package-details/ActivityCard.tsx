@@ -5,8 +5,8 @@ import {
   DollarSign,
   MapPin,
   Zap,
-  Maximize2,
   Trash2,
+  LocateFixed,
   Landmark,
   UtensilsCrossed,
   Footprints,
@@ -46,13 +46,17 @@ interface ActivityCardProps {
   activity: Activity
   onDelete?: (id: string) => void
   onExpand?: (activity: Activity) => void
+  onSeeOnMap?: (activityId: string) => void
 }
 
-export function ActivityCard({ activity, onDelete, onExpand }: ActivityCardProps) {
+export function ActivityCard({ activity, onDelete, onExpand, onSeeOnMap }: ActivityCardProps) {
   const style = ACTIVITY_STYLE[activity.type] ?? ACTIVITY_STYLE.tour
 
   return (
-    <div className="group relative flex gap-3 bg-white rounded-xl p-3 shadow-[0_1px_4px_rgba(0,0,0,0.08)] hover:shadow-[0_3px_12px_rgba(0,0,0,0.12)] transition-all duration-200">
+    <div
+      className="group relative flex gap-3 bg-white rounded-xl p-3 shadow-[0_1px_4px_rgba(0,0,0,0.08)] hover:shadow-[0_3px_12px_rgba(0,0,0,0.12)] transition-all duration-200 cursor-pointer"
+      onClick={() => onExpand?.(activity)}
+    >
       {/* Left: type icon + vertical connector */}
       <div className="flex flex-col items-center gap-1 pt-0.5 min-w-8">
         <div
@@ -97,9 +101,18 @@ export function ActivityCard({ activity, onDelete, onExpand }: ActivityCardProps
           <span className="flex items-center gap-0.5">
             <DollarSign size={9} /> {activity.cost}
           </span>
-          <span className="flex items-center gap-0.5">
-            <MapPin size={9} /> {activity.location}
-          </span>
+          {onSeeOnMap && activity.latitude && activity.longitude ? (
+            <button
+              className="flex items-center gap-0.5 text-blue-500 hover:text-blue-600 transition-colors"
+              onClick={(e) => { e.stopPropagation(); onSeeOnMap(activity.id) }}
+            >
+              <MapPin size={9} /> See on map
+            </button>
+          ) : (
+            <span className="flex items-center gap-0.5">
+              <MapPin size={9} /> {activity.location}
+            </span>
+          )}
         </div>
       </div>
 
@@ -117,19 +130,19 @@ export function ActivityCard({ activity, onDelete, onExpand }: ActivityCardProps
         )}
 
         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
-          {onExpand && (
+          {onSeeOnMap && activity.latitude && activity.longitude && (
             <button
-              aria-label="View activity details"
-              onClick={() => onExpand(activity)}
-              className="p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
+              aria-label="See on map"
+              onClick={(e) => { e.stopPropagation(); onSeeOnMap(activity.id) }}
+              className="p-1 rounded hover:bg-blue-50 text-gray-400 hover:text-blue-500 transition-colors"
             >
-              <Maximize2 size={10} />
+              <LocateFixed size={10} />
             </button>
           )}
           {onDelete && (
             <button
               aria-label="Delete activity"
-              onClick={() => onDelete(activity.id)}
+              onClick={(e) => { e.stopPropagation(); onDelete(activity.id) }}
               className="p-1 rounded hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors"
             >
               <Trash2 size={10} />

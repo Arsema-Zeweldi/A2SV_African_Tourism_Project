@@ -130,7 +130,7 @@ export function ItineraryPage({ data, itineraryId }: ItineraryPageProps) {
   const handleShare = async () => {
     const url = window.location.href
     try {
-      if (typeof navigator !== "undefined" && "share" in navigator) {
+      if (navigator.share) {
         await navigator.share({ title: data.title, url })
       } else {
         await navigator.clipboard.writeText(url)

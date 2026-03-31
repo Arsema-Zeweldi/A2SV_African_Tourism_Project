@@ -14,6 +14,7 @@ import (
 // PlannerService is the interface for the AI planning service.
 type PlannerService interface {
 	GenerateItinerary(ctx context.Context, req GenerateRequest) (*ItineraryResponse, error)
+	ChatAboutActivity(ctx context.Context, req ActivityChatRequest) (*ActivityChatResponse, error)
 }
 
 // InterviewService implements PlannerService with a cache-aside pattern.
@@ -76,6 +77,15 @@ func (s *InterviewService) GenerateItinerary(ctx context.Context, req GenerateRe
 	}
 
 	return result, nil
+}
+
+// ChatAboutActivity answers a user question about a specific activity.
+// No caching — each question is unique.
+func (s *InterviewService) ChatAboutActivity(ctx context.Context, req ActivityChatRequest) (*ActivityChatResponse, error) {
+	if req.Question == "" {
+		return nil, errors.New("question is required")
+	}
+	return s.client.ChatAboutActivity(ctx, req)
 }
 
 // StartInterview is kept for backward-compatibility with the existing interface.

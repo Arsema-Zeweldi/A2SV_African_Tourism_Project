@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"strings"
 	"time"
 
 	"github.com/google/generative-ai-go/genai"
@@ -72,4 +73,41 @@ func (g *GeminiClientImpl) GenerateItinerary(ctx context.Context, req GenerateRe
 	}
 
 	return result, nil
+}
+
+// ChatAboutActivity calls the Gemini API to answer a user question about a specific activity.
+func (g *GeminiClientImpl) ChatAboutActivity(ctx context.Context, req ActivityChatRequest) (*ActivityChatResponse, error) {
+	llmCtx, cancel := context.WithTimeout(ctx, g.timeout)
+	defer cancel()
+
+	prompt := fmt.Sprintf(`You are an expert African travel guide. A traveler is asking about this activity on their itinerary:
+
+Activity: %s
+Description: %s
+Location: %s
+
+Their question: %s
+
+Answer concisely in 2-4 sentences. Be helpful and practical. If you don't know, say so.`,
+		req.ActivityTitle, req.ActivityDescription, req.ActivityLocation, req.Question)
+
+	m := g.client.GenerativeModel(g.model)
+
+	slog.Info("Calling Gemini API for activity chat", "model", g.model, "activity", req.ActivityTitle)
+
+	resp, err := m.GenerateContent(llmCtx, genai.Text(prompt))
+	if err != nil {
+		return nil, fmt.Errorf("Gemini API error: %w", err)
+	}
+
+	if resp == nil || len(resp.Candidates) == 0 || len(resp.Candidates[0].Content.Parts) == 0 {
+		return nil, fmt.Errorf("Gemini returned empty response")
+	}
+
+	rawText, ok := resp.Candidates[0].Content.Parts[0].(genai.Text)
+	if !ok {
+		return nil, fmt.Errorf("unexpected part type from Gemini")
+	}
+
+	return &ActivityChatResponse{Answer: strings.TrimSpace(string(rawText))}, nil
 }

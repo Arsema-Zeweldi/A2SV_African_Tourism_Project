@@ -34,3 +34,16 @@ type ItineraryResponse struct {
 	NightsCount int        `json:"nights_count"`
 	Activities  []Activity `json:"activities"`
 }
+
+// ActivityChatRequest is the input for the activity chat endpoint.
+type ActivityChatRequest struct {
+	ActivityTitle       string `json:"activity_title"`
+	ActivityDescription string `json:"activity_description"`
+	ActivityLocation    string `json:"activity_location"`
+	Question            string `json:"question"`
+}
+
+// ActivityChatResponse is the output from the activity chat endpoint.
+type ActivityChatResponse struct {
+	Answer string `json:"answer"`
+}

@@ -92,6 +92,39 @@ func (h *AppHandler) GenerateItinerary(c *gin.Context) {
 	c.JSON(http.StatusOK, result)
 }
 
+// ChatAboutActivity answers a user question about a specific itinerary activity using AI.
+func (h *AppHandler) ChatAboutActivity(c *gin.Context) {
+	if h.PlannerService == nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "AI planner service not configured"})
+		return
+	}
+
+	var req ActivityChatRequestDTO
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request: " + err.Error()})
+		return
+	}
+
+	chatReq := ai_planner.ActivityChatRequest{
+		ActivityTitle:       req.ActivityTitle,
+		ActivityDescription: req.ActivityDescription,
+		ActivityLocation:    req.ActivityLocation,
+		Question:            req.Question,
+	}
+
+	result, err := h.PlannerService.ChatAboutActivity(c.Request.Context(), chatReq)
+	if err != nil {
+		if strings.Contains(err.Error(), "quota") || strings.Contains(err.Error(), "rate limit") {
+			c.JSON(http.StatusTooManyRequests, gin.H{"error": "AI service rate limit exceeded. Please try again later."})
+			return
+		}
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "AI chat failed: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, result)
+}
+
 // resolveBudgetLevel maps string labels or numeric budget to standard levels.
 func resolveBudgetLevel(level string, budget float64) string {
 	if level != "" {

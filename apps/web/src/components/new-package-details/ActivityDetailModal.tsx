@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, useTransition, useEffect } from "react"
 import {
   X,
   Clock,
@@ -11,8 +12,13 @@ import {
   Footprints,
   BedDouble,
   Car,
+  MessageCircle,
+  Send,
+  Loader2,
+  LocateFixed,
 } from "lucide-react"
 import type { Activity, ActivityType } from "@/types/new-package"
+import { chatAboutActivity } from "@/actions/planner_actions"
 
 const ACTIVITY_STYLE: Record<
   ActivityType,
@@ -48,15 +54,61 @@ const ACTIVITY_STYLE: Record<
 interface ActivityDetailModalProps {
   activity: Activity | null
   onClose: () => void
+  onSeeOnMap?: (activityId: string) => void
 }
 
 export function ActivityDetailModal({
   activity,
   onClose,
+  onSeeOnMap,
 }: ActivityDetailModalProps) {
+  const [chatOpen, setChatOpen] = useState(false)
+  const [question, setQuestion] = useState("")
+  const [messages, setMessages] = useState<
+    Array<{ role: "user" | "ai"; text: string }>
+  >([])
+  const [isPending, startTransition] = useTransition()
+
+  // Reset chat when activity changes
+  useEffect(() => {
+    setChatOpen(false)
+    setQuestion("")
+    setMessages([])
+  }, [activity?.id])
+
   if (!activity) return null
 
   const style = ACTIVITY_STYLE[activity.type] ?? ACTIVITY_STYLE.tour
+
+  const handleSend = () => {
+    if (!question.trim() || !activity) return
+    const q = question.trim()
+    setMessages((prev) => [...prev, { role: "user", text: q }])
+    setQuestion("")
+
+    startTransition(async () => {
+      const result = await chatAboutActivity(
+        activity.title,
+        activity.description,
+        activity.location,
+        q,
+      )
+      if (result.success) {
+        setMessages((prev) => [
+          ...prev,
+          { role: "ai", text: result.data.answer },
+        ])
+      } else {
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: "ai",
+            text: "Sorry, I couldn't answer that. Please try again.",
+          },
+        ])
+      }
+    })
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -65,17 +117,17 @@ export function ActivityDetailModal({
         onClick={onClose}
       />
 
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden max-h-[90vh] flex flex-col">
         {/* Hero / header area */}
         {activity.imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={activity.imageUrl}
             alt={activity.title}
-            className="w-full h-48 object-cover"
+            className="w-full h-48 object-cover shrink-0"
           />
         ) : (
-          <div className="w-full h-28 bg-gradient-to-br from-orange-50 to-orange-100 flex items-center justify-center">
+          <div className="w-full h-28 bg-gradient-to-br from-orange-50 to-orange-100 flex items-center justify-center shrink-0">
             <div
               className={`w-14 h-14 rounded-2xl flex items-center justify-center ${style.bg}`}
             >
@@ -94,7 +146,7 @@ export function ActivityDetailModal({
         </button>
 
         {/* Content */}
-        <div className="p-5">
+        <div className="p-5 overflow-y-auto">
           {/* Type badge + AI pick */}
           <div className="flex items-center gap-2 mb-2">
             <span
@@ -144,10 +196,80 @@ export function ActivityDetailModal({
             </div>
           </div>
 
-          {/* Location */}
-          <div className="flex items-center gap-2 text-sm text-gray-500 mb-5">
-            <MapPin size={14} className="text-orange-400 shrink-0" />
-            {activity.location}
+          {/* Location + See on Map */}
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2 text-sm text-gray-500">
+              <MapPin size={14} className="text-orange-400 shrink-0" />
+              {activity.location}
+            </div>
+            {onSeeOnMap && activity.latitude && activity.longitude && (
+              <button
+                onClick={() => { onSeeOnMap(activity.id); onClose() }}
+                className="flex items-center gap-1 text-xs font-semibold text-blue-500 hover:text-blue-600 transition-colors"
+              >
+                <LocateFixed size={12} />
+                See on Map
+              </button>
+            )}
+          </div>
+
+          {/* AI Chat section */}
+          <div className="border-t border-gray-100 pt-3 mb-3">
+            <button
+              onClick={() => setChatOpen(!chatOpen)}
+              className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 hover:text-orange-500 transition-colors"
+            >
+              <MessageCircle size={13} />
+              Ask AI about this activity
+            </button>
+
+            {chatOpen && (
+              <div className="mt-3 space-y-2">
+                {/* Message list */}
+                {messages.length > 0 && (
+                  <div className="max-h-40 overflow-y-auto space-y-2 pr-1">
+                    {messages.map((msg, i) => (
+                      <div
+                        key={i}
+                        className={`text-xs rounded-lg px-3 py-2 ${
+                          msg.role === "user"
+                            ? "bg-orange-50 text-gray-800 ml-6"
+                            : "bg-gray-50 text-gray-700 mr-6"
+                        }`}
+                      >
+                        {msg.text}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Input */}
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={question}
+                    onChange={(e) => setQuestion(e.target.value)}
+                    onKeyDown={(e) =>
+                      e.key === "Enter" && !isPending && handleSend()
+                    }
+                    placeholder="e.g. Is this suitable for kids?"
+                    disabled={isPending}
+                    className="flex-1 text-xs border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-300 placeholder:text-gray-300 disabled:opacity-50"
+                  />
+                  <button
+                    onClick={handleSend}
+                    disabled={isPending || !question.trim()}
+                    className="p-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:opacity-50 transition-colors"
+                  >
+                    {isPending ? (
+                      <Loader2 size={12} className="animate-spin" />
+                    ) : (
+                      <Send size={12} />
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Close */}

@@ -142,6 +142,7 @@ func SetupRouter(db *gorm.DB, cfg *config.Config, uploadService upload.UploadSer
 		planner.Use(middleware.RateLimiter("5-M", limiterStore))
 		{
 			planner.POST("/generate", h.GenerateItinerary)
+			planner.POST("/activity-chat", h.ChatAboutActivity)
 		}
 
 		itineraries := protected.Group("/itineraries")

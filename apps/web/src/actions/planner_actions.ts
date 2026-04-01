@@ -49,3 +49,26 @@ export async function saveItinerary(
     return { success: false, error: message }
   }
 }
+
+export async function chatAboutActivity(
+  activityTitle: string,
+  activityDescription: string,
+  activityLocation: string,
+  question: string,
+): Promise<ActionResult<{ answer: string }>> {
+  try {
+    const data = await apiFetch<{ answer: string }>("/planner/activity-chat", {
+      method: "POST",
+      body: {
+        activity_title: activityTitle,
+        activity_description: activityDescription,
+        activity_location: activityLocation,
+        question,
+      },
+    })
+    return { success: true, data }
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "Chat failed"
+    return { success: false, error: message }
+  }
+}

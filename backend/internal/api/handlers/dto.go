@@ -129,6 +129,13 @@ type GeneratePlanRequest struct {
 	Notes        string   `json:"notes"`
 }
 
+type ActivityChatRequestDTO struct {
+	ActivityTitle       string `json:"activity_title" binding:"required,min=1"`
+	ActivityDescription string `json:"activity_description"`
+	ActivityLocation    string `json:"activity_location"`
+	Question            string `json:"question" binding:"required,min=1,max=500"`
+}
+
 type CreateItineraryRequest struct {
 	Title       string                `json:"title" binding:"required,min=3,max=255"`
 	Description string                `json:"description"`

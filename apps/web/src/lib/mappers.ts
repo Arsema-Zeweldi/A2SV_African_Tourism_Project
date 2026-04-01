@@ -151,6 +151,8 @@ function mapActivityResponse(a: ItineraryActivityResponse, index: number): Activ
     type: ACTIVITY_TYPE_MAP[a.activity_type] ?? "tour",
     imageUrl: a.image_url || undefined,
     aiPick: a.ai_pick,
+    latitude: a.latitude || undefined,
+    longitude: a.longitude || undefined,
   }
 }
 
@@ -166,6 +168,8 @@ function mapGeneratedActivity(a: GeneratedActivity, index: number): Activity {
     type: ACTIVITY_TYPE_MAP[a.activity_type] ?? "tour",
     imageUrl: undefined,
     aiPick: a.ai_pick,
+    latitude: a.latitude || undefined,
+    longitude: a.longitude || undefined,
   }
 }
 

@@ -233,3 +233,16 @@ export interface PackageChatHistoryResponse {
     page_size: number
   }
 }
+
+// ── Activity AI Chat ──────────────────────────────────────────────
+
+export interface ActivityChatRequest {
+  activity_title: string
+  activity_description: string
+  activity_location: string
+  question: string
+}
+
+export interface ActivityChatResponse {
+  answer: string
+}

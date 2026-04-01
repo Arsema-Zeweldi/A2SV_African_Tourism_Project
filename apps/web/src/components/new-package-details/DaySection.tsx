@@ -10,6 +10,7 @@ interface DaySectionProps {
   onDeleteActivity?: (activityId: string) => void
   onAddActivity?: (dayId: string) => void
   onExpandActivity?: (activity: Activity) => void
+  onSeeOnMap?: (activityId: string) => void
 }
 
 export function DaySection({
@@ -18,6 +19,7 @@ export function DaySection({
   onDeleteActivity,
   onAddActivity,
   onExpandActivity,
+  onSeeOnMap,
 }: DaySectionProps) {
   const hasActivities = day.activities.length > 0
 
@@ -50,6 +52,7 @@ export function DaySection({
               activity={activity}
               onDelete={onDeleteActivity}
               onExpand={onExpandActivity}
+              onSeeOnMap={onSeeOnMap}
             />
           ))
         ) : (

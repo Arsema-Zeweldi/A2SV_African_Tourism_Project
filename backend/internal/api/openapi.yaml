@@ -926,16 +926,53 @@ paths:
                 message: Plan generated
                 data:
                   title: Nairobi Highlights
-                  currency: USD
-                  days:
-                    - day_num: 1
-                      activities:
-                        - name: City tour
-                          type: culture
-                          description: Explore downtown
-                          est_cost: 50
-                          geo_lat: -1.286389
-                          geo_long: 36.817223
+                  description: A 3-day cultural tour
+                  days_count: 3
+                  nights_count: 2
+                  activities:
+                    - day_number: 1
+                      order_index: 0
+                      title: City tour
+                      activity_type: culture
+                      description: Explore downtown
+                      cost_label: $50
+                      latitude: -1.286389
+                      longitude: 36.817223
+                      ai_pick: true
+  /api/v1/planner/activity-chat:
+    post:
+      summary: Chat about a specific activity
+      description: |
+        Allows users to ask specific questions about an activity in their itinerary (e.g., "Is it safe for kids?", "What should I wear?").
+        The AI uses the provided activity details to give context-aware answers.
+      tags: [Planner]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActivityChatRequest'
+            example:
+              activity_title: "Giraffe Centre Visit"
+              activity_description: "Feeding giraffes at the sanctuary"
+              activity_location: "Nairobi"
+              question: "What is the best time to visit and what should I bring?"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActivityChatResponse'
+              example:
+                answer: "The best time to visit is in the morning when the giraffes are most active. Bring some sunscreen and a camera!"
+        '400':
+          description: Invalid request
+        '429':
+          description: Rate limit exceeded
+
   /api/v1/itineraries:
     get:
       summary: List user itineraries
@@ -951,6 +988,32 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Itinerary'
+              example:
+                - itinerary_id: 00000000-0000-0000-0000-000000000700
+                  user_id: 00000000-0000-0000-0000-000000000001
+                  title: Test Itinerary
+                  description: Test itinerary description
+                  days_count: 3
+                  nights_count: 2
+                  activities:
+                    - activity_id: 00000000-0000-0000-0000-000000000701
+                      itinerary_id: 00000000-0000-0000-0000-000000000700
+                      day_number: 1
+                      order_index: 0
+                      title: Arrival and check-in
+                      description: Check in and rest
+                      time_label: Morning
+                      duration_label: 2 hours
+                      cost_label: $0
+                      location: Hotel Area
+                      activity_type: relaxed
+                      image_url: https://example.com/checkin.jpg
+                      ai_pick: false
+                      requirement: Passport
+                      latitude: -1.286389
+                      longitude: 36.817223
+                      start_time: "09:00:00"
+                      end_time: "11:00:00"
     post:
       summary: Create itinerary
       tags: [Itineraries]
@@ -969,12 +1032,23 @@ paths:
               nights_count: 2
               start_date: "2026-03-20"
               end_date: "2026-03-23"
-              items:
+              activities:
                 - day_number: 1
+                  order_index: 0
                   title: Arrival and check-in
                   description: Check in and rest
-                  start_time: "09:00"
-                  end_time: "12:00"
+                  time_label: Morning
+                  duration_label: 2 hours
+                  cost_label: $0
+                  location: Hotel Area
+                  activity_type: relaxed
+                  image_url: https://example.com/checkin.jpg
+                  ai_pick: false
+                  requirement: Passport
+                  latitude: -1.286389
+                  longitude: 36.817223
+                  start_time: "09:00:00"
+                  end_time: "11:00:00"
       responses:
         '201':
           description: Created
@@ -989,7 +1063,25 @@ paths:
                 description: Test itinerary description
                 days_count: 3
                 nights_count: 2
-                activities: []
+                activities:
+                  - activity_id: 00000000-0000-0000-0000-000000000701
+                    itinerary_id: 00000000-0000-0000-0000-000000000700
+                    day_number: 1
+                    order_index: 0
+                    title: Arrival and check-in
+                    description: Check in and rest
+                    time_label: Morning
+                    duration_label: 2 hours
+                    cost_label: $0
+                    location: Hotel Area
+                    activity_type: relaxed
+                    image_url: https://example.com/checkin.jpg
+                    ai_pick: false
+                    requirement: Passport
+                    latitude: -1.286389
+                    longitude: 36.817223
+                    start_time: "09:00"
+                    end_time: "11:00"
   /api/v1/itineraries/{id}:
     get:
       summary: Get itinerary by ID
@@ -1021,7 +1113,21 @@ paths:
                   - activity_id: 00000000-0000-0000-0000-000000000701
                     itinerary_id: 00000000-0000-0000-0000-000000000700
                     day_number: 1
-                    title: Arrival
+                    order_index: 0
+                    title: Arrival and check-in
+                    description: Check in and rest
+                    time_label: Morning
+                    duration_label: 2 hours
+                    cost_label: $0
+                    location: Hotel Area
+                    activity_type: relaxed
+                    image_url: https://example.com/checkin.jpg
+                    ai_pick: false
+                    requirement: Passport
+                    latitude: -1.286389
+                    longitude: 36.817223
+                    start_time: "09:00:00"
+                    end_time: "11:00:00"
     delete:
       summary: Delete itinerary
       tags: [Itineraries]
@@ -1064,7 +1170,22 @@ paths:
               $ref: '#/components/schemas/UpdateItineraryActivityRequest'
             example:
               activity_id: 00000000-0000-0000-0000-000000000701
+              day_number: 1
+              order_index: 1
               title: Updated activity title
+              description: Check in and relax
+              time_label: Afternoon
+              duration_label: 3 hours
+              cost_label: $20
+              location: City Center
+              activity_type: culture
+              image_url: https://example.com/relax.jpg
+              ai_pick: true
+              requirement: None
+              latitude: -1.286389
+              longitude: 36.817223
+              start_time: "14:00:00"
+              end_time: "17:00:00"
       responses:
         '200':
           description: OK
@@ -1076,7 +1197,21 @@ paths:
                 activity_id: 00000000-0000-0000-0000-000000000701
                 itinerary_id: 00000000-0000-0000-0000-000000000700
                 day_number: 1
+                order_index: 1
                 title: Updated activity title
+                description: Check in and relax
+                time_label: Afternoon
+                duration_label: 3 hours
+                cost_label: $20
+                location: City Center
+                activity_type: culture
+                image_url: https://example.com/relax.jpg
+                ai_pick: true
+                requirement: None
+                latitude: -1.286389
+                longitude: 36.817223
+                start_time: "14:00:00"
+                end_time: "17:00:00"
   /api/v1/posts:
     get:
       summary: List community posts
@@ -1947,8 +2082,9 @@ components:
           example: 500.0
         budget_level:
           type: string
-          enum: [low, medium, luxury]
+          enum: [low, medium, high, luxury]
           example: "medium"
+
         vibe_tags:
           type: array
           items:
@@ -1967,22 +2103,28 @@ components:
         notes:
           type: string
           example: "Interested in local markets and wildlife conservation."
+
     GeneratePlanResponse:
       type: object
       properties:
         message:
           type: string
+          example: "Plan generated successfully"
         data:
           type: object
           properties:
             title:
               type: string
+              example: "Nairobi City & Culture Tour"
             description:
               type: string
+              example: "A vibrant 3-day exploration of Nairobi's wildlife and heritage."
             days_count:
               type: integer
+              example: 3
             nights_count:
               type: integer
+              example: 2
             activities:
               type: array
               items:
@@ -1990,22 +2132,55 @@ components:
                 properties:
                   day_number:
                     type: integer
+                    example: 1
                   order_index:
                     type: integer
+                    example: 1
                   title:
                     type: string
+                    example: "David Sheldrick Wildlife Trust"
                   activity_type:
                     type: string
+                    example: "wildlife"
                   description:
                     type: string
+                    example: "Visit the elephant orphanage and learn about conservation."
                   cost_label:
                     type: string
+                    example: "$15"
                   latitude:
                     type: number
+                    example: -1.3768
                   longitude:
                     type: number
+                    example: 36.7749
                   ai_pick:
                     type: boolean
+                    example: true
+
+    ActivityChatRequest:
+      type: object
+      required: [activity_title, question]
+      properties:
+        activity_title:
+          type: string
+          example: "Giraffe Centre Visit"
+        activity_description:
+          type: string
+          example: "Feeding giraffes at the sanctuary"
+        activity_location:
+          type: string
+          example: "Nairobi"
+        question:
+          type: string
+          example: "What is the best time to visit?"
+    ActivityChatResponse:
+      type: object
+      properties:
+        answer:
+          type: string
+          example: "The best time to visit is in the morning..."
+
     PackageReview:
       type: object
       properties:

@@ -13,6 +13,7 @@ import type {
 import type {
   CostBreakdowns as PackageDetailsCostBreakdownItem,
   PackageDetails as PackageDetailsPageData,
+  RouteStop,
 } from "@/types/package-details"
 
 const FALLBACK_PACKAGE_IMAGE = "/images/African-Safari-Sunset.png"
@@ -104,20 +105,38 @@ function mapPackageDetails(
   chatMessages: PackageChatHistoryResponse["data"],
 ): PackageDetailsPageData {
   const location = [pkg.location, pkg.country].filter(Boolean).join(", ")
+  const itineraryActivities = (pkg.itinerary?.activities ?? [])
+    .slice()
+    .sort((a, b) => a.day_number - b.day_number || a.order_index - b.order_index)
+  const routeStops: RouteStop[] = itineraryActivities
+    .filter(
+      (activity) =>
+        Number.isFinite(activity.latitude) && Number.isFinite(activity.longitude)
+    )
+    .map((activity, index, arr) => ({
+      name: activity.location || activity.title || `Stop ${index + 1}`,
+      label:
+        index === 0 ? "Start" : index === arr.length - 1 ? "End" : `Stop ${index}`,
+      latitude: activity.latitude,
+      longitude: activity.longitude,
+    }))
 
   return {
     name: pkg.title,
     owner: {
-      name: toDisplayName(pkg.creator_id, "Creator"),
-      avatar: FALLBACK_AVATAR,
+      name: pkg.creator_name || toDisplayName(pkg.creator_id, "Creator"),
+      avatar: pkg.creator_avatar || FALLBACK_AVATAR,
     },
     cost: formatCurrency(pkg.price, pkg.currency),
+    currency: pkg.currency || "USD",
+    totalCost: pkg.price,
     isPublic: pkg.status === "public",
     review: reviews.map((review) => ({
       author: toDisplayName(review.user_id, "Traveler"),
       avatar: FALLBACK_AVATAR,
       text: review.comment,
       date: formatRelativeDate(review.created_at),
+      rating: review.rating,
     })),
     description: pkg.description || pkg.summary || "No description available yet.",
     image: pkg.image_url || FALLBACK_PACKAGE_IMAGE,
@@ -128,22 +147,26 @@ function mapPackageDetails(
         }
       : undefined,
     location,
-    itinerary: (pkg.itinerary?.activities ?? [])
-      .slice()
-      .sort((a, b) => a.day_number - b.day_number || a.order_index - b.order_index)
-      .map((activity) => ({
+    itinerary: itineraryActivities.map((activity) => ({
         day: activity.day_number,
         name: activity.title,
         description: activity.description,
         cost: activity.cost_label || undefined,
         requirement: activity.requirement || undefined,
+        latitude: activity.latitude,
+        longitude: activity.longitude,
+        location: activity.location || undefined,
       })),
+    routeStops,
     costBreakdown: buildCostBreakdown(pkg),
     communityChat: chatMessages
       .slice()
       .reverse()
       .map((message) => ({
-        name: toDisplayName(message.user_id, "Traveler"),
+        id: message.chat_id,
+        userId: message.user_id,
+        name: message.user_name || toDisplayName(message.user_id, "Traveler"),
+        avatar: message.user_avatar || FALLBACK_AVATAR,
         text: message.message,
         timeStamp: formatTime(message.created_at),
       })),
@@ -156,9 +179,9 @@ function mapPackageDetails(
 
 function mapMyPackageCard(pkg: PackageResponse): MyPackageCard {
   const statusMap: Record<PackageResponse["status"], MyPackageCard["status"]> = {
-    public: { label: "Published", tone: "success" },
-    private: { label: "Draft", tone: "neutral" },
-    archived: { label: "Archived", tone: "warning" },
+    public: { label: "Public", tone: "success", value: "public" },
+    private: { label: "Private", tone: "neutral", value: "private" },
+    archived: { label: "Archived", tone: "warning", value: "archived" },
   }
 
   return {
@@ -166,6 +189,8 @@ function mapMyPackageCard(pkg: PackageResponse): MyPackageCard {
     title: pkg.title,
     location: [pkg.location, pkg.country].filter(Boolean).join(", "),
     image: pkg.image_url || FALLBACK_PACKAGE_IMAGE,
+    createdAt: pkg.created_at,
+    priceAmount: pkg.price,
     status: statusMap[pkg.status],
     priceLabel: "Package Price",
     priceValue: formatCurrency(pkg.price, pkg.currency),
@@ -181,7 +206,7 @@ function mapMyPackageCard(pkg: PackageResponse): MyPackageCard {
       {
         label: pkg.status === "public" ? "Live Package" : "Edit Package",
         variant: "primary",
-        href: `/new-package/${pkg.itinerary_id}`,
+        kind: "status-modal",
       },
     ],
   }
@@ -228,13 +253,13 @@ export async function getMyPackagesPageData(): Promise<MyPackagesPageData> {
     description: "Manage your upcoming African adventures and itineraries.",
     sidebar: {
       dashboardItems: [
-        { label: "Current Packages", icon: "package", active: true },
-        { label: "Saved for Later", icon: "bookmark" },
-        { label: "Past Trips", icon: "history" },
+        { label: "Current Packages", icon: "package", active: true, href: "/my-packages" },
+        { label: "Saved for Later", icon: "bookmark", href: "/my-packages/saved-for-later" },
+        { label: "Past Trips", icon: "history", href: "/my-packages/past-trips" },
       ],
       preferenceItems: [
-        { label: "Account Settings", icon: "settings" },
-        { label: "Support Center", icon: "support" },
+        { label: "Account Settings", icon: "settings", href: "/profile" },
+        { label: "Support Center", icon: "support", href: "/my-packages/support-center" },
       ],
       tipCard: {
         title: "Travel Tip",

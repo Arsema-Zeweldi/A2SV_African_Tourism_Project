@@ -62,10 +62,10 @@ export default function ProfilePage() {
       />
 
       {/* Actions */}
-      <div className="flex justify-end gap-3">
+      <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
         <Button
           variant="outline"
-          className="border-stone-200 text-stone-600"
+          className="border-stone-200 text-stone-600 w-full sm:w-auto"
           onClick={() => window.location.reload()}
           disabled={isSaving}
         >
@@ -74,11 +74,11 @@ export default function ProfilePage() {
         <Button
           onClick={saveChanges}
           disabled={isSaving || isUploadingAvatar}
-          className={
+          className={`w-full sm:w-auto ${
             saveSuccess
-              ? "bg-green-600 hover:bg-green-700 text-white"
-              : "bg-orange-500 hover:bg-orange-600 text-white"
-          }
+              ? 'bg-green-600 hover:bg-green-700 text-white'
+              : 'bg-orange-500 hover:bg-orange-600 text-white'
+          }`}
         >
           {isSaving ? (
             <>
@@ -98,7 +98,7 @@ export default function ProfilePage() {
 
       {/* Promo banner */}
       <div
-        className="relative rounded-xl overflow-hidden min-h-28 flex items-end p-6"
+        className="relative rounded-xl overflow-hidden min-h-28 flex items-end p-5 sm:p-6"
         style={{ background: "linear-gradient(135deg, #1c1917 50%, #292524)" }}
       >
         <div

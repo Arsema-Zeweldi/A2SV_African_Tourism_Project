@@ -7,6 +7,7 @@ import { IoChatbubbleSharp } from 'react-icons/io5'
 import { HiDotsHorizontal } from 'react-icons/hi'
 import { Post, Comment as PostComment } from '@/types/feed'
 import { getComments, toggleLike, postComment } from '@/services/feedServices'
+import { useCurrentUserAvatar } from '@/hooks/useCurrentUserAvatar'
 import Image from 'next/image'
 import { useEffect } from 'react'
 
@@ -15,6 +16,8 @@ interface PostCardProps {
 }
 
 const PostCard = ({ post }: PostCardProps) => {
+  const { avatar: currentUserAvatar, handleAvatarError } =
+    useCurrentUserAvatar()
   const [isLiked, setIsLiked] = useState(post.liked || false)
   const [likesCount, setLikesCount] = useState(post.likes_count)
   const [commentCount, setCommentCount] = useState(post.comments_count)
@@ -149,7 +152,7 @@ const PostCard = ({ post }: PostCardProps) => {
               alt="User Avatar"
               fill
               className="object-cover"
-              unoptimized={!post.user_avatar?.startsWith('http')}
+              unoptimized
             />
           </div>
           <div className="flex flex-col">
@@ -250,10 +253,12 @@ const PostCard = ({ post }: PostCardProps) => {
             <div className="flex gap-3 items-center mb-6">
               <div className="relative size-8 shrink-0 rounded-full overflow-hidden bg-gray-200">
                 <Image
-                  src="/images/user-icon.png"
+                  src={currentUserAvatar}
                   alt="My Avatar"
                   fill
                   className="object-cover"
+                  unoptimized
+                  onError={handleAvatarError}
                 />
               </div>
               <div className="flex-1 relative group">
@@ -293,6 +298,7 @@ const PostCard = ({ post }: PostCardProps) => {
                           alt={`${comment.user_name}'s avatar`}
                           fill
                           className="object-cover"
+                          unoptimized
                         />
                       </div>
 

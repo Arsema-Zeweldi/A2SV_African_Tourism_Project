@@ -42,6 +42,7 @@ const TrendingNow = () => {
                 alt={pkg.title}
                 fill
                 className="object-cover"
+                unoptimized
               />
             </div>
             <div className="flex flex-col">

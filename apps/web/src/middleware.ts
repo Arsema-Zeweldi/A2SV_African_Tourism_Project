@@ -5,7 +5,10 @@ const PUBLIC_ROUTES = ["/", "/landing"]
 const AUTH_ROUTES = ["/login", "/signup", "/forgot-password"]
 
 export function middleware(request: NextRequest) {
-  const token = request.cookies.get("auth_token")?.value
+  const token =
+    request.cookies.get("auth_token")?.value ||
+    request.cookies.get("next-auth.session-token")?.value ||
+    request.cookies.get("__Secure-next-auth.session-token")?.value
   const { pathname } = request.nextUrl
 
   // Auth pages: if already logged in → redirect to /home

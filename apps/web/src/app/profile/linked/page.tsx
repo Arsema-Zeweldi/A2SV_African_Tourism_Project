@@ -55,7 +55,7 @@ export default function LinkedAccountsPage() {
 
         <CardContent className="divide-y divide-stone-100">
           {PROVIDERS.map(({ id, icon: Icon, label, description, connected, color, bg }) => (
-            <div key={id} className="flex items-center gap-4 py-4 first:pt-0 last:pb-0">
+            <div key={id} className="flex flex-col items-start gap-3 py-4 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:gap-4">
               <div
                 className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] ${bg}`}
               >
@@ -85,7 +85,7 @@ export default function LinkedAccountsPage() {
       </Card>
 
       {/* Info note */}
-      <p className="text-xs text-stone-400 text-center">
+      <p className="text-center text-xs text-stone-400">
         Social login integrations (Google, GitHub) are coming in a future release.
       </p>
     </div>

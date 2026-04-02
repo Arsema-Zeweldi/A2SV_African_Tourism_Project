@@ -167,6 +167,8 @@ export interface CreatePackageRequest {
 export interface PackageResponse {
   package_id: string
   creator_id: string
+  creator_name?: string
+  creator_avatar?: string | null
   itinerary_id: string
   title: string
   summary: string
@@ -221,6 +223,8 @@ export interface PackageChatResponse {
   chat_id: string
   package_id: string
   user_id: string
+  user_name?: string
+  user_avatar?: string | null
   message: string
   created_at: string
 }

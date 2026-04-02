@@ -14,6 +14,9 @@ import 'package:mobile/features/profile/presentation/pages/edit_profile_screen.d
 import 'package:mobile/features/profile/presentation/pages/profile_page.dart';
 import 'package:mobile/features/post/presentation/pages/new_post_screen.dart';
 import 'package:mobile/features/generated_itinerary/presentation/pages/itinerary_result_screen.dart';
+import 'package:mobile/features/chat/presentation/bloc/chat_bloc.dart';
+import 'package:mobile/features/chat/presentation/pages/package_chat_screen.dart';
+import 'package:mobile/injection_container.dart';
 import 'package:mobile/main_screen.dart';
 
 /// Creates and configures the app's GoRouter instance.
@@ -111,6 +114,22 @@ GoRouter createRouter(AuthBloc authBloc) {
       GoRoute(
         path: '/itinerary-result',
         builder: (context, state) => const ItineraryResultScreen(),
+      ),
+
+      // ─── Package Chat ──────────────────────────────────────────────
+      GoRoute(
+        path: '/package-chat/:packageId',
+        builder: (context, state) {
+          final packageId = state.pathParameters['packageId']!;
+          final packageTitle = state.extra as String? ?? 'Package Chat';
+          return BlocProvider(
+            create: (_) => sl<ChatBloc>(),
+            child: PackageChatScreen(
+              packageId: packageId,
+              packageTitle: packageTitle,
+            ),
+          );
+        },
       ),
     ],
   );

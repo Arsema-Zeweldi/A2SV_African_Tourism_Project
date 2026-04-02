@@ -1,15 +1,3 @@
-// TODO: Replace this placeholder with the real Onboarding screen.
-// Dawit's PR #26 (branch: Dawit_Branch) has the real implementation.
-// Once that PR is merged and conflicts resolved, this file gets replaced.
-//
-// CONTRACT — Your screen must:
-//   1. Keep the class name: OnboardingScreen
-//   2. Keep the file at this exact path
-//   3. On "Get Started" or "Skip", navigate to login:
-//        context.go('/login')
-//   4. Optionally save a flag so onboarding is only shown once:
-//        SharedPreferences → set 'HAS_SEEN_ONBOARDING' = true
-
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/constants/app_colors.dart';
@@ -56,7 +44,7 @@ class OnboardingScreen extends StatelessWidget {
               ),
               const Spacer(),
               ElevatedButton(
-                onPressed: () => context.go('/login'),
+                onPressed: () => context.go('/signup'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryOrange,
                   padding: const EdgeInsets.symmetric(vertical: 16),

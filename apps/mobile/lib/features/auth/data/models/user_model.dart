@@ -19,7 +19,7 @@ class UserModel extends User {
   ///
   /// Handles two backend response shapes:
   ///   1. Auth response (minimal): { "id": "...", "email": "..." }
-  ///   2. Profile response (full):  { "user_id": "...", "first_name": "...", ... }
+  ///   2. Profile response (full):  { "user_id": "...", "first_name": "...", "avatar_url": "...", ... }
   factory UserModel.fromJson(Map<String, dynamic> json) {
     // The backend uses 'user_id' in profile responses, 'id' in auth responses.
     final id = json['id']?.toString() ??
@@ -39,13 +39,16 @@ class UserModel extends User {
     if (json['createdAt'] != null) {
       createdAt = DateTime.parse(json['createdAt']);
     } else if (json['created_at'] != null) {
-      createdAt = DateTime.parse(json['created_at']);
+      createdAt = DateTime.tryParse(json['created_at'].toString()) ?? DateTime.now();
     } else {
       createdAt = DateTime.now();
     }
 
+    // Backend profile response uses 'avatar_url' (see dto.go UserProfileResponse).
     final profilePictureUrl =
-        json['profilePictureUrl'] ?? json['profile_image_url'];
+        json['profilePictureUrl'] ??
+        json['avatar_url'] ??
+        json['profile_image_url'];
 
     return UserModel(
       id: id,

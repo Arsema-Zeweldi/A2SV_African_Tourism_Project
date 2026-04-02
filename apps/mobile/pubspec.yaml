@@ -20,6 +20,8 @@ dependencies:
   google_fonts: ^8.0.1
   flutter_svg: ^2.2.3
   image_picker: ^1.2.1
+  flutter_map: ^6.1.0
+  latlong2: ^0.9.1
 
 dev_dependencies:
   flutter_test:

@@ -31,12 +31,67 @@ class PlanTripSummaryScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Use real params or sensible demo defaults.
+    final dest = destination ?? 'Maasai Mara, Kenya';
+    final climate = climatePref ?? 'tropical';
+    final days = durationDays ?? 10;
+    final vibes = vibeTags ?? ['adventure', 'wildlife'];
+    final bLevel = budgetLevel ?? 'high';
+    final tripNotes = notes ?? '';
+    final tripBudget = budget;
+
+    // Human-readable labels for the summary cards.
+    String climateLabel;
+    switch (climate) {
+      case 'tropical':
+        climateLabel = 'Warm & Sunny';
+        break;
+      case 'coastal':
+        climateLabel = 'Coastal Breeze';
+        break;
+      case 'highland':
+        climateLabel = 'Cool Highlands';
+        break;
+      case 'desert':
+        climateLabel = 'Desert Heat';
+        break;
+      case 'temperate':
+        climateLabel = 'Temperate';
+        break;
+      default:
+        climateLabel = 'Any Climate';
+    }
+
+    String budgetLabel;
+    switch (bLevel) {
+      case 'low':
+        budgetLabel = 'Budget (\$)';
+        break;
+      case 'medium':
+        budgetLabel = 'Standard (\$\$)';
+        break;
+      case 'high':
+        budgetLabel = 'Premium (\$\$\$)';
+        break;
+      case 'luxury':
+        budgetLabel = 'Luxury (\$\$\$\$)';
+        break;
+      default:
+        budgetLabel = 'Premium (\$\$\$)';
+    }
+
+    String vibeLabel = vibes.isNotEmpty
+        ? vibes
+            .map((v) => v[0].toUpperCase() + v.substring(1))
+            .join(' & ')
+        : 'Adventure & Wildlife';
+
     final items = [
-      {'icon': '📍', 'label': 'DESTINATION', 'value': 'Maasai Mara, Kenya'},
-      {'icon': '☀', 'label': 'CLIMATE', 'value': 'Warm & Sunny'},
-      {'icon': '📅', 'label': 'DURATION', 'value': '10 Days'},
-      {'icon': '✨', 'label': 'VIBE', 'value': 'Adventure & Wildlife'},
-      {'icon': '💰', 'label': 'BUDGET', 'value': 'Premium (\$\$\$\$)'},
+      {'icon': '📍', 'label': 'DESTINATION', 'value': dest},
+      {'icon': '☀', 'label': 'CLIMATE', 'value': climateLabel},
+      {'icon': '📅', 'label': 'DURATION', 'value': '$days Days'},
+      {'icon': '✨', 'label': 'VIBE', 'value': vibeLabel},
+      {'icon': '💰', 'label': 'BUDGET', 'value': budgetLabel},
     ];
 
     return Scaffold(
@@ -168,7 +223,7 @@ class PlanTripSummaryScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 12),
                     const Text(
-                      "Disclaimer: We've made some general assumptions to craft this summary. Our experts will confirm all details with you shortly.",
+                      'Disclaimer: We facilitate itinerary generation and community connection. On-ground services are managed by third-party agents.',
                       style: TextStyle(
                           fontSize: 10,
                           color: Color(0xFF9E8A70),
@@ -176,82 +231,104 @@ class PlanTripSummaryScreen extends StatelessWidget {
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 20),
+
+                    // ── BLoC listener for navigation after generation ──
                     BlocListener<PlannerBloc, PlannerState>(
                       listener: (context, state) {
                         if (state is ItineraryGenerated) {
                           context.push('/itinerary-result');
                         } else if (state is PlannerError) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(state.message), backgroundColor: Colors.red),
+                            SnackBar(
+                                content: Text(state.message),
+                                backgroundColor: Colors.red),
                           );
                         }
                       },
                       child: const SizedBox.shrink(),
                     ),
-                    GestureDetector(
-                      onTap: () {
-                        final dest = destination ?? 'Maasai Mara, Kenya';
-                        final days = durationDays ?? 10;
-                        context.read<PlannerBloc>().add(
-                          GenerateItineraryRequested(
-                            GeneratePlanRequest(
-                              destination: dest,
-                              durationDays: days,
-                              budget: budget,
-                              budgetLevel: budgetLevel,
-                              vibeTags: vibeTags ?? [],
-                              climatePref: climatePref,
-                              notes: notes,
-                            ),
-                          ),
-                        );
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: const Row(
-                              children: [
-                                Text('🌍 ', style: TextStyle(fontSize: 16)),
-                                Text('Crafting your dream itinerary...',
-                                    style: TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.w600)),
+
+                    // ── Generate button (with loading state) ──
+                    BlocBuilder<PlannerBloc, PlannerState>(
+                      builder: (context, state) {
+                        final isLoading = state is PlannerLoading;
+
+                        return GestureDetector(
+                          onTap: isLoading
+                              ? null
+                              : () {
+                                  context.read<PlannerBloc>().add(
+                                    GenerateItineraryRequested(
+                                      GeneratePlanRequest(
+                                        destination: dest,
+                                        durationDays: days,
+                                        budget: tripBudget,
+                                        budgetLevel: bLevel,
+                                        vibeTags: vibes,
+                                        climatePref: climate,
+                                        notes: tripNotes,
+                                      ),
+                                    ),
+                                  );
+                                },
+                          child: Container(
+                            width: double.infinity,
+                            height: 54,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: isLoading
+                                    ? [
+                                        const Color(0xFF6B5B3E),
+                                        const Color(0xFF8B7B5E),
+                                      ]
+                                    : [
+                                        const Color(0xFF3D2B1A),
+                                        const Color(0xFF6B4423),
+                                      ],
+                              ),
+                              borderRadius: BorderRadius.circular(14),
+                              boxShadow: [
+                                BoxShadow(
+                                  color:
+                                      const Color(0xFF3D2B1A).withOpacity(0.4),
+                                  blurRadius: 16,
+                                  offset: const Offset(0, 6),
+                                ),
                               ],
                             ),
-                            backgroundColor: const Color(0xFFE8781A),
-                            behavior: SnackBarBehavior.floating,
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12)),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: isLoading
+                                  ? [
+                                      const SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(
+                                          color: Colors.white,
+                                          strokeWidth: 2,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      const Text('Crafting your itinerary...',
+                                          style: TextStyle(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.w700,
+                                              fontSize: 13)),
+                                    ]
+                                  : [
+                                      const Text('✨ ',
+                                          style: TextStyle(fontSize: 16)),
+                                      const Text('GENERATE MY ITINERARY',
+                                          style: TextStyle(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.w800,
+                                              fontSize: 13,
+                                              letterSpacing: 0.8)),
+                                    ],
+                            ),
                           ),
                         );
                       },
-                      child: Container(
-                        width: double.infinity,
-                        height: 54,
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFF3D2B1A), Color(0xFF6B4423)],
-                          ),
-                          borderRadius: BorderRadius.circular(14),
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(0xFF3D2B1A).withOpacity(0.4),
-                              blurRadius: 16,
-                              offset: const Offset(0, 6),
-                            ),
-                          ],
-                        ),
-                        child: const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text('✨ ', style: TextStyle(fontSize: 16)),
-                            Text('GENERATE MY ITINERARY',
-                                style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w800,
-                                    fontSize: 13,
-                                    letterSpacing: 0.8)),
-                          ],
-                        ),
-                      ),
                     ),
                     const SizedBox(height: 24),
                   ],

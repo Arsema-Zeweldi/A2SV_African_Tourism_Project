@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import 'package:mobile/core/widgets/activity_map.dart';
 import 'package:mobile/features/packages/presentation/bloc/package_bloc.dart';
 import 'package:mobile/features/packages/presentation/bloc/package_event.dart';
 import 'package:mobile/features/packages/presentation/bloc/package_state.dart';
@@ -88,6 +90,7 @@ class _PackageDetailPageState extends State<PackageDetailPage> {
           String? displayImageUrl = widget.imageUrl;
           String? displayImagePath = widget.imagePath;
           List<_ItineraryDay> itineraryDays = [];
+          List<MapActivity> mapActivities = [];
 
           if (state is PackageDetailLoaded) {
             final pkg = state.package;
@@ -114,6 +117,17 @@ class _PackageDetailPageState extends State<PackageDetailPage> {
                 title: 'Day $d',
                 description: activitiesByDay[d]!.join('\n'),
               )).toList();
+
+              mapActivities = pkg.itinerary!.activities
+                  .where((a) => a.latitude != 0 && a.longitude != 0)
+                  .map((a) => MapActivity(
+                        title: a.title,
+                        description: a.description,
+                        location: a.location,
+                        latitude: a.latitude,
+                        longitude: a.longitude,
+                      ))
+                  .toList();
             }
           }
 
@@ -153,6 +167,10 @@ class _PackageDetailPageState extends State<PackageDetailPage> {
                           _buildDescriptionSection(displayDescription),
                           const SizedBox(height: 20),
                           _buildItinerarySection(itineraryDays),
+                          if (mapActivities.isNotEmpty) ...[
+                            const SizedBox(height: 20),
+                            _buildMapSection(context, mapActivities),
+                          ],
                           const SizedBox(height: 100),
                         ],
                       ),
@@ -164,6 +182,20 @@ class _PackageDetailPageState extends State<PackageDetailPage> {
                 alignment: Alignment.bottomCenter,
                 child: _buildBottomAction(context, displayPrice),
               ),
+              if (widget.packageId != null)
+                Positioned(
+                  right: 16,
+                  bottom: 90,
+                  child: FloatingActionButton(
+                    heroTag: 'chat_fab',
+                    onPressed: () => context.push(
+                      '/package-chat/${widget.packageId}',
+                      extra: displayTitle,
+                    ),
+                    backgroundColor: Colors.orange,
+                    child: const Icon(Icons.chat_bubble_outline, color: Colors.white),
+                  ),
+                ),
             ],
           );
         },
@@ -317,6 +349,45 @@ class _PackageDetailPageState extends State<PackageDetailPage> {
               ],
             ],
           ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMapSection(BuildContext context, List<MapActivity> activities) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text("Map",
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 12),
+        ActivityMapView(
+          activities: activities,
+          height: 200,
+          interactive: false,
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => Scaffold(
+                  appBar: AppBar(
+                    title: const Text('Activity Locations'),
+                    backgroundColor: Colors.white,
+                    foregroundColor: Colors.black,
+                    elevation: 1,
+                  ),
+                  body: ActivityMapView(
+                    activities: activities,
+                    height: double.infinity,
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+        const SizedBox(height: 4),
+        const Center(
+          child: Text('Tap to expand',
+              style: TextStyle(color: Colors.grey, fontSize: 12)),
         ),
       ],
     );

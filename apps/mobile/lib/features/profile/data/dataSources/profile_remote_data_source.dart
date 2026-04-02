@@ -84,7 +84,7 @@ class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
     required String newPassword,
     required String passwordConfirm,
   }) async {
-    await apiClient.post('/user/change-password', data: {
+    await apiClient.post(ApiEndpoints.changePassword, data: {
       'current_password': currentPassword,
       'new_password': newPassword,
       'password_confirm': passwordConfirm,

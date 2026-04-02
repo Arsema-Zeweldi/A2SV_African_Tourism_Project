@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/constants/app_colors.dart';
+import 'package:mobile/core/widgets/activity_map.dart';
 import 'package:mobile/core/widgets/logo_header.dart';
 import 'package:mobile/features/generated_itinerary/presentation/widgets/budget_tracker_card.dart';
 import 'package:mobile/features/generated_itinerary/presentation/widgets/cost_breakdown_card.dart';
@@ -8,9 +9,16 @@ import 'package:mobile/features/generated_itinerary/presentation/widgets/itinera
 import 'package:mobile/features/planner/presentation/bloc/planner_bloc.dart';
 import 'package:mobile/features/planner/presentation/bloc/planner_state.dart';
 
-class ItineraryResultScreen extends StatelessWidget {
+class ItineraryResultScreen extends StatefulWidget {
   static const routeName = "/itinerary-result-screen";
   const ItineraryResultScreen({super.key});
+
+  @override
+  State<ItineraryResultScreen> createState() => _ItineraryResultScreenState();
+}
+
+class _ItineraryResultScreenState extends State<ItineraryResultScreen> {
+  bool _showMap = false;
 
   IconData _activityIcon(String type) {
     switch (type.toLowerCase()) {
@@ -57,9 +65,17 @@ class ItineraryResultScreen extends StatelessWidget {
                   style: TextStyle(
                       color: Color(0xFF1B254B), fontWeight: FontWeight.bold)),
               centerTitle: true,
-              actions: const [
-                Icon(Icons.share_outlined, color: Colors.orange),
-                SizedBox(width: 16)
+              actions: [
+                IconButton(
+                  icon: Icon(
+                    _showMap ? Icons.list_alt : Icons.map_outlined,
+                    color: Colors.orange,
+                  ),
+                  onPressed: () => setState(() => _showMap = !_showMap),
+                  tooltip: _showMap ? 'Show list' : 'Show map',
+                ),
+                const Icon(Icons.share_outlined, color: Colors.orange),
+                const SizedBox(width: 16),
               ],
             ),
             floatingActionButton: FloatingActionButton(
@@ -87,6 +103,22 @@ class ItineraryResultScreen extends StatelessWidget {
                     activitiesByDay[a.dayNumber]!.add(a);
                   }
                   final sortedDays = activitiesByDay.keys.toList()..sort();
+
+                  if (_showMap) {
+                    final mapActivities = itinerary.activities
+                        .map((a) => MapActivity(
+                              title: a.title,
+                              description: a.description,
+                              location: a.location,
+                              latitude: a.latitude,
+                              longitude: a.longitude,
+                            ))
+                        .toList();
+                    return ActivityMapView(
+                      activities: mapActivities,
+                      height: double.infinity,
+                    );
+                  }
 
                   return SingleChildScrollView(
                     padding: const EdgeInsets.all(20),

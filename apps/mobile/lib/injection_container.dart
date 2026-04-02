@@ -41,6 +41,14 @@ import 'package:mobile/features/feed/domain/usecases/create_post_usecase.dart';
 import 'package:mobile/features/feed/domain/usecases/toggle_like_usecase.dart';
 import 'package:mobile/features/feed/presentation/bloc/feed_bloc.dart';
 
+// ── Chat Feature ────────────────────────────────────────────
+import 'package:mobile/features/chat/data/dataSources/chat_remote_data_source.dart';
+import 'package:mobile/features/chat/data/repositories/chat_repository_impl.dart';
+import 'package:mobile/features/chat/domain/repositories/chat_repository.dart';
+import 'package:mobile/features/chat/domain/usecases/get_chat_history_usecase.dart';
+import 'package:mobile/features/chat/domain/usecases/send_message_usecase.dart';
+import 'package:mobile/features/chat/presentation/bloc/chat_bloc.dart';
+
 // ── Packages Feature ──────────────────────────────────────────
 import 'package:mobile/features/packages/data/dataSources/package_remote_data_source.dart';
 import 'package:mobile/features/packages/data/repositories/package_repository_impl.dart';
@@ -252,6 +260,36 @@ Future<void> init() async {
       generateItineraryUsecase: sl<GenerateItineraryUsecase>(),
       saveItineraryUsecase: sl<SaveItineraryUsecase>(),
       plannerRepository: sl<PlannerRepository>(),
+    ),
+  );
+
+  // ══════════════════════════════════════════════════════════════
+  //  CHAT FEATURE
+  // ══════════════════════════════════════════════════════════════
+
+  // ── Data Sources ──────────────────────────────────────────────
+
+  sl.registerLazySingleton<ChatRemoteDataSource>(
+    () => ChatRemoteDataSourceImpl(apiClient: sl<ApiClient>()),
+  );
+
+  // ── Repository ────────────────────────────────────────────────
+
+  sl.registerLazySingleton<ChatRepository>(
+    () => ChatRepositoryImpl(remoteDataSource: sl<ChatRemoteDataSource>()),
+  );
+
+  // ── Use Cases ─────────────────────────────────────────────────
+
+  sl.registerLazySingleton(() => GetChatHistoryUsecase(sl<ChatRepository>()));
+  sl.registerLazySingleton(() => SendMessageUsecase(sl<ChatRepository>()));
+
+  // ── BLoC ──────────────────────────────────────────────────────
+
+  sl.registerFactory(
+    () => ChatBloc(
+      getChatHistoryUsecase: sl<GetChatHistoryUsecase>(),
+      sendMessageUsecase: sl<SendMessageUsecase>(),
     ),
   );
 }

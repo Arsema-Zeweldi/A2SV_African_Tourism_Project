@@ -50,10 +50,16 @@ func LoadConfig() (*Config, error) {
 
 	originsRaw := getEnv("ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:5173")
 	origins := []string{}
+	seenOrigins := map[string]bool{}
 	for _, o := range strings.Split(originsRaw, ",") {
-		if trimmed := strings.TrimSpace(o); trimmed != "" {
+		if trimmed := strings.TrimRight(strings.TrimSpace(o), "/"); trimmed != "" && !seenOrigins[trimmed] {
 			origins = append(origins, trimmed)
+			seenOrigins[trimmed] = true
 		}
+	}
+
+	if frontendURL := strings.TrimRight(strings.TrimSpace(getEnv("FRONTEND_URL", "http://localhost:3000")), "/"); frontendURL != "" && !seenOrigins[frontendURL] {
+		origins = append(origins, frontendURL)
 	}
 
 	return &Config{

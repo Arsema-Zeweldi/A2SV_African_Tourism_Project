@@ -1,59 +1,57 @@
-"use client"
+'use client'
 
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { z } from "zod"
-import { X, Loader2, AlertTriangle } from "lucide-react"
-import type { ItineraryData } from "@/types/new-package"
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
+import { X, Loader2, AlertTriangle } from 'lucide-react'
+import type { ItineraryData } from '@/types/new-package'
 
 const schema = z.object({
-  title: z.string().min(3, "Title must be at least 3 characters"),
+  title: z.string().min(3, 'Title must be at least 3 characters'),
   summary: z
     .string()
-    .min(10, "Summary must be at least 10 characters")
-    .max(300, "Summary must be under 300 characters"),
-  description: z
-    .string()
-    .min(20, "Description must be at least 20 characters"),
+    .min(10, 'Summary must be at least 10 characters')
+    .max(300, 'Summary must be under 300 characters'),
+  description: z.string().min(20, 'Description must be at least 20 characters'),
   price: z
-    .number({ invalid_type_error: "Enter a valid number" })
-    .min(0, "Price must be non-negative"),
-  country: z.string().min(2, "Country is required"),
-  location: z.string().min(2, "Location is required"),
+    .number({ error: 'Enter a valid number' })
+    .min(0, 'Price cannot be negative'),
+  country: z.string().min(2, 'Country is required'),
+  location: z.string().min(2, 'Location is required'),
   currency: z.string().min(1),
   duration_days: z.number().int().min(1),
-  category: z.string().min(2, "Category is required"),
-  group_size: z.string().min(1, "Group size is required"),
+  category: z.string().min(2, 'Category is required'),
+  group_size: z.string().min(1, 'Group size is required'),
 })
 
 export type CreatePackageFormData = z.infer<typeof schema>
 
 const CATEGORIES = [
-  "Adventure",
-  "Cultural",
-  "Wildlife",
-  "Beach & Coastal",
-  "City Explorer",
-  "Culinary",
-  "Eco-Tourism",
-  "Historical",
+  'Adventure',
+  'Cultural',
+  'Wildlife',
+  'Beach & Coastal',
+  'City Explorer',
+  'Culinary',
+  'Eco-Tourism',
+  'Historical',
 ]
 
 const GROUP_SIZES = [
-  "Solo",
-  "Couple",
-  "Small Group (3–6)",
-  "Medium Group (7–15)",
-  "Large Group (16+)",
+  'Solo',
+  'Couple',
+  'Small Group (3–6)',
+  'Medium Group (7–15)',
+  'Large Group (16+)',
 ]
 
-const CURRENCIES = ["USD", "EUR", "GBP", "ETB", "KES", "ZAR", "NGN"]
+const CURRENCIES = ['USD', 'EUR', 'GBP', 'ETB', 'KES', 'ZAR', 'NGN']
 
 const MIN_ACTIVITIES = 3
 
 interface CreatePackageModalProps {
   open: boolean
-  itineraryData: Pick<ItineraryData, "title" | "daysCount">
+  itineraryData: Pick<ItineraryData, 'title' | 'daysCount'>
   totalActivities: number
   isSubmitting: boolean
   onClose: () => void
@@ -76,7 +74,7 @@ export function CreatePackageModal({
     resolver: zodResolver(schema),
     defaultValues: {
       title: itineraryData.title,
-      currency: "USD",
+      currency: 'USD',
       duration_days: itineraryData.daysCount,
       price: 0,
     },
@@ -130,17 +128,14 @@ export function CreatePackageModal({
           </div>
         )}
 
-        <form
-          onSubmit={handleSubmit(onSubmit)}
-          className="p-6 space-y-4"
-        >
+        <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-4">
           {/* Title */}
           <div>
             <label className="text-xs font-semibold text-gray-700 mb-1 block">
               Package Title *
             </label>
             <input
-              {...register("title")}
+              {...register('title')}
               className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-transparent"
             />
             {errors.title && (
@@ -156,7 +151,7 @@ export function CreatePackageModal({
               Short Summary *
             </label>
             <textarea
-              {...register("summary")}
+              {...register('summary')}
               rows={2}
               placeholder="A tagline that captures the essence of this trip..."
               className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-orange-300 resize-none placeholder:text-gray-300"
@@ -174,7 +169,7 @@ export function CreatePackageModal({
               Full Description *
             </label>
             <textarea
-              {...register("description")}
+              {...register('description')}
               rows={3}
               placeholder="Describe the experience, highlights, and what makes this trip special..."
               className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-orange-300 resize-none placeholder:text-gray-300"
@@ -193,7 +188,7 @@ export function CreatePackageModal({
                 Country *
               </label>
               <input
-                {...register("country")}
+                {...register('country')}
                 placeholder="e.g. Kenya"
                 className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-orange-300 placeholder:text-gray-300"
               />
@@ -208,7 +203,7 @@ export function CreatePackageModal({
                 Location *
               </label>
               <input
-                {...register("location")}
+                {...register('location')}
                 placeholder="e.g. Nairobi"
                 className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-orange-300 placeholder:text-gray-300"
               />
@@ -230,7 +225,7 @@ export function CreatePackageModal({
                 type="number"
                 min={0}
                 step="0.01"
-                {...register("price", { valueAsNumber: true })}
+                {...register('price', { valueAsNumber: true })}
                 placeholder="0"
                 className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-orange-300 placeholder:text-gray-300"
               />
@@ -245,7 +240,7 @@ export function CreatePackageModal({
                 Currency *
               </label>
               <select
-                {...register("currency")}
+                {...register('currency')}
                 className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-orange-300 bg-white"
               >
                 {CURRENCIES.map((c) => (
@@ -264,7 +259,7 @@ export function CreatePackageModal({
                 Category *
               </label>
               <select
-                {...register("category")}
+                {...register('category')}
                 className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-orange-300 bg-white"
               >
                 <option value="">Select category...</option>
@@ -285,7 +280,7 @@ export function CreatePackageModal({
                 Group Size *
               </label>
               <select
-                {...register("group_size")}
+                {...register('group_size')}
                 className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-orange-300 bg-white"
               >
                 <option value="">Select size...</option>
@@ -306,7 +301,7 @@ export function CreatePackageModal({
           {/* Hidden field */}
           <input
             type="hidden"
-            {...register("duration_days", { valueAsNumber: true })}
+            {...register('duration_days', { valueAsNumber: true })}
           />
 
           {/* Actions */}
@@ -330,7 +325,7 @@ export function CreatePackageModal({
                   Publishing...
                 </>
               ) : (
-                "Publish Package"
+                'Publish Package'
               )}
             </button>
           </div>

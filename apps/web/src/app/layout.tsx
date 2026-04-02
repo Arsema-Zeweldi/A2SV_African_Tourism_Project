@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import React from 'react'
-import { AuthProvider } from '@/context/auth-context'
 import { Toaster } from 'sonner'
+import { Providers } from './providers'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -18,10 +18,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <AuthProvider>
+        <Providers>
           <main>{children}</main>
-        </AuthProvider>
-        <Toaster position="top-center" richColors />
+          <Toaster position="top-center" richColors />
+        </Providers>
       </body>
     </html>
   )

@@ -49,7 +49,7 @@ export default function PersonalInfoSection({
       </CardHeader>
 
       <CardContent>
-        <div className="flex gap-7 items-start">
+        <div className="flex flex-col gap-6 md:flex-row md:items-start md:gap-7">
           {/* Avatar */}
           <div className="flex flex-col items-center gap-2 shrink-0">
             <div className="relative">
@@ -92,9 +92,9 @@ export default function PersonalInfoSection({
           </div>
 
           {/* Fields */}
-          <div className="flex-1 space-y-4">
+          <div className="flex-1 space-y-4 min-w-0">
             {/* First Name + Last Name */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <Label htmlFor="firstName" className="text-xs font-medium text-stone-500">
                   First Name
@@ -122,7 +122,7 @@ export default function PersonalInfoSection({
             </div>
 
             {/* Email (read-only) + Country */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <Label htmlFor="email" className="text-xs font-medium text-stone-500">
                   Email Address

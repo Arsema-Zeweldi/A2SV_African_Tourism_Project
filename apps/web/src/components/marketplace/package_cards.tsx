@@ -1,18 +1,19 @@
-'use client';
+'use client'
 
-import { useState } from 'react';
-import Image from 'next/image';
-import { ApiPackage } from '../../services/packagesService';
-import { useMarketplace } from '../../context/marketplace-context';
-import { Heart, MapPin, Calendar } from 'lucide-react';
+import { useState } from 'react'
+import Link from 'next/link'
+import Image from 'next/image'
+import { ApiPackage } from '../../services/packagesService'
+import { useMarketplace } from '../../context/marketplace-context'
+import { Heart, MapPin, Calendar } from 'lucide-react'
 
 interface PackageCardProps {
-  pkg: ApiPackage;
+  pkg: ApiPackage
 }
 
 export function PackageCard({ pkg }: PackageCardProps) {
-  const { toggleWishlist, isInWishlist, addToCart } = useMarketplace();
-  const inWishlist = isInWishlist(pkg.package_id);
+  const { toggleWishlist, isInWishlist } = useMarketplace()
+  const inWishlist = isInWishlist(pkg.package_id)
 
   const getCategoryBadgeText = (category: string) => {
     const categoryMap: { [key: string]: string } = {
@@ -22,13 +23,13 @@ export function PackageCard({ pkg }: PackageCardProps) {
       adventure: 'ECO-ADVENTURE',
       extreme: 'LUXURY',
       photography: 'PHOTOGRAPHY',
-    };
-    return categoryMap[category] || category.toUpperCase();
-  };
+    }
+    return categoryMap[category] || category.toUpperCase()
+  }
 
-  const [imgSrc, setImgSrc] = useState(pkg.image_url || '/images/lion.png');
-  const location = pkg.location || pkg.country || 'Africa';
-  const duration = pkg.duration_days ? `${pkg.duration_days} days` : 'N/A';
+  const [imgSrc, setImgSrc] = useState(pkg.image_url || '/images/lion.png')
+  const location = pkg.location || pkg.country || 'Africa'
+  const duration = pkg.duration_days ? `${pkg.duration_days} days` : 'N/A'
 
   return (
     <div className="overflow-hidden rounded-4xl bg-white border border-gray-200 hover:shadow-xl transition-shadow">
@@ -85,7 +86,9 @@ export function PackageCard({ pkg }: PackageCardProps) {
         </div>
 
         {/* Title */}
-        <h3 className="font-semibold text-lg leading-tight line-clamp-2">{pkg.title}</h3>
+        <h3 className="font-semibold text-lg leading-tight line-clamp-2">
+          {pkg.title}
+        </h3>
 
         {/* Description */}
         <p className="text-sm text-muted-foreground line-clamp-2">
@@ -107,19 +110,22 @@ export function PackageCard({ pkg }: PackageCardProps) {
         {/* Price & Button */}
         <div className="flex items-end justify-between gap-4 pt-2 border-t border-border">
           <div className="pt-2">
-            <p className="text-xs text-muted-foreground font-medium">PER PERSON</p>
+            <p className="text-xs text-muted-foreground font-medium">
+              PER PERSON
+            </p>
             <p className="text-2xl font-bold text-primary">
-              {pkg.currency || '$'}{pkg.price.toLocaleString()}
+              {pkg.currency || '$'}
+              {pkg.price.toLocaleString()}
             </p>
           </div>
-          <button
-            onClick={() => addToCart(pkg)}
-            className="bg-foreground hover:bg-foreground/90 text-background px-5 py-2.5 rounded-lg font-semibold text-sm transition-colors"
+          <Link
+            href={`/package-details/${pkg.package_id}`}
+            className="bg-[#221810] hover:bg-foreground/90 text-background px-5 py-2.5 rounded-lg font-semibold text-sm transition-colors"
           >
             View Details
-          </button>
+          </Link>
         </div>
       </div>
     </div>
-  );
+  )
 }

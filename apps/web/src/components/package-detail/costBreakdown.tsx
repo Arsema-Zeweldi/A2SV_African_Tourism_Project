@@ -3,13 +3,32 @@ import { AlertCircle, Bus } from 'lucide-react'
 import type { CostBreakdowns as PackageDetailsCostBreakdownItem } from '@/types/package-details'
 
 interface CostBreakdownsProps {
-  props: PackageDetailsCostBreakdownItem[];
-  currency?: string;
-  updatedAt?: string;
+  props: PackageDetailsCostBreakdownItem[]
+  currency?: string
+  totalCost?: number
+  updatedAt?: string
 }
 
-const CostBreakdown = ({ props, currency = "USD", updatedAt = "Recently" }: CostBreakdownsProps) => {
-    const total = props.reduce((sum, c) => sum + c.cost, 0 )
+function formatAmount(amount: number, currency: string) {
+  try {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency,
+      maximumFractionDigits: 2,
+    }).format(amount)
+  } catch {
+    return `${currency} ${amount.toFixed(2)}`
+  }
+}
+
+const CostBreakdown = ({
+  props,
+  currency = "USD",
+  totalCost,
+  updatedAt = "Recently",
+}: CostBreakdownsProps) => {
+    const derivedTotal = props.reduce((sum, c) => sum + c.cost, 0 )
+    const total = typeof totalCost === 'number' ? totalCost : derivedTotal
 
   return (
     <div>
@@ -35,7 +54,7 @@ const CostBreakdown = ({ props, currency = "USD", updatedAt = "Recently" }: Cost
                 </td>
                 <td className="px-6 py-4 text-[13px] text-slate-600">{c.item}</td>
                 <td className="px-6 py-4 text-[13px] text-slate-400">{c.notes}</td>
-                <td className="px-6 py-4 text-[13px] font-bold text-slate-800 text-right">${c.cost.toFixed(2)}</td>
+                <td className="px-6 py-4 text-[13px] font-bold text-slate-800 text-right">{formatAmount(c.cost, currency)}</td>
                 </tr>
                 ))}
 
@@ -43,7 +62,7 @@ const CostBreakdown = ({ props, currency = "USD", updatedAt = "Recently" }: Cost
             <tfoot className="bg-slate-50">
                 <tr>
                 <td colSpan={3} className="px-6 py-4 text-[13px] font-black text-slate-800">Total Estimated</td>
-                <td className="px-6 py-4 text-[15px] font-black text-[#F97316] text-right">${total}</td>
+                <td className="px-6 py-4 text-[15px] font-black text-[#F97316] text-right">{formatAmount(total, currency)}</td>
                 </tr>
             </tfoot>
             </table>

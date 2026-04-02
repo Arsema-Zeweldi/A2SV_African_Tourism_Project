@@ -169,7 +169,7 @@ export default function PreferencesPage() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label className="text-xs font-medium text-stone-500">
                 Preferred Season
@@ -277,7 +277,7 @@ export default function PreferencesPage() {
           )}
 
           {/* Custom input */}
-          <div className="flex gap-2 max-w-xs">
+          <div className="flex max-w-md flex-col gap-2 sm:flex-row">
             <Input
               value={customInput}
               onChange={(e) => setCustomInput(e.target.value)}
@@ -302,7 +302,7 @@ export default function PreferencesPage() {
       <div className="flex justify-end gap-3">
         <Button
           variant="outline"
-          className="border-stone-200 text-stone-600"
+          className="border-stone-200 text-stone-600 w-full sm:w-auto"
           onClick={() => window.location.reload()}
           disabled={isSaving}
         >
@@ -311,11 +311,11 @@ export default function PreferencesPage() {
         <Button
           onClick={handleSave}
           disabled={isSaving}
-          className={
+          className={`w-full sm:w-auto ${
             saveSuccess
               ? "bg-green-600 hover:bg-green-700 text-white"
               : "bg-orange-500 hover:bg-orange-600 text-white"
-          }
+          }`}
         >
           {isSaving ? (
             <>

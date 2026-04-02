@@ -57,6 +57,7 @@ export default function ProfileSidebar() {
 
       <Button
         variant="ghost"
+        onClick={logout}
         className="mx-3 justify-start gap-2.5 text-stone-400 hover:text-red-500 hover:bg-red-50 text-sm font-normal"
         onClick={handleLogout}
       >

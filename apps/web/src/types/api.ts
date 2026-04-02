@@ -113,6 +113,40 @@ export interface ItineraryResponse {
   activities: ItineraryActivityResponse[]
 }
 
+// ── Itinerary list ─────────────────────────────────────────────────
+
+export interface ItineraryListResponse {
+  data: ItineraryResponse[]
+  meta: { total: number }
+}
+
+// ── User Profile ───────────────────────────────────────────────────
+
+export interface UserProfileResponse {
+  user_id: string
+  email: string
+  first_name: string
+  last_name: string
+  country: string
+  bio: string
+  avatar_url: string | null
+  created_at: string
+}
+
+export interface UserPreferencesResponse {
+  preference_id?: string
+  user_id?: string
+  preferred_season?: string
+  budget_range?: string
+  preferred_activities?: string[]
+  dietary_restrictions?: string[]
+  preferred_climate?: string
+  preferred_language?: string
+  travel_vibe_interest?: string
+  created_at?: string
+  updated_at?: string
+}
+
 // ── Packages ───────────────────────────────────────────────────────
 
 export interface CreatePackageRequest {
@@ -152,4 +186,63 @@ export interface PackageResponse {
   created_at: string
   updated_at: string
   itinerary?: ItineraryResponse
+}
+
+export interface PackagesFeedResponse {
+  data: PackageResponse[]
+  meta: {
+    page: number
+    page_size: number
+    total: number
+    sort_by?: string
+    order?: string
+  }
+}
+
+export interface PackageReviewResponse {
+  review_id: string
+  package_id: string
+  user_id: string
+  rating: number
+  comment: string
+  created_at: string
+}
+
+export interface PackageReviewsResponse {
+  data: PackageReviewResponse[]
+  meta: {
+    total: number
+    page: number
+    page_size: number
+  }
+}
+
+export interface PackageChatResponse {
+  chat_id: string
+  package_id: string
+  user_id: string
+  message: string
+  created_at: string
+}
+
+export interface PackageChatHistoryResponse {
+  data: PackageChatResponse[]
+  meta: {
+    total: number
+    page: number
+    page_size: number
+  }
+}
+
+// ── Activity AI Chat ──────────────────────────────────────────────
+
+export interface ActivityChatRequest {
+  activity_title: string
+  activity_description: string
+  activity_location: string
+  question: string
+}
+
+export interface ActivityChatResponse {
+  answer: string
 }

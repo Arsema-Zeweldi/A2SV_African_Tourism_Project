@@ -1,24 +1,26 @@
 import React from 'react'
 import { Star } from 'lucide-react';
-import type { Reviews } from '@/app/package-details/data';
+import type { Reviews as PackageDetailsReview } from '@/types/package-details';
 
 interface ReviewsProps {
-    props: Reviews[];
+    props: PackageDetailsReview[];
+    ratingAvg?: number;
+    reviewsCount?: number;
 }
 
-const Reviews = ({props}: ReviewsProps) => {
+const Reviews = ({props, ratingAvg = 0, reviewsCount = 0}: ReviewsProps) => {
     return (
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
             <div className="flex justify-between items-start mb-5">
             <div>
                 <h3 className="text-[13px] font-black text-slate-800 mb-1.5">Reviews</h3>
                 <div className="flex items-end gap-2.5">
-                <span className="text-[38px] font-black text-slate-900 leading-none">4.8</span>
+                <span className="text-[38px] font-black text-slate-900 leading-none">{ratingAvg.toFixed(1)}</span>
                 <div className="pb-1">
                     <div className="flex text-[#F97316] gap-0.5 mb-0.5">
                     {[...Array(5)].map((_, i) => <Star key={i} size={12} fill="currentColor" />)}
                     </div>
-                    <p className="text-[10px] text-slate-400">120 verified reviews</p>
+                    <p className="text-[10px] text-slate-400">{reviewsCount} verified reviews</p>
                 </div>
                 </div>
             </div>
@@ -26,7 +28,7 @@ const Reviews = ({props}: ReviewsProps) => {
             </div>
 
             <div className="space-y-4 mb-5">
-               {props.map((review:Reviews, index:number) => (
+               {props.map((review:PackageDetailsReview, index:number) => (
             <div key={index} className="pb-4 border-b border-slate-50">
                 <div className="flex justify-between items-center mb-1.5">
                 <div className="flex items-center gap-2">

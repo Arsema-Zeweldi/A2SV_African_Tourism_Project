@@ -1,6 +1,6 @@
 import React from "react";
 import { CirclePlus, Sparkles } from "lucide-react";
-import type { RecommendationCard } from "@/app/my-packages/data";
+import type { RecommendationCard } from "@/types/my-packages";
 
 interface RecommendationsProps {
   items: RecommendationCard[];

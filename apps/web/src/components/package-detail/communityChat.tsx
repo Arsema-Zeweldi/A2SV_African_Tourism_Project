@@ -1,9 +1,9 @@
 import React from 'react'
 import { MessageCircle, Send } from 'lucide-react';
-import { CommunityChats } from '@/app/package-details/data';
+import type { CommunityChats as PackageDetailsChat } from '@/types/package-details';
 
 interface CommunityChatsProps {
-    props: CommunityChats[];
+    props: PackageDetailsChat[];
 }
 
 const ChatBubble = ({

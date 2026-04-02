@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef, useMemo, useCallback } from "react"
+import { useRouter } from "next/navigation"
 import type { Activity, ItineraryData } from "@/types/new-package"
 import { useToast } from "@/hooks/useToast"
 import { syncAddActivity, syncDeleteActivity } from "@/actions/itinerary_actions"
@@ -28,9 +29,19 @@ export function ItineraryPage({ data, itineraryId }: ItineraryPageProps) {
   const [addActivityDayId, setAddActivityDayId] = useState<string | null>(null)
   const [expandedActivity, setExpandedActivity] = useState<Activity | null>(null)
   const [showPublishModal, setShowPublishModal] = useState(false)
+  const [focusedActivityId, setFocusedActivityId] = useState<string | null>(null)
+  const mapRef = useRef<HTMLDivElement>(null)
+  const router = useRouter()
   const { toasts, show: toast, dismiss } = useToast()
 
   const totalActivities = days.reduce((sum, d) => sum + d.activities.length, 0)
+  const allActivities = useMemo(() => days.flatMap((d) => d.activities), [days])
+
+  // ── See on map ─────────────────────────────────────────────────
+  const handleSeeOnMap = useCallback((activityId: string) => {
+    setFocusedActivityId(activityId)
+    mapRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+  }, [])
 
   // ── Delete activity ────────────────────────────────────────────────
   const handleDeleteActivity = async (activityId: string) => {
@@ -106,9 +117,10 @@ export function ItineraryPage({ data, itineraryId }: ItineraryPageProps) {
     setIsSaving(true)
     try {
       // The itinerary is already persisted on the backend from the plan-trip flow.
-      // Local adds/deletes are synced in real-time, so saving here is a confirmation.
-      await new Promise((r) => setTimeout(r, 500))
-      toast("Trip saved successfully!", "success")
+      // Local adds/deletes are synced in real-time. "Save" confirms and navigates.
+      await new Promise((r) => setTimeout(r, 400))
+      toast("Trip saved! Taking you to My Trips…", "success")
+      setTimeout(() => router.push("/my-trips"), 1000)
     } finally {
       setIsSaving(false)
     }
@@ -118,7 +130,7 @@ export function ItineraryPage({ data, itineraryId }: ItineraryPageProps) {
   const handleShare = async () => {
     const url = window.location.href
     try {
-      if (typeof navigator !== "undefined" && "share" in navigator) {
+      if (navigator.share) {
         await navigator.share({ title: data.title, url })
       } else {
         await navigator.clipboard.writeText(url)
@@ -184,13 +196,19 @@ export function ItineraryPage({ data, itineraryId }: ItineraryPageProps) {
                 onDeleteActivity={handleDeleteActivity}
                 onAddActivity={(dayId) => setAddActivityDayId(dayId)}
                 onExpandActivity={setExpandedActivity}
+                onSeeOnMap={handleSeeOnMap}
               />
             ))}
           </div>
 
           {/* ── Right column ── */}
           <div className="lg:w-95 lg:shrink-0 space-y-3">
-            <MapSidebar config={data.map} />
+            <div ref={mapRef}>
+              <MapSidebar
+                activities={allActivities}
+                focusedActivityId={focusedActivityId}
+              />
+            </div>
             <BudgetSidebar budget={data.budget} />
             <ActionsSidebar
               onSave={handleSave}
@@ -218,6 +236,7 @@ export function ItineraryPage({ data, itineraryId }: ItineraryPageProps) {
       <ActivityDetailModal
         activity={expandedActivity}
         onClose={() => setExpandedActivity(null)}
+        onSeeOnMap={handleSeeOnMap}
       />
 
       <CreatePackageModal

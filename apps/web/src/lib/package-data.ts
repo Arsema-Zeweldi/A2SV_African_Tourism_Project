@@ -1,0 +1,247 @@
+import { apiFetch } from "@/lib/api"
+import type {
+  PackageChatHistoryResponse,
+  PackageResponse,
+  PackageReviewsResponse,
+  PackagesFeedResponse,
+} from "@/types/api"
+import type {
+  MyPackagesPageData,
+  PackageCard as MyPackageCard,
+  RecommendationCard,
+} from "@/types/my-packages"
+import type {
+  CostBreakdowns as PackageDetailsCostBreakdownItem,
+  PackageDetails as PackageDetailsPageData,
+} from "@/types/package-details"
+
+const FALLBACK_PACKAGE_IMAGE = "/images/African-Safari-Sunset.png"
+const FALLBACK_AVATAR = "/images/profile.png"
+
+function formatCurrency(amount: number, currency: string) {
+  try {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: currency || "USD",
+      maximumFractionDigits: 0,
+    }).format(amount)
+  } catch {
+    return `${currency || "USD"} ${amount}`
+  }
+}
+
+function formatShortDate(date: string) {
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(new Date(date))
+}
+
+function formatRelativeDate(date: string) {
+  const value = new Date(date)
+  const diffMs = Date.now() - value.getTime()
+  const diffDays = Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)))
+
+  if (diffDays === 0) return "Today"
+  if (diffDays === 1) return "1 day ago"
+  if (diffDays < 7) return `${diffDays} days ago`
+  if (diffDays < 30) return `${Math.floor(diffDays / 7)} week${diffDays >= 14 ? "s" : ""} ago`
+
+  return formatShortDate(date)
+}
+
+function formatTime(date: string) {
+  return new Intl.DateTimeFormat("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(new Date(date))
+}
+
+function toDisplayName(userID: string, prefix: string) {
+  return `${prefix} ${userID.slice(0, 8)}`
+}
+
+function parseActivityCost(costLabel: string) {
+  const match = costLabel.match(/[\d,.]+/)
+  if (!match) return 0
+  return Number(match[0].replaceAll(",", ""))
+}
+
+function buildCostBreakdown(pkg: PackageResponse): PackageDetailsCostBreakdownItem[] {
+  const activities = pkg.itinerary?.activities ?? []
+  const grouped = new Map<string, number>()
+
+  for (const activity of activities) {
+    const label = activity.activity_type
+      ? activity.activity_type[0].toUpperCase() + activity.activity_type.slice(1)
+      : "Activity"
+    grouped.set(label, (grouped.get(label) ?? 0) + parseActivityCost(activity.cost_label))
+  }
+
+  const breakdown = Array.from(grouped.entries()).map(([category, cost]) => ({
+    category,
+    item: `${category} expenses`,
+    notes: `${pkg.duration_days || pkg.itinerary?.days_count || activities.length} day package estimate`,
+    cost,
+  }))
+
+  if (breakdown.length > 0) return breakdown
+
+  return [
+    {
+      category: "Package",
+      item: pkg.title,
+      notes: pkg.summary || "Base package price",
+      cost: pkg.price,
+    },
+  ]
+}
+
+function mapPackageDetails(
+  pkg: PackageResponse,
+  reviews: PackageReviewsResponse["data"],
+  chatMessages: PackageChatHistoryResponse["data"],
+): PackageDetailsPageData {
+  const location = [pkg.location, pkg.country].filter(Boolean).join(", ")
+
+  return {
+    name: pkg.title,
+    owner: {
+      name: toDisplayName(pkg.creator_id, "Creator"),
+      avatar: FALLBACK_AVATAR,
+    },
+    cost: formatCurrency(pkg.price, pkg.currency),
+    isPublic: pkg.status === "public",
+    review: reviews.map((review) => ({
+      author: toDisplayName(review.user_id, "Traveler"),
+      avatar: FALLBACK_AVATAR,
+      text: review.comment,
+      date: formatRelativeDate(review.created_at),
+    })),
+    description: pkg.description || pkg.summary || "No description available yet.",
+    image: pkg.image_url || FALLBACK_PACKAGE_IMAGE,
+    viralMoment: pkg.image_url
+      ? {
+          thumbnail: pkg.image_url,
+          description: pkg.summary || "Highlights from this package.",
+        }
+      : undefined,
+    location,
+    itinerary: (pkg.itinerary?.activities ?? [])
+      .slice()
+      .sort((a, b) => a.day_number - b.day_number || a.order_index - b.order_index)
+      .map((activity) => ({
+        day: activity.day_number,
+        name: activity.title,
+        description: activity.description,
+        cost: activity.cost_label || undefined,
+        requirement: activity.requirement || undefined,
+      })),
+    costBreakdown: buildCostBreakdown(pkg),
+    communityChat: chatMessages
+      .slice()
+      .reverse()
+      .map((message) => ({
+        name: toDisplayName(message.user_id, "Traveler"),
+        text: message.message,
+        timeStamp: formatTime(message.created_at),
+      })),
+    viewsCount: pkg.views_count,
+    reviewsCount: pkg.reviews_count,
+    ratingAvg: pkg.rating_avg,
+    updatedAt: formatRelativeDate(pkg.updated_at),
+  }
+}
+
+function mapMyPackageCard(pkg: PackageResponse): MyPackageCard {
+  const statusMap: Record<PackageResponse["status"], MyPackageCard["status"]> = {
+    public: { label: "Published", tone: "success" },
+    private: { label: "Draft", tone: "neutral" },
+    archived: { label: "Archived", tone: "warning" },
+  }
+
+  return {
+    id: pkg.package_id,
+    title: pkg.title,
+    location: [pkg.location, pkg.country].filter(Boolean).join(", "),
+    image: pkg.image_url || FALLBACK_PACKAGE_IMAGE,
+    status: statusMap[pkg.status],
+    priceLabel: "Package Price",
+    priceValue: formatCurrency(pkg.price, pkg.currency),
+    priceSuffix: pkg.group_size ? `/${pkg.group_size}` : undefined,
+    metaLabel: "Duration",
+    metaValue: pkg.duration_days > 0 ? `${pkg.duration_days} Days` : "Flexible",
+    actions: [
+      {
+        label: "View Details",
+        variant: "secondary",
+        href: `/package-details/${pkg.package_id}`,
+      },
+      {
+        label: pkg.status === "public" ? "Live Package" : "Edit Package",
+        variant: "primary",
+        href: `/new-package/${pkg.itinerary_id}`,
+      },
+    ],
+  }
+}
+
+export async function getPackageDetailsPageData(id: string) {
+  const [pkg, reviewsResult, chatResult] = await Promise.all([
+    apiFetch<PackageResponse>(`/packages/${id}`),
+    apiFetch<PackageReviewsResponse>(`/packages/${id}/reviews`).catch(() => ({
+      data: [],
+      meta: { total: 0, page: 1, page_size: 50 },
+    })),
+    apiFetch<PackageChatHistoryResponse>(`/packages/${id}/chat`).catch(() => ({
+      data: [],
+      meta: { total: 0, page: 1, page_size: 50 },
+    })),
+  ])
+
+  return mapPackageDetails(pkg, reviewsResult.data, chatResult.data)
+}
+
+export async function getMyPackagesPageData(): Promise<MyPackagesPageData> {
+  const response = await apiFetch<PackagesFeedResponse>("/packages/me")
+  const recommendations: RecommendationCard[] = [
+    {
+      title: "Zanzibar Shores",
+      image: "/images/ocean.png",
+      price: "Starting $899",
+    },
+    {
+      title: "Namibia Desert Tour",
+      image: "/images/desert.png",
+      price: "Starting $1,250",
+    },
+    {
+      title: "Victoria Falls Adventure",
+      image: "/images/waterfall.png",
+      price: "Starting $780",
+    },
+  ]
+
+  return {
+    title: "My Packages",
+    description: "Manage your upcoming African adventures and itineraries.",
+    sidebar: {
+      dashboardItems: [
+        { label: "Current Packages", icon: "package", active: true },
+        { label: "Saved for Later", icon: "bookmark" },
+        { label: "Past Trips", icon: "history" },
+      ],
+      preferenceItems: [
+        { label: "Account Settings", icon: "settings" },
+        { label: "Support Center", icon: "support" },
+      ],
+      tipCard: {
+        title: "Travel Tip",
+        description: "Keep your draft packages updated so they are ready to publish as soon as the itinerary is complete.",
+      },
+    },
+    packages: response.data.map(mapMyPackageCard),
+    recommendations,
+  }
+}

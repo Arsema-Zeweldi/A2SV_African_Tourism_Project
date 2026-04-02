@@ -5,7 +5,6 @@ import { Card } from "@/components/ui/card"
 import { CalendarDays, MapPin, Trash2 } from "lucide-react"
 import type { ItineraryResponse } from "@/types/api"
 
-// Curated African travel images from Unsplash (already whitelisted domain)
 const TRIP_IMAGES = [
   "https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?w=400&q=80",
   "https://images.unsplash.com/photo-1580060839134-75a5edca2e99?w=400&q=80",
@@ -18,10 +17,7 @@ function getTripImage(index: number) {
   return TRIP_IMAGES[index % TRIP_IMAGES.length]
 }
 
-function formatDateRange(
-  start: string | null,
-  end: string | null,
-): string {
+function formatDateRange(start: string | null, end: string | null): string {
   if (!start) return ""
   const s = new Date(start).toLocaleDateString("en-US", {
     month: "short",
@@ -33,7 +29,7 @@ function formatDateRange(
     day: "numeric",
     year: "numeric",
   })
-  return `${s} – ${e}`
+  return `${s} - ${e}`
 }
 
 function formatCost(cost: number): string {
@@ -43,11 +39,15 @@ function formatCost(cost: number): string {
 
 interface UpcomingAdventuresProps {
   itineraries: ItineraryResponse[]
-  onDelete: (id: string) => void
+  packageStatuses: Record<string, "public" | "private" | "archived">
+  packageIdsByItinerary: Record<string, string>
+  onDelete: (trip: ItineraryResponse) => void
 }
 
 export function UpcomingAdventures({
   itineraries,
+  packageStatuses,
+  packageIdsByItinerary,
   onDelete,
 }: UpcomingAdventuresProps) {
   return (
@@ -67,11 +67,9 @@ export function UpcomingAdventures({
             key={trip.itinerary_id}
             className="relative overflow-hidden rounded-[28px] border-0 bg-white shadow-[0_18px_38px_rgba(48,35,11,0.03)]"
           >
-            {/* Confirmed accent bar */}
             <div className="absolute left-0 top-[20%] h-[60%] w-[4px] rounded-r-full bg-[#ec6d13]" />
 
             <div className="grid gap-6 p-6 lg:grid-cols-[140px_minmax(0,1fr)_auto] lg:items-center pr-8">
-              {/* Image */}
               <div className="relative h-[110px] w-[140px] overflow-hidden rounded-[20px] bg-[#f4f1ec] shrink-0">
                 <Image
                   src={getTripImage(index)}
@@ -82,14 +80,13 @@ export function UpcomingAdventures({
                 />
               </div>
 
-              {/* Info */}
               <div className="min-w-0 flex flex-col justify-center">
                 <div className="flex flex-wrap items-center gap-3 mb-2.5">
                   <Badge
                     variant="secondary"
                     className="bg-[#fff2e7] text-primary border-0 px-2.5 py-[3px] text-[9px] font-bold uppercase tracking-[0.12em]"
                   >
-                    Confirmed
+                    {packageStatuses[trip.itinerary_id] ?? "private"}
                   </Badge>
                   <span className="text-[11px] font-medium text-[#9ba5b1]">
                     #{trip.itinerary_id.slice(0, 8).toUpperCase()}
@@ -118,7 +115,6 @@ export function UpcomingAdventures({
                 </div>
               </div>
 
-              {/* Actions */}
               <div className="flex flex-col items-start gap-3.5 lg:items-end justify-center min-w-[140px]">
                 <div className="text-left lg:text-right">
                   <p className="text-[18px] font-bold tracking-[-0.02em] text-[#243244] leading-none mb-1.5">
@@ -130,14 +126,18 @@ export function UpcomingAdventures({
                 </div>
                 <div className="flex items-center gap-2.5">
                   <button
-                    onClick={() => onDelete(trip.itinerary_id)}
+                    onClick={() => onDelete(trip)}
                     aria-label="Delete itinerary"
                     className="h-[34px] w-[34px] rounded-full border border-[#ece7e0] bg-[#fcfaf8] flex items-center justify-center text-[#8c97a4] transition hover:bg-red-50 hover:border-red-200 hover:text-red-500"
                   >
                     <Trash2 size={13} />
                   </button>
                   <Link
-                    href={`/new-package/${trip.itinerary_id}`}
+                    href={
+                      packageIdsByItinerary[trip.itinerary_id]
+                        ? `/package-details/${packageIdsByItinerary[trip.itinerary_id]}`
+                        : `/new-package/${trip.itinerary_id}`
+                    }
                     className="h-[34px] rounded-full bg-[#ec6d13] px-4 text-[11px] font-semibold text-white shadow-[0_8px_18px_rgba(236,109,19,0.24)] transition hover:bg-[#d4600f] flex items-center"
                   >
                     View Itinerary

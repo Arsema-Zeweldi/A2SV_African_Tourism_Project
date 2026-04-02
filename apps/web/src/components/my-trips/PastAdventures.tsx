@@ -32,12 +32,14 @@ function formatCost(cost: number): string {
 
 interface SavedItinerariesProps {
   itineraries: ItineraryResponse[]
-  onDelete: (id: string) => void
+  packageIdsByItinerary: Record<string, string>
+  onDelete: (trip: ItineraryResponse) => void
   showEmptyState?: boolean
 }
 
 export function SavedItineraries({
   itineraries,
+  packageIdsByItinerary,
   onDelete,
   showEmptyState = false,
 }: SavedItinerariesProps) {
@@ -152,14 +154,18 @@ export function SavedItineraries({
               {/* Right: actions */}
               <div className="flex flex-wrap items-center justify-between sm:justify-end gap-3">
                 <button
-                  onClick={() => onDelete(trip.itinerary_id)}
+                  onClick={() => onDelete(trip)}
                   aria-label="Delete itinerary"
                   className="h-8 w-8 rounded-full border border-[#ece7e0] bg-[#fbfaf8] flex items-center justify-center text-[#8d98a6] transition hover:bg-red-50 hover:border-red-200 hover:text-red-500"
                 >
                   <Trash2 size={13} />
                 </button>
                 <Link
-                  href={`/new-package/${trip.itinerary_id}`}
+                  href={
+                    packageIdsByItinerary[trip.itinerary_id]
+                      ? `/package-details/${packageIdsByItinerary[trip.itinerary_id]}`
+                      : `/new-package/${trip.itinerary_id}`
+                  }
                   className="h-8 rounded-full border border-[#ec6d13] bg-white px-5 text-[11px] font-semibold text-[#ec6d13] transition hover:bg-[#fff3e8] flex items-center"
                 >
                   View Itinerary

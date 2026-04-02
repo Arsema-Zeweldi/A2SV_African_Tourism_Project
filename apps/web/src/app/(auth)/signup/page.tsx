@@ -11,6 +11,7 @@ import { signup, resendVerification } from '@/services/authService'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { AxiosError } from 'axios'
+import { signIn } from 'next-auth/react'
 
 interface SignUpFormData {
   name: string
@@ -27,6 +28,12 @@ const SignUpPage = () => {
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm<SignUpFormData>({ mode: 'onTouched' })
+
+  const handleGoogleSignup = () => {
+    signIn('google', {
+      callbackUrl: '/home',
+    })
+  }
 
   const onSubmit = async (data: SignUpFormData) => {
     setApiError(null)
@@ -291,7 +298,11 @@ const SignUpPage = () => {
               </div>
             </div>
             <div className="flex justify-center">
-              <button className="flex items-center justify-center gap-3 w-full py-4 input-glass rounded-full bg-white hover:bg-white/40 transition-colors">
+              <button
+                type="button"
+                className="flex items-center justify-center gap-3 w-full py-4 input-glass rounded-full bg-white hover:bg-white/40 transition-colors"
+                onClick={handleGoogleSignup}
+              >
                 <FcGoogle size={24} />
                 <span className="text-sm text-black font-bold">
                   Sign in with Google

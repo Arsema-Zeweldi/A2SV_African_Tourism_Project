@@ -27,7 +27,9 @@ interface PackageDetailsPageProps {
 }
 
 const PackageDetailsPage = async ({ params }: PackageDetailsPageProps) => {
-  const { id } = params
+  const resolvedParams = await params
+
+  const id = resolvedParams.id
 
   const details = await getPackageDetailsPageData(id).catch(() => null)
 
@@ -37,7 +39,9 @@ const PackageDetailsPage = async ({ params }: PackageDetailsPageProps) => {
         <Navbar />
         <main className="mx-auto max-w-[960px] px-6 py-16">
           <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
-            <h1 className="text-3xl font-black text-slate-900">Package unavailable</h1>
+            <h1 className="text-3xl font-black text-slate-900">
+              Package unavailable
+            </h1>
             <p className="mt-3 text-sm text-slate-600">
               The selected package could not be loaded right now.
             </p>
@@ -117,7 +121,7 @@ const PackageDetailsPage = async ({ params }: PackageDetailsPageProps) => {
             </div>
           </section>
 
-          <CommunityChat props={details.communityChat} />
+          <CommunityChat packageId={id} props={details.communityChat} />
         </div>
         {/* /top-grid */}
 
@@ -154,21 +158,31 @@ const PackageDetailsPage = async ({ params }: PackageDetailsPageProps) => {
             {/* Map + Itinerary */}
             <div className="grid grid-cols-2 gap-6">
               {/* Route Map */}
-              <Map />
+              <Map stops={details.routeStops} />
 
               {/* Itinerary */}
               <Itenerary props={details.itinerary} />
             </div>
 
             {/* Cost Breakdown */}
-            <CostBreakdown props={details.costBreakdown} currency="USD" updatedAt={details.updatedAt} />
+            <CostBreakdown
+              props={details.costBreakdown}
+              currency={details.currency}
+              totalCost={details.totalCost}
+              updatedAt={details.updatedAt}
+            />
           </div>
           {/* /left col */}
 
           {/* ── SIDEBAR ── */}
           <aside className="flex flex-col gap-5">
             {/* Reviews */}
-            <Reviews props={details.review} ratingAvg={details.ratingAvg} reviewsCount={details.reviewsCount} />
+            <Reviews
+              packageId={id}
+              props={details.review}
+              ratingAvg={details.ratingAvg}
+              reviewsCount={details.reviewsCount}
+            />
 
             {/* Visa Card */}
             <VisaCard />

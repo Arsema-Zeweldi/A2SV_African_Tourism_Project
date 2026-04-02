@@ -3,10 +3,14 @@ export interface Reviews {
   avatar: string
   text: string
   date: string
+  rating?: number
 }
 
 export interface CommunityChats {
+  id?: string
+  userId?: string
   name: string
+  avatar?: string
   text: string
   timeStamp: string
 }
@@ -17,6 +21,16 @@ export interface Itinerary {
   description: string
   cost?: string
   requirement?: string
+  latitude?: number
+  longitude?: number
+  location?: string
+}
+
+export interface RouteStop {
+  name: string
+  label: string
+  latitude: number
+  longitude: number
 }
 
 export interface CostBreakdowns {
@@ -33,6 +47,8 @@ export interface PackageDetails {
     avatar: string
   }
   cost: string
+  currency: string
+  totalCost: number
   isPublic: boolean
   review: Reviews[]
   description: string
@@ -43,6 +59,7 @@ export interface PackageDetails {
   }
   location: string
   itinerary: Itinerary[]
+  routeStops: RouteStop[]
   costBreakdown: CostBreakdowns[]
   communityChat: CommunityChats[]
   viewsCount?: number
@@ -58,6 +75,8 @@ export const packageDetails: PackageDetails = {
     avatar: "/images/profile.png",
   },
   cost: "$500 - $700",
+  currency: "USD",
+  totalCost: 345,
   isPublic: true,
   review: [
     {
@@ -69,18 +88,18 @@ export const packageDetails: PackageDetails = {
     {
       author: "Amara G.",
       avatar: "/images/review-image-2.png",
-      text: "I loved the beach day in Lomé. The local food was amazing!",
+      text: "I loved the beach day in Lome. The local food was amazing!",
       date: "1 week ago",
     },
   ],
   description:
-    "Experience the chaotic charm and coastal beauty of West Africa on this 5-day adventure. From the bustling markets of Lagos to the golden beaches of Lomé, and finally arriving in the vibrant city of Accra. This itinerary is designed for the adventurous soul ready to embrace local transport, street food, and border crossings.",
+    "Experience the chaotic charm and coastal beauty of West Africa on this 5-day adventure. From the bustling markets of Lagos to the golden beaches of Lome, and finally arriving in the vibrant city of Accra. This itinerary is designed for the adventurous soul ready to embrace local transport, street food, and border crossings.",
   image: "/images/package-details-pic-1.png",
   viralMoment: {
     thumbnail: "/images/package-details-pic-2.png",
     description: "Watch: iShowSpeed tries fufu in Accra for the first time",
   },
-  location: "Lagos, Nigeria → Lomé, Togo → Accra, Ghana",
+  location: "Lagos, Nigeria -> Lome, Togo -> Accra, Ghana",
   itinerary: [
     {
       day: 1,
@@ -89,6 +108,9 @@ export const packageDetails: PackageDetails = {
         "Early morning start from CMS Park. Boarding the Chisco Transport bus. Prepare for traffic getting out of Lagos.",
       cost: "N15,000 (~$12)",
       requirement: "Bus ticket",
+      latitude: 6.5244,
+      longitude: 3.3792,
+      location: "Lagos",
     },
     {
       day: 2,
@@ -96,12 +118,18 @@ export const packageDetails: PackageDetails = {
       description:
         "Crossing into Benin Republic. Make sure your Yellow Card is ready. Stop for lunch in Cotonou.",
       requirement: "Yellow Card, Passport",
+      latitude: 6.3703,
+      longitude: 2.3912,
+      location: "Cotonou",
     },
     {
       day: 3,
       name: "Arrival in Accra & Nightlife",
       description:
         "Check into hotel in Osu. Evening exploring Oxford Street. Dinner at Buka Restaurant.",
+      latitude: 5.6037,
+      longitude: -0.187,
+      location: "Accra",
     },
     {
       day: 4,
@@ -109,6 +137,29 @@ export const packageDetails: PackageDetails = {
       description: "Relaxing by the ocean. Horse riding available. Entrance fee required.",
       cost: "GHS 20 (~$3.50)",
       requirement: "Entrance fee",
+      latitude: 5.5602,
+      longitude: -0.1517,
+      location: "Labadi Beach",
+    },
+  ],
+  routeStops: [
+    {
+      name: "Lagos",
+      label: "Start",
+      latitude: 6.5244,
+      longitude: 3.3792,
+    },
+    {
+      name: "Cotonou",
+      label: "Stopover",
+      latitude: 6.3703,
+      longitude: 2.3912,
+    },
+    {
+      name: "Accra",
+      label: "End",
+      latitude: 5.6037,
+      longitude: -0.187,
     },
   ],
   costBreakdown: [
@@ -133,16 +184,22 @@ export const packageDetails: PackageDetails = {
   ],
   communityChat: [
     {
+      id: "sample-chat-1",
+      userId: "traveler-kofi",
       name: "Kofi.Travels",
       text: "Is the Seme border crossing busy on Sundays?",
       timeStamp: "10:30 AM",
     },
     {
+      id: "sample-chat-2",
+      userId: "traveler-you",
       name: "You",
       text: "Usually less busy than Mondays. Try to arrive before 8am though.",
       timeStamp: "10:32 AM",
     },
     {
+      id: "sample-chat-3",
+      userId: "traveler-amara",
       name: "Amara_G",
       text: "Thanks for the tip! Also, do they accept Naira at the border or should I change to CFA beforehand?",
       timeStamp: "10:45 AM",

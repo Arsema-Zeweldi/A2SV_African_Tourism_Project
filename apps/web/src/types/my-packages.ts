@@ -2,6 +2,7 @@ export interface SidebarItem {
   label: string
   icon: "package" | "bookmark" | "history" | "settings" | "support"
   active?: boolean
+  href?: string
 }
 
 export interface TipCard {
@@ -13,6 +14,7 @@ export interface PackageAction {
   label: string
   variant: "primary" | "secondary" | "outline"
   href?: string
+  kind?: "link" | "status-modal"
 }
 
 export interface PackageCard {
@@ -20,9 +22,12 @@ export interface PackageCard {
   title: string
   location: string
   image: string
+  createdAt?: string
+  priceAmount?: number
   status: {
     label: string
     tone: "success" | "neutral" | "warning"
+    value?: "public" | "private" | "archived"
   }
   nextLabel?: string
   nextValue?: string

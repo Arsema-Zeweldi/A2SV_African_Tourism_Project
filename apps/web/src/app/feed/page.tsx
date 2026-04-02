@@ -6,6 +6,7 @@ import PostCard from '@/components/feedPage/PostCard'
 import FooterSimple from '@/components/footerSimple'
 import { getAllPosts } from '@/services/feedServices'
 import Navbar from '@/components/navbar'
+import PageLoading from '@/components/page-loading'
 import { Post } from '@/types/feed'
 
 export default function FeedPage() {
@@ -30,7 +31,14 @@ export default function FeedPage() {
     fetchPosts()
   }, [])
 
-  if (loading) return <div className="p-4 text-center">Loading feed...</div>
+  if (loading) {
+    return (
+      <PageLoading
+        title="Gathering the latest travel stories"
+        subtitle="We are loading community posts, fresh moments, and trending adventures from across Africa."
+      />
+    )
+  }
   if (error) return <div className="p-4 text-center text-red-500">{error}</div>
 
   return (

@@ -51,7 +51,7 @@ export const upcomingTrips: UpcomingTrip[] = [
     id: "aegean",
     title: "Aegean Island Hopping Tour",
     reference: "Ref: #AWD-9012",
-    statusLabel: "pending confirmation",
+    statusLabel: "pending",
     scheduleLabel: "Confirmed Tour",
     dateRange: "Nov 05 - Nov 12,\n2023",
     location: "Cyclades,",

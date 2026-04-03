@@ -1,7 +1,10 @@
 import React from "react";
 import Link from "next/link";
 import { Clock3, Heart } from "lucide-react";
-import type { PackageCard as MyPackageCard } from "@/types/my-packages";
+import type {
+  PackageAction,
+  PackageCard as MyPackageCard,
+} from "@/types/my-packages";
 
 const statusClasses = {
   success: "bg-[#2CC75A] text-white",
@@ -20,12 +23,24 @@ const actionClasses = {
 
 interface PackageCardProps {
   item: MyPackageCard;
+  viewMode?: "grid" | "list";
+  onAction?: (action: PackageAction, item: MyPackageCard) => void;
 }
 
-const PackageCard = ({ item }: PackageCardProps) => {
+const PackageCard = ({
+  item,
+  viewMode = "grid",
+  onAction,
+}: PackageCardProps) => {
+  const isListView = viewMode === "list";
+
   return (
-    <article className="overflow-hidden rounded-2xl border border-[#E8E1DB] bg-white shadow-[0_10px_30px_rgba(27,20,17,0.06)]">
-      <div className="relative h-[224px] overflow-hidden">
+    <article
+      className={`overflow-hidden rounded-2xl border border-[#E8E1DB] bg-white shadow-[0_10px_30px_rgba(27,20,17,0.06)] ${
+        isListView ? "lg:grid lg:grid-cols-[320px_minmax(0,1fr)]" : ""
+      }`}
+    >
+      <div className={`relative overflow-hidden ${isListView ? "h-[220px] lg:h-full" : "h-[224px]"}`}>
         <img src={item.image} alt={item.title} className="h-full w-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/15 to-transparent" />
 
@@ -49,8 +64,8 @@ const PackageCard = ({ item }: PackageCardProps) => {
         </div>
       </div>
 
-      <div className="p-5">
-        <div className="grid grid-cols-2 gap-4 pb-5">
+      <div className={`p-5 ${isListView ? "lg:flex lg:flex-col lg:justify-between" : ""}`}>
+        <div className={`grid gap-4 pb-5 ${isListView ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-2"}`}>
           {item.priceValue ? (
             <>
               <div>
@@ -105,15 +120,34 @@ const PackageCard = ({ item }: PackageCardProps) => {
           )}
         </div>
 
-        <div className={`grid gap-3 ${item.actions.length > 1 ? "grid-cols-2" : "grid-cols-1"}`}>
+        <div
+          className={`grid gap-3 ${
+            item.actions.length > 1
+              ? isListView
+                ? "grid-cols-1 sm:grid-cols-2"
+                : "grid-cols-2"
+              : "grid-cols-1"
+          }`}
+        >
           {item.actions.map((action) => (
-            <Link
-              key={action.label}
-              href={action.href ?? "#"}
-              className={`h-11 rounded-xl px-2 text-[14px] font-semibold transition-colors ${actionClasses[action.variant]}`}
-            >
-              {action.label}
-            </Link>
+            action.kind === "status-modal" ? (
+              <button
+                key={action.label}
+                type="button"
+                onClick={() => onAction?.(action, item)}
+                className={`flex h-11 items-center justify-center rounded-xl px-2 text-center text-[14px] font-semibold transition-colors ${actionClasses[action.variant]}`}
+              >
+                {action.label}
+              </button>
+            ) : (
+              <Link
+                key={action.label}
+                href={action.href ?? "#"}
+                className={`flex h-11 items-center justify-center rounded-xl px-2 text-center text-[14px] font-semibold transition-colors ${actionClasses[action.variant]}`}
+              >
+                {action.label}
+              </Link>
+            )
           ))}
         </div>
       </div>

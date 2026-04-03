@@ -1,6 +1,6 @@
-import axios from 'axios';
+'use server'
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+import { apiFetch } from '@/lib/api'
 
 export interface ApiPackage {
   package_id: string;
@@ -39,11 +39,11 @@ export interface PackagesFeedResponse {
 export type FeedParams = Record<string, unknown>;
 
 export const getPackagesFeed = async (params: FeedParams = {}): Promise<PackagesFeedResponse> => {
-  const response = await axios.get(`${API_URL}/packages`, { params });
-  return response.data;
+  return apiFetch<PackagesFeedResponse>('/packages', {
+    params: params as Record<string, string | number | boolean>,
+  })
 };
 
 export const getPackage = async (id: string): Promise<ApiPackage> => {
-  const response = await axios.get(`${API_URL}/packages/${id}`);
-  return response.data;
+  return apiFetch<ApiPackage>(`/packages/${id}`)
 };

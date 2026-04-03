@@ -1,6 +1,5 @@
 'use client'
 import { signOut, useSession } from 'next-auth/react'
-import { usePathname } from 'next/navigation'
 import {
   ReactNode,
   createContext,
@@ -31,7 +30,6 @@ function hasAuthStatusCookie() {
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const pathname = usePathname()
   const { status } = useSession()
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
@@ -51,7 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       window.removeEventListener('focus', syncAuthState)
       window.removeEventListener('auth-status-change', syncAuthState)
     }
-  }, [pathname])
+  }, [])
 
   useEffect(() => {
     if (status === 'authenticated') {

@@ -1,101 +1,105 @@
+import { useState } from 'react'
 import Image from 'next/image'
-import { PackageCardData } from '@/types/homepage'
+import Link from 'next/link'
+import type { Package } from '@/types/feed'
 import { Star, Clock, Users, MapPin, Trees } from 'lucide-react'
-import { cn } from '@/lib/utils'
 
 interface PackageCardProps {
-  package_: PackageCardData
+  package_: Package
 }
 
-const getCategoryColor = (category: string) => {
-  switch (category.toLowerCase()) {
-    case 'safari':
-      return 'bg-[#9CA389] text-white' // Sage Green
-    case 'coastal':
-      return 'bg-[#5D8AA8] text-white' // Air Force Blue
-    case 'adventure':
-      return 'bg-[#C17C5F] text-white' // Terracotta
-    default:
-      return 'bg-white/90 text-gray-800'
-  }
+const CATEGORY_STYLE: Record<string, string> = {
+  safari: 'bg-[#4a6741] text-white',
+  coastal: 'bg-[#5D8AA8] text-white',
+  adventure: 'bg-primary text-white',
+  beach: 'bg-[#5D8AA8] text-white',
+  cultural: 'bg-[#9CA389] text-white',
+  extreme: 'bg-[#C17C5F] text-white',
 }
 
-export default function PackageCard({ package_ }: PackageCardProps) {
+export default function PackageCard({ package_: pkg }: PackageCardProps) {
+  const [imgError, setImgError] = useState(false)
+  const categoryStyle = CATEGORY_STYLE[pkg.category?.toLowerCase()] || 'bg-white/90 text-gray-800'
+  const fallback = '/images/African-Safari-Sunset.png'
+
   return (
-    <div className="group relative h-[420px] w-full flex-shrink-0 cursor-pointer overflow-hidden rounded-[2rem] bg-gray-100 shadow-sm transition-all duration-300 hover:shadow-lg">
+    <Link
+      href={`/package-details/${pkg.package_id}`}
+      className="group relative flex h-[400px] w-full flex-shrink-0 cursor-pointer flex-col overflow-hidden rounded-2xl bg-gray-100 shadow-sm transition-shadow duration-300 hover:shadow-lg"
+    >
       {/* Background Image */}
-      <div className="absolute inset-0 h-full w-full">
+      <div className="absolute inset-0">
         <Image
-          src={package_.image_url}
-          alt={package_.title}
+          src={imgError ? fallback : (pkg.image_url || fallback)}
+          alt={pkg.title}
           fill
           className="object-cover transition-transform duration-700 group-hover:scale-105"
           sizes="(max-width: 768px) 100vw, 33vw"
+          unoptimized
+          onError={() => setImgError(true)}
         />
       </div>
 
-      {/* Dark Gradient Overlay (Bottom only) */}
-      <div className="absolute inset-x-0 bottom-0 h-3/4 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
+      {/* Gradient overlay */}
+      <div className="absolute inset-x-0 bottom-0 h-3/5 bg-gradient-to-t from-black/85 via-black/40 to-transparent" />
 
-      {/* Rating Badge (Top Right) */}
-      <div className="absolute right-5 top-5 flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 shadow-sm transition-transform duration-300 group-hover:scale-110">
-        <Star className="h-3.5 w-3.5 fill-[#ec6d13] text-[#ec6d13]" />
-        <span className="text-sm font-bold text-gray-900">
-          {package_.rating_avg.toFixed(1)} ({package_.reviews_count})
+      {/* Rating badge */}
+      <div className="absolute right-4 top-4 flex items-center gap-1 rounded-full bg-white px-2.5 py-1 shadow-sm">
+        <Star className="h-3 w-3 fill-primary text-primary" />
+        <span className="text-xs font-bold text-gray-900">
+          {pkg.rating_avg?.toFixed(1) || '0.0'}
         </span>
+        {pkg.reviews_count > 0 && (
+          <span className="text-[10px] text-gray-400">({pkg.reviews_count})</span>
+        )}
       </div>
 
-      {/* Content Container */}
-      <div className="absolute bottom-0 left-0 right-0 flex flex-col justify-end p-6">
-        {/* Tags Row */}
-        <div className="mb-4 flex flex-wrap gap-2">
-          {/* Category Tag */}
-          <div
-            className={cn(
-              'flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider backdrop-blur-md',
-              getCategoryColor(package_.category)
-            )}
-          >
-            <Trees className="h-3 w-3" />
-            {package_.category}
-          </div>
-
-          {/* Duration Tag */}
-          <div className="flex items-center gap-1.5 rounded-full bg-white/90 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-gray-800 backdrop-blur-md">
-            <Clock className="h-3 w-3" />
-            {package_.duration_days}
-          </div>
-
-          {/* Group Size Tag */}
-          <div className="flex items-center gap-1.5 rounded-full bg-white/90 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-gray-800 backdrop-blur-md">
-            <Users className="h-3 w-3" />
-            {package_.group_size}
-          </div>
+      {/* Bottom content */}
+      <div className="relative mt-auto flex flex-col gap-3 p-5">
+        {/* Tags */}
+        <div className="flex flex-wrap gap-1.5">
+          {pkg.category && (
+            <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider backdrop-blur-sm ${categoryStyle}`}>
+              <Trees className="h-3 w-3" />
+              {pkg.category}
+            </span>
+          )}
+          {pkg.duration_days > 0 && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-bold text-gray-800 backdrop-blur-sm">
+              <Clock className="h-3 w-3" />
+              {pkg.duration_days} Days
+            </span>
+          )}
+          {pkg.group_size && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-bold text-gray-800 backdrop-blur-sm">
+              <Users className="h-3 w-3" />
+              {pkg.group_size}
+            </span>
+          )}
         </div>
 
-        {/* Title and Price Row */}
-        <div className="flex items-end justify-between">
-          <div className="flex flex-col gap-1">
-            <h3 className="texl-xl font-bold leading-tight text-white sm:text-2xl">
-              {package_.title}
+        {/* Title + Price row */}
+        <div className="flex items-end justify-between gap-3">
+          <div className="min-w-0">
+            <h3 className="text-lg font-bold leading-tight text-white line-clamp-2 sm:text-xl">
+              {pkg.title}
             </h3>
-            <div className="flex items-center gap-1.5 text-white/80">
-              <MapPin className="h-3.5 w-3.5" />
-              <span className="text-sm font-medium">{package_.location}</span>
+            <div className="mt-1 flex items-center gap-1 text-white/70">
+              <MapPin className="h-3 w-3 shrink-0" />
+              <span className="truncate text-xs font-medium">{pkg.location || pkg.country}</span>
             </div>
           </div>
 
-          <div className="flex flex-col items-end">
-            <span className="mb-[-2px] text-[10px] font-medium uppercase tracking-wide text-white/70">
-              FROM
+          <div className="shrink-0 text-right">
+            <span className="block text-[9px] font-medium uppercase tracking-wide text-white/60">
+              From
             </span>
-            <span className="text-2xl font-bold text-[#ec6d13]">
-              {package_.currency}
-              {package_.price.toLocaleString()}
+            <span className="text-lg font-bold text-primary sm:text-xl">
+              ${pkg.price?.toLocaleString()}
             </span>
           </div>
         </div>
       </div>
-    </div>
+    </Link>
   )
 }

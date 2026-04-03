@@ -72,9 +72,12 @@ export default function HeroSection() {
                         variant="ghost"
                         size="lg"
                         className="group h-12 min-w-[160px] gap-2.5 rounded-full border border-white/40 bg-white/10 px-6 text-sm font-semibold text-white backdrop-blur-md transition-all hover:border-white/60 hover:bg-white/20 hover:text-white hover:shadow-lg"
+                        asChild
                     >
-                        Start Exploring
-                        <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                        <Link href="/marketplace">
+                            Start Exploring
+                            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                        </Link>
                     </Button>
                 </div>
             </div>

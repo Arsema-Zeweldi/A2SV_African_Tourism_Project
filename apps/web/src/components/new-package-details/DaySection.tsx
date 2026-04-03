@@ -24,22 +24,22 @@ export function DaySection({
   const hasActivities = day.activities.length > 0
 
   return (
-    <div className="bg-white rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.07)] overflow-hidden">
+    <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
       {/* ── Day header ── */}
-      <div className="flex items-center gap-3 px-5 py-3 border-b border-gray-50">
+      <div className="flex items-center gap-3 px-5 py-3.5 border-b border-gray-100">
         <span
-          className={`text-[11px] font-bold px-3 py-1 rounded-full ${
+          className={`text-[10px] font-bold px-2.5 py-1 rounded-md ${
             isFirst
               ? "bg-gray-900 text-white"
-              : "bg-gray-200 text-gray-600"
+              : "bg-gray-100 text-gray-600"
           }`}
         >
           Day {day.dayNumber}
         </span>
 
-        <div>
+        <div className="flex items-baseline gap-2">
           <span className="text-sm font-bold text-gray-900">{day.label}</span>
-          <span className="ml-2 text-xs text-gray-400">{day.date}</span>
+          <span className="text-xs text-gray-400">{day.date}</span>
         </div>
       </div>
 

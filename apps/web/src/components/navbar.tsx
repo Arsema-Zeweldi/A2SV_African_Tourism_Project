@@ -129,8 +129,9 @@ const Navbar = () => {
           <Link href="/" className="flex items-center">
             <Image
               src="/images/logo&name.png"
-              alt="Amá»nÃ "
-              fill
+              alt="Amona"
+              width={100}
+              height={100}
               className="h-8 md:h-10 w-auto object-contain"
             />
           </Link>

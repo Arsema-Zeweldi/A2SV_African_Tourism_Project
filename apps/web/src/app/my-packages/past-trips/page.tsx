@@ -87,7 +87,7 @@ const pastTripsData: MyPackagesPageData = {
 
 const PastTripsPage = () => {
   return (
-    <div className="min-h-screen bg-[#FCFAF8] font-sans text-slate-900">
+    <div className="min-h-screen bg-[#faf8f5] font-sans text-slate-900">
       <Navbar />
       <MyPackagesPageShell details={pastTripsData} />
       <FooterSimple />

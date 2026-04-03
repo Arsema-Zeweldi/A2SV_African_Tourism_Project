@@ -54,7 +54,7 @@ export function ActivityCard({ activity, onDelete, onExpand, onSeeOnMap }: Activ
 
   return (
     <div
-      className="group relative flex gap-3 bg-white rounded-xl p-3 shadow-[0_1px_4px_rgba(0,0,0,0.08)] hover:shadow-[0_3px_12px_rgba(0,0,0,0.12)] transition-all duration-200 cursor-pointer"
+      className="group relative flex gap-3 bg-white rounded-lg border border-gray-100 p-3 hover:border-gray-200 hover:shadow-sm transition-all duration-200 cursor-pointer"
       onClick={() => onExpand?.(activity)}
     >
       {/* Left: type icon + vertical connector */}
@@ -123,10 +123,10 @@ export function ActivityCard({ activity, onDelete, onExpand, onSeeOnMap }: Activ
           <img
             src={activity.imageUrl}
             alt={activity.title}
-            className="w-16 h-14 rounded-lg object-cover bg-gray-100"
+            className="w-16 h-14 rounded-md object-cover bg-gray-100"
           />
         ) : (
-          <div className="w-16 h-14 rounded-lg bg-gray-100" />
+          <div className="w-16 h-14 rounded-md bg-gray-100" />
         )}
 
         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150">

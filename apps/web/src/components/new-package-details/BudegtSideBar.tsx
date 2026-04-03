@@ -61,7 +61,7 @@ interface BudgetSidebarProps {
 
 export function BudgetSidebar({ budget }: BudgetSidebarProps) {
   return (
-    <div className="bg-white rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.07)] p-4">
+    <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-bold text-gray-900">Budget Est.</h3>

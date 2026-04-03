@@ -107,8 +107,8 @@ export function usePackageChat({
           name,
           avatar: result.data.avatar_url || FALLBACK_AVATAR,
         })
-      } catch (error) {
-        console.error(error)
+      } catch {
+        // Profile fetch failed — chat still works without user identity
       }
     }
 
@@ -126,8 +126,8 @@ export function usePackageChat({
             .reverse()
             .map((chat) => mapPackageChatMessage(chat, currentUserId, currentUser))
         )
-      } catch (error) {
-        console.error(error)
+      } catch {
+        // Message load failed — keep existing messages
       } finally {
         setIsLoading(false)
       }

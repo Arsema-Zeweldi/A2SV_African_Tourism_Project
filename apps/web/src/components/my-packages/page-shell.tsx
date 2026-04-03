@@ -137,8 +137,8 @@ const MyPackagesPageShell = ({ details, children }: MyPackagesPageShellProps) =>
       </div>
 
       <section className="min-w-0 px-6 py-10 lg:px-10">
-        <div className="mb-10 flex flex-col gap-6 xl:flex-row xl:items-center xl:justify-between">
-          <div>
+        <div className="mb-10 flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
+          <div className="min-w-0">
             <button
               type="button"
               className={toggleButtonClass}
@@ -147,7 +147,7 @@ const MyPackagesPageShell = ({ details, children }: MyPackagesPageShellProps) =>
               <Menu size={16} />
               Open sidebar
             </button>
-            <h1 className="mt-4 text-[44px] font-bold tracking-[-0.03em] text-[#201D1C] lg:mt-0">
+            <h1 className="mt-4 text-3xl sm:text-[44px] font-bold tracking-[-0.03em] text-[#201D1C] lg:mt-0">
               {details.title}
             </h1>
             <p className="mt-2 text-[15px] text-[#7A716D]">
@@ -155,12 +155,14 @@ const MyPackagesPageShell = ({ details, children }: MyPackagesPageShellProps) =>
             </p>
           </div>
 
-          <MyPackagesToolbar
-            viewMode={viewMode}
-            onViewModeChange={setViewMode}
-            sortBy={sortBy}
-            onSortChange={setSortBy}
-          />
+          {!children && (
+            <MyPackagesToolbar
+              viewMode={viewMode}
+              onViewModeChange={setViewMode}
+              sortBy={sortBy}
+              onSortChange={setSortBy}
+            />
+          )}
         </div>
 
         {children ? (

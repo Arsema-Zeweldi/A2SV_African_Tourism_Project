@@ -1,50 +1,38 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { fetchProfile } from '@/actions/profile_actions'
 import { useAuth } from '@/context/auth-context'
 
 const FALLBACK_AVATAR = '/images/user-icon.png'
 
-let cachedAvatar = FALLBACK_AVATAR
-let avatarRequest: Promise<string> | null = null
-
-async function loadCurrentUserAvatar() {
-  if (!avatarRequest) {
-    avatarRequest = fetchProfile()
-      .then((result) => {
-        cachedAvatar =
-          result.success && result.data.avatar_url
-            ? result.data.avatar_url
-            : FALLBACK_AVATAR
-
-        return cachedAvatar
-      })
-      .catch(() => {
-        cachedAvatar = FALLBACK_AVATAR
-        return FALLBACK_AVATAR
-      })
-  }
-
-  return avatarRequest
-}
-
 export function useCurrentUserAvatar() {
   const { isAuthenticated } = useAuth()
-  const [avatar, setAvatar] = useState(cachedAvatar)
+  const [avatar, setAvatar] = useState(FALLBACK_AVATAR)
+  const requestRef = useRef<Promise<string> | null>(null)
 
   useEffect(() => {
     let cancelled = false
 
     if (!isAuthenticated) {
       setAvatar(FALLBACK_AVATAR)
+      requestRef.current = null
       return
     }
 
-    loadCurrentUserAvatar().then((value) => {
-      if (!cancelled) {
-        setAvatar(value)
-      }
+    // Deduplicate concurrent requests within this hook instance
+    if (!requestRef.current) {
+      requestRef.current = fetchProfile()
+        .then((result) =>
+          result.success && result.data.avatar_url
+            ? result.data.avatar_url
+            : FALLBACK_AVATAR
+        )
+        .catch(() => FALLBACK_AVATAR)
+    }
+
+    requestRef.current.then((value) => {
+      if (!cancelled) setAvatar(value)
     })
 
     return () => {
@@ -53,7 +41,6 @@ export function useCurrentUserAvatar() {
   }, [isAuthenticated])
 
   const handleAvatarError = () => {
-    cachedAvatar = FALLBACK_AVATAR
     setAvatar(FALLBACK_AVATAR)
   }
 

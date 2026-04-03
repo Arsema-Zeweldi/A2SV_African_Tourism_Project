@@ -66,11 +66,11 @@ const savedForLaterData: MyPackagesPageData = {
 
 const SavedForLaterPage = () => {
   return (
-    <div className="min-h-screen bg-[#FCFAF8] font-sans text-slate-900">
+    <div className="min-h-screen bg-[#faf8f5] font-sans text-slate-900">
       <Navbar />
       <MyPackagesPageShell details={savedForLaterData} />
-      <footer className="border-t border-[#E6E0DA] bg-[#FCFAF8] py-10 text-center text-[14px] text-[#9A7360]">
-        Â© 2026 Amá»nÃ . All rights reserved.
+      <footer className="border-t border-[#E6E0DA] bg-[#faf8f5] py-10 text-center text-sm text-[#9A7360]">
+        &copy; {new Date().getFullYear()} Amona. All rights reserved.
       </footer>
     </div>
   );

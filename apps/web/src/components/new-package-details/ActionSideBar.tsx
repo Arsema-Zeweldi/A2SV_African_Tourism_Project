@@ -31,7 +31,7 @@ export function ActionsSidebar({
       <button
         onClick={onSave}
         disabled={isSaving}
-        className="w-full flex items-center justify-center gap-2 bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white font-bold text-sm py-3 rounded-xl shadow-[0_4px_14px_rgba(249,115,22,0.35)] transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed"
+        className="w-full flex items-center justify-center gap-2 bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white font-bold text-sm py-3 rounded-lg shadow-[0_4px_14px_rgba(249,115,22,0.35)] transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed"
       >
         {isSaving ? (
           <>
@@ -47,7 +47,7 @@ export function ActionsSidebar({
       </button>
 
       {/* ── Publish toggle ── */}
-      <div className="bg-white rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.07)] p-4">
+      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
         <div className="flex items-start gap-3">
           <button
             role="switch"
@@ -78,7 +78,7 @@ export function ActionsSidebar({
       {/* ── Share ── */}
       <button
         onClick={onShare}
-        className="w-full flex items-center justify-center gap-2 border border-gray-200 bg-white hover:bg-gray-50 text-gray-600 font-semibold text-sm py-3 rounded-xl transition-colors duration-200"
+        className="w-full flex items-center justify-center gap-2 border border-gray-200 bg-white hover:bg-gray-50 text-gray-600 font-semibold text-sm py-3 rounded-lg transition-colors duration-200"
       >
         <Share2 size={14} /> Share
       </button>

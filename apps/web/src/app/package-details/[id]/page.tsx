@@ -1,4 +1,5 @@
 import React from 'react'
+import Image from 'next/image'
 import {
   Share2,
   Heart,
@@ -35,7 +36,7 @@ const PackageDetailsPage = async ({ params }: PackageDetailsPageProps) => {
 
   if (!details) {
     return (
-      <div className="min-h-screen bg-[#FCFCFD] font-sans text-slate-900">
+      <div className="min-h-screen bg-[#faf8f5] font-sans text-slate-900">
         <Navbar />
         <main className="mx-auto max-w-[960px] px-6 py-16">
           <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
@@ -59,20 +60,23 @@ const PackageDetailsPage = async ({ params }: PackageDetailsPageProps) => {
   }
 
   return (
-    <div className="min-h-screen bg-[#FCFCFD] font-sans text-slate-900">
+    <div className="min-h-screen bg-[#faf8f5] font-sans text-slate-900">
       <Navbar />
 
-      <main className="max-w-[1280px] mx-auto py-7 pb-16">
+      <main className="max-w-[1280px] mx-auto px-4 sm:px-6 py-7 pb-16">
         {/* ── TOP GRID: Hero + Chat ── */}
-        <div className="grid grid-cols-[1fr_340px] gap-5 mb-0">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-5 mb-0">
           {/* Hero */}
-          <section className="relative h-[500px] rounded-2xl overflow-hidden shadow-sm">
-            <img
+          <section className="relative h-[300px] sm:h-[400px] lg:h-[500px] rounded-2xl overflow-hidden shadow-sm bg-slate-200">
+            <Image
               src={details.image}
-              alt="Lagos to Accra Roadtrip"
-              className="w-full h-full object-cover"
+              alt={details.name}
+              fill
+              className="object-cover"
+              priority
+              unoptimized
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent flex flex-col justify-end p-8">
+            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent flex flex-col justify-end p-5 sm:p-8">
               <div className="flex flex-wrap gap-2 mb-3">
                 <span className="bg-primary text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">
                   {details.isPublic ? 'Public' : 'Private'}
@@ -85,23 +89,27 @@ const PackageDetailsPage = async ({ params }: PackageDetailsPageProps) => {
                 </span>
               </div>
 
-              <h1 className="text-[32px] md:text-4xl font-black text-white leading-tight max-w-lg tracking-tight mb-5">
+              <h1 className="text-2xl sm:text-[32px] md:text-4xl font-black text-white leading-tight max-w-lg tracking-tight mb-5">
                 {details.name}
               </h1>
 
-              <div className="flex items-end justify-between gap-4">
+              <div className="flex items-end justify-between gap-4 flex-wrap">
                 <div className="flex items-center gap-3">
-                  <img
-                    src={details.owner.avatar}
-                    alt="Creator"
-                    className="w-10 h-10 rounded-full object-cover"
-                  />
+                  <div className="relative w-10 h-10 rounded-full overflow-hidden shrink-0 ring-2 ring-white/30">
+                    <Image
+                      src={details.owner.avatar}
+                      alt={details.owner.name}
+                      fill
+                      className="object-cover"
+                      unoptimized
+                    />
+                  </div>
                   <div>
                     <p className="text-white/70 text-[11px] mb-0.5">
                       Created by
                     </p>
                     <p className="text-white font-bold text-[13px] flex items-center gap-1">
-                      {details.owner.name}{' '}
+                      @{details.owner.name}{' '}
                       <CheckCircle size={13} className="text-blue-400" />
                     </p>
                   </div>
@@ -126,25 +134,25 @@ const PackageDetailsPage = async ({ params }: PackageDetailsPageProps) => {
         {/* /top-grid */}
 
         {/* ── Action Bar ── */}
-        <div className="flex items-center justify-between py-4 border-b border-slate-100 mb-7">
-          <div className="flex items-center gap-2 text-[#926154] text-[12px] font-medium">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 py-4 border-b border-slate-100 mb-7">
+          <div className="flex items-center gap-2 text-[#926154] text-xs font-medium">
             <RefreshCcw size={13} /> Last updated {details.updatedAt}
-            <div id="buttons" className="ml-auto flex items-center gap-2">
-              <button className="flex items-center gap-2 px-4 py-2 border border-slate-200 rounded-xl bg-white hover:bg-slate-50 transition-colors text-[12px] font-semibold text-slate-700">
-                <Share2 size={14} /> Share
-              </button>
-              <button className="flex items-center gap-2 px-4 py-2 border border-slate-200 rounded-xl bg-white hover:bg-slate-50 transition-colors text-[12px] font-semibold text-slate-700">
-                <Heart size={14} /> Save
-              </button>
-              <button className="flex items-center gap-2 px-5 py-2 bg-primary hover:bg-orange-600 text-white rounded-xl text-[12px] font-bold transition-colors">
-                <Navigation size={13} /> Follow this Path
-              </button>
-            </div>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <button className="flex items-center gap-2 px-4 py-2 border border-slate-200 rounded-xl bg-white hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-700">
+              <Share2 size={14} /> Share
+            </button>
+            <button className="flex items-center gap-2 px-4 py-2 border border-slate-200 rounded-xl bg-white hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-700">
+              <Heart size={14} /> Save
+            </button>
+            <button className="flex items-center gap-2 px-5 py-2 bg-primary hover:bg-orange-600 text-white rounded-xl text-xs font-bold transition-colors">
+              <Navigation size={13} /> Follow this Path
+            </button>
           </div>
         </div>
 
         {/* ── Content Grid ── */}
-        <div className="grid grid-cols-[1fr_340px] gap-7">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-7">
           {/* ── LEFT COLUMN ── */}
           <div className="flex flex-col gap-7">
             {/* Description */}
@@ -156,7 +164,7 @@ const PackageDetailsPage = async ({ params }: PackageDetailsPageProps) => {
             <Video props={details.viralMoment} />
 
             {/* Map + Itinerary */}
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               {/* Route Map */}
               <Map stops={details.routeStops} />
 
@@ -185,20 +193,21 @@ const PackageDetailsPage = async ({ params }: PackageDetailsPageProps) => {
             />
 
             {/* Visa Card */}
-            <VisaCard />
+            <VisaCard destination={details.location} />
           </aside>
         </div>
         {/* /content-grid */}
+        {/* Disclaimer */}
+        <div className="mt-8 bg-orange-50/60 border border-orange-100 rounded-xl px-4 py-3 flex items-start gap-2 text-xs text-orange-900 leading-relaxed">
+          <Info size={13} className="shrink-0 mt-0.5" />
+          <p>
+            Disclaimer: Amona facilitates itinerary generation and community
+            connection via package chats. We do not provide on-ground staff or
+            tour guides. All on-site services are managed by third-party travel
+            agents and guides.
+          </p>
+        </div>
       </main>
-      <div className="bg-orange-50/60 border border-orange-100 rounded-xl px-3.5 py-2.5 flex items-start gap-2 text-[11px] text-orange-900 leading-relaxed">
-        <Info size={13} className="shrink-0 mt-0.5" />
-        <p>
-          Disclaimer: Amọnà facilitates itinerary generation and community
-          connection via package chats. We do not provide on-ground staff or
-          tour guides. All on-site services are managed by third-party travel
-          agents and guides.
-        </p>
-      </div>
 
       <FooterSimple />
     </div>

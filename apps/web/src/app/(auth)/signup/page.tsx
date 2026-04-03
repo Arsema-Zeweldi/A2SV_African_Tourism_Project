@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form'
 import Image from 'next/image'
 import Link from 'next/link'
 import { FcGoogle } from 'react-icons/fc'
+import { User, Mail, Lock } from 'lucide-react'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -50,15 +51,12 @@ const SignUpPage = () => {
         last_name: lastName,
       }
 
-      console.log('Sending Payload:', payload)
-
       await signup(payload)
 
       try {
         await resendVerification(data.email)
-        console.log('Verification email triggered successfully')
-      } catch (resendErr) {
-        console.error('Could not trigger verification email:', resendErr)
+      } catch {
+        // Verification email is best-effort
       }
 
       router.push('/login?message=check_email')
@@ -74,7 +72,7 @@ const SignUpPage = () => {
         setApiError(message)
       }
 
-      console.error('Signup Error:', error.response?.status, error.message)
+      // Error already displayed via apiError state
     }
   }
 
@@ -108,7 +106,7 @@ const SignUpPage = () => {
             <Image
               src="/images/logo&name.png"
               alt="African Tourism Logo"
-              className="z-20 fixed top-8 left-10"
+              className="z-20 fixed top-4 left-4 sm:top-8 sm:left-10 hidden sm:block"
               width={100}
               height={100}
             />
@@ -138,8 +136,8 @@ const SignUpPage = () => {
                   Full Name
                 </Label>
                 <div className="relative">
-                  <span className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-500">
-                    <i className="material-icons text-sm">person</i>
+                  <span className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+                    <User size={16} />
                   </span>
                   <Input
                     {...register('name', { required: 'Full name is required' })}
@@ -163,8 +161,8 @@ const SignUpPage = () => {
                   Email Address
                 </Label>
                 <div className="relative">
-                  <span className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-500">
-                    <i className="material-icons text-sm">mail</i>
+                  <span className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+                    <Mail size={16} />
                   </span>
                   <Input
                     {...register('email', {
@@ -194,8 +192,8 @@ const SignUpPage = () => {
                   Password
                 </Label>
                 <div className="relative">
-                  <span className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-500">
-                    <i className="material-icons text-sm">lock</i>
+                  <span className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+                    <Lock size={16} />
                   </span>
                   <Input
                     {...register('password', {

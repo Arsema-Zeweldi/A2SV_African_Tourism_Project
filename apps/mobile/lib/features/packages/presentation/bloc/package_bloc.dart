@@ -27,6 +27,7 @@ class PackageBloc extends Bloc<PackageEvent, PackageState> {
     on<LoadMyPackages>(_onLoadMyPackages);
     on<SubmitPackageReview>(_onSubmitReview);
     on<UpdatePackageStatus>(_onUpdatePackageStatus);
+    on<SavePackageRequested>(_onSavePackage);
   }
 
   Future<void> _onLoadPackagesFeed(
@@ -118,6 +119,23 @@ class PackageBloc extends Bloc<PackageEvent, PackageState> {
     result.fold(
       (failure) => emit(PackageError(failure.message)),
       (_) => emit(PackageStatusUpdated()),
+    );
+  }
+
+  Future<void> _onSavePackage(
+      SavePackageRequested event, Emitter<PackageState> emit) async {
+    emit(PackageLoading());
+    final result = await packageRepository.savePackage(
+      itineraryId: event.itineraryId,
+      title: event.title,
+      description: event.description,
+      durationDays: event.durationDays,
+      totalCost: event.totalCost,
+      status: event.status,
+    );
+    result.fold(
+      (failure) => emit(PackageError(failure.message)),
+      (package) => emit(PackageSaved(package)),
     );
   }
 }

@@ -8,7 +8,9 @@ import 'package:mobile/features/auth/presentation/bloc/auth_state.dart';
 import 'package:mobile/features/auth/presentation/pages/forgot_password_screen.dart';
 import 'package:mobile/features/auth/presentation/pages/login_screen.dart';
 import 'package:mobile/features/auth/presentation/pages/signup_screen.dart';
+import 'package:mobile/features/market_place/presentation/pages/package_detail_page.dart';
 import 'package:mobile/features/onboarding/presentation/pages/onboarding_screen.dart';
+import 'package:mobile/features/packages/domain/entities/package_entity.dart';
 import 'package:mobile/features/plan_trip/presentation/pages/plan_trip_screen.dart';
 import 'package:mobile/features/profile/presentation/pages/edit_profile_screen.dart';
 import 'package:mobile/features/profile/presentation/pages/profile_page.dart';
@@ -114,6 +116,32 @@ GoRouter createRouter(AuthBloc authBloc) {
       GoRoute(
         path: '/itinerary-result',
         builder: (context, state) => const ItineraryResultScreen(),
+      ),
+
+      GoRoute(
+        path: '/package-detail',
+        builder: (context, state) {
+          final package = state.extra as TravelPackage;
+          return PackageDetailPage(
+            packageId: package.id,
+            title: package.title,
+            location: package.location.isNotEmpty
+                ? package.location
+                : package.country,
+            price: package.price.toStringAsFixed(0),
+            rating: package.ratingAvg.toStringAsFixed(1),
+            reviewsCount: package.reviewsCount.toString(),
+            duration: '${package.durationDays} Days',
+            groupType:
+                package.groupSize.isNotEmpty ? package.groupSize : 'All Ages',
+            category: package.category.isNotEmpty ? package.category : 'Travel',
+            description: package.description.isNotEmpty
+                ? package.description
+                : package.summary,
+            imageUrl: package.imageUrl,
+            imagePath: null,
+          );
+        },
       ),
 
       // ─── Package Chat ──────────────────────────────────────────────

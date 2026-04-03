@@ -2,6 +2,7 @@ import 'package:mobile/core/constants/api_endpoints.dart';
 import 'package:mobile/core/network/api_client.dart';
 import 'package:mobile/core/network/exceptions.dart';
 import 'package:mobile/features/packages/data/models/package_model.dart';
+import 'package:mobile/features/packages/domain/entities/package_entity.dart';
 
 abstract class PackageRemoteDataSource {
   /// GET /packages?sort_by=...&order=...&page=...&page_size=...
@@ -31,6 +32,15 @@ abstract class PackageRemoteDataSource {
 
   /// PATCH /packages/:id/status
   Future<void> updatePackageStatus(String packageId, String status);
+
+  Future<TravelPackage> savePackage({
+    required String itineraryId,
+    required String title,
+    required String description,
+    required int durationDays,
+    required double totalCost,
+    required String status,
+  });
 }
 
 class PackageRemoteDataSourceImpl implements PackageRemoteDataSource {
@@ -195,4 +205,20 @@ class PackageRemoteDataSourceImpl implements PackageRemoteDataSource {
       throw ApiException(message: 'Failed to update status: ${e.toString()}');
     }
   }
+  
+  @override
+  Future<TravelPackage> savePackage({ required String itineraryId, required String title, required String description, required int durationDays, required double totalCost, required String status}) async {
+   final body = {
+      'itinerary_id': itineraryId,
+      'title': title,
+      'description': description,
+      'duration_days': durationDays,
+      'total_cost': totalCost,
+      'status': status,
+    };
+    final response = await apiClient.post('/packages', data: body);
+    return TravelPackage.fromJson(response.data);
+  }
+
+  
 }

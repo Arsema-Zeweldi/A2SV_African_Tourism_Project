@@ -1,4 +1,5 @@
 
+import 'package:mobile/core/constants/app_colors.dart';
 import 'package:mobile/features/plan_trip/presentation/pages/plan_your_trip_3.dart';
 import 'package:mobile/features/plan_trip/presentation/pages/trip_screen.dart';
 import 'package:mobile/core/widgets/malak/orange_button.dart';
@@ -6,7 +7,9 @@ import 'package:mobile/core/widgets/malak/trip_bottom_nav.dart';
 import 'package:flutter/material.dart';
 
 class PlanTripStep2Screen extends StatefulWidget {
-  const PlanTripStep2Screen({super.key});
+  final String destinations;
+  final bool multiCountry;
+  const PlanTripStep2Screen({super.key, required this.destinations, required this.multiCountry});
 
   @override
   State<PlanTripStep2Screen> createState() => _PlanTripStep2ScreenState();
@@ -30,7 +33,7 @@ class _PlanTripStep2ScreenState extends State<PlanTripStep2Screen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.scaffoldBackground,
       body: SafeArea(
         child: Column(
           children: [
@@ -239,8 +242,13 @@ class _PlanTripStep2ScreenState extends State<PlanTripStep2Screen> {
                       label: 'Continue',
                       onTap: () => Navigator.push(
                         context,
-                        MaterialPageRoute(
-                            builder: (_) => const PlanTripStep3Screen()),
+                        MaterialPageRoute(builder: (_) => PlanTripStep3Screen(
+                          destinations: widget.destinations,
+                          multiCountry: widget.multiCountry,
+                          climate: _selectedClimate,
+                          vibes: _selectedVibes,
+                          budget: _budget,
+                        )),
                       ),
                     ),
                     const SizedBox(height: 8),

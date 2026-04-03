@@ -1,15 +1,20 @@
 import Image from "next/image"
-import { recommendedTrips, profile } from "@/lib/my-trips-data"
+import { recommendedTrips } from "@/lib/my-trips-data"
 
-export function TripSidebar() {
+interface TripSidebarProps {
+  userName: string
+  avatarUrl: string
+}
+
+export function TripSidebar({ userName, avatarUrl }: TripSidebarProps) {
   return (
     <aside className="space-y-8">
       <div className="flex flex-col items-center gap-4 pt-6 text-center">
         <div className="relative">
           <div className="relative h-[84px] w-[84px] overflow-hidden rounded-full border-[3px] border-[#ecd2c0] bg-[#f7efe8]">
             <Image
-              src={profile.avatar}
-              alt={profile.name}
+              src={avatarUrl}
+              alt={userName}
               fill
               className="object-cover"
               sizes="84px"
@@ -18,7 +23,7 @@ export function TripSidebar() {
           <span className="absolute bottom-1 right-2 h-4 w-4 rounded-full border-[2.5px] border-white bg-[#25d674]" />
         </div>
         <p className="text-[17px] font-semibold tracking-[-0.02em] text-[#243244]">
-          {profile.name}
+          {userName}
         </p>
       </div>
 

@@ -6,4 +6,5 @@ import "context"
 // Production uses GeminiClientImpl; tests use a mock.
 type GeminiClient interface {
 	GenerateItinerary(ctx context.Context, req GenerateRequest) (*ItineraryResponse, error)
+	ChatAboutActivity(ctx context.Context, req ActivityChatRequest) (*ActivityChatResponse, error)
 }

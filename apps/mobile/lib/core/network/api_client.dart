@@ -11,9 +11,10 @@ class ApiClient {
   ApiClient({required this.sharedPreferences}) {
     dio = Dio(BaseOptions(
       baseUrl: ApiEndpoints.baseUrl,
-      connectTimeout: const Duration(seconds: 10),
-      receiveTimeout: const Duration(seconds: 10),
-      sendTimeout: const Duration(seconds: 10),
+      // Render free-tier cold starts can take 30-60 s on first request.
+      connectTimeout: const Duration(seconds: 30),
+      receiveTimeout: const Duration(seconds: 30),
+      sendTimeout: const Duration(seconds: 30),
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
@@ -93,6 +94,27 @@ class ApiClient {
     }
   }
 
+  // PATCH REQUEST
+  Future<Response> patch(
+    String path, {
+    dynamic data,
+    Map<String, dynamic>? queryParameters,
+    Options? options,
+    CancelToken? cancelToken,
+  }) async {
+    try {
+      return await dio.patch(
+        path,
+        data: data,
+        queryParameters: queryParameters,
+        options: options,
+        cancelToken: cancelToken,
+      );
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
   // DELETE REQUEST
   Future<Response> delete(
     String path, {
@@ -120,7 +142,8 @@ class ApiClient {
       case DioExceptionType.connectionTimeout:
       case DioExceptionType.receiveTimeout:
       case DioExceptionType.sendTimeout:
-        return TimeoutException('Connection timeout. Please try again.');
+        return TimeoutException(
+            'Connection timeout. The server may be waking up — please try again in a moment.');
 
       case DioExceptionType.connectionError:
         return NetworkException(

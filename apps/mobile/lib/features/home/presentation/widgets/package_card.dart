@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 
 class PackageCard extends StatelessWidget {
-  final String imagePath;
+  final String? imagePath;
+  final String? imageUrl;
   final double rating;
   final String categoryName;
   final Color categoryColor;
@@ -14,7 +15,8 @@ class PackageCard extends StatelessWidget {
 
   const PackageCard({
     super.key,
-    required this.imagePath,
+    this.imagePath,
+    this.imageUrl,
     required this.rating,
     required this.categoryName,
     required this.categoryColor,
@@ -50,12 +52,7 @@ class PackageCard extends StatelessWidget {
             children: [
               ClipRRect(
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
-                child: Image.asset(
-                  imagePath,
-                  height: 200,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                ),
+                child: _buildImage(),
               ),
 
               // RATING BADGE
@@ -157,6 +154,28 @@ class PackageCard extends StatelessWidget {
           Text(label.toUpperCase(), style: TextStyle(color: textColor, fontSize: 10, fontWeight: FontWeight.bold)),
         ],
       ),
+    );
+  }
+
+  Widget _buildImage() {
+    if (imageUrl != null && imageUrl!.isNotEmpty) {
+      return Image.network(
+        imageUrl!,
+        height: 200,
+        width: double.infinity,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => Container(
+          height: 200,
+          color: Colors.grey[200],
+          child: const Icon(Icons.image, size: 48, color: Colors.grey),
+        ),
+      );
+    }
+    return Image.asset(
+      imagePath ?? 'assets/images/top_rated1.png',
+      height: 200,
+      width: double.infinity,
+      fit: BoxFit.cover,
     );
   }
 

@@ -67,6 +67,8 @@ export const DURATION_MAX = 30
 export const BUDGET_MIN = 500
 export const BUDGET_MAX = 10_000
 export const BUDGET_STEP = 100
+export const GROUP_SIZE_MIN = 1
+export const GROUP_SIZE_MAX = 10
 
 /** Background image for the wizard overlay */
 export const WIZARD_BG = "/plan_trip/savanna-bg.jpg"

@@ -1,4 +1,5 @@
 import React from "react";
+import Link from "next/link";
 import {
   Bookmark,
   History,
@@ -6,7 +7,7 @@ import {
   Settings,
   UserRoundCog,
 } from "lucide-react";
-import type { SidebarItem, TipCard } from "@/app/my-packages/data";
+import type { SidebarItem, TipCard } from "@/types/my-packages";
 
 const sidebarIcons = {
   package: Package2,
@@ -37,19 +38,21 @@ const MyPackagesSidebar = ({
           <div className="space-y-1">
             {dashboardItems.map((item) => {
               const Icon = sidebarIcons[item.icon];
+              const className = `flex w-full items-center gap-3 rounded-xl px-4 py-5 text-left text-[14px] font-medium transition-colors ${
+                item.active
+                  ? "bg-[#F48C25] text-white shadow-[0_14px_30px_rgba(236,109,19,0.22)]"
+                  : "text-[#625A56] hover:bg-white"
+              }`;
 
               return (
-                <button
+                <Link
                   key={item.label}
-                  className={`flex w-full items-center gap-3 rounded-xl px-4 py-5 text-left text-[14px] font-medium transition-colors ${
-                    item.active
-                      ? "bg-[#F48C25] text-white shadow-[0_14px_30px_rgba(236,109,19,0.22)]"
-                      : "text-[#625A56] hover:bg-white"
-                  }`}
+                  href={item.href ?? "#"}
+                  className={className}
                 >
                   <Icon size={16} />
                   {item.label}
-                </button>
+                </Link>
               );
             })}
           </div>
@@ -62,15 +65,21 @@ const MyPackagesSidebar = ({
           <div className="space-y-2">
             {preferenceItems.map((item) => {
               const Icon = sidebarIcons[item.icon];
+              const className = `flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-[15px] font-medium transition-colors ${
+                item.active
+                  ? "bg-[#F7EDE4] text-[#A1581A]"
+                  : "text-[#625A56] hover:bg-white"
+              }`;
 
               return (
-                <button
+                <Link
                   key={item.label}
-                  className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-[15px] font-medium text-[#625A56] transition-colors hover:bg-white"
+                  href={item.href ?? "#"}
+                  className={className}
                 >
                   <Icon size={16} />
                   {item.label}
-                </button>
+                </Link>
               );
             })}
           </div>

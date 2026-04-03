@@ -1,14 +1,16 @@
 // src/components/DaySection.tsx
 
-import { Plus } from "lucide-react";
-import { Day } from "../../types/new-package";
-import { ActivityCard } from "./ActivityCard";
+import { Plus } from "lucide-react"
+import { Activity, Day } from "../../types/new-package"
+import { ActivityCard } from "./ActivityCard"
 
 interface DaySectionProps {
-  day: Day;
-  isFirst?: boolean;
-  onDeleteActivity?: (activityId: string) => void;
-  onAddActivity?: (dayId: string) => void;
+  day: Day
+  isFirst?: boolean
+  onDeleteActivity?: (activityId: string) => void
+  onAddActivity?: (dayId: string) => void
+  onExpandActivity?: (activity: Activity) => void
+  onSeeOnMap?: (activityId: string) => void
 }
 
 export function DaySection({
@@ -16,12 +18,13 @@ export function DaySection({
   isFirst = false,
   onDeleteActivity,
   onAddActivity,
+  onExpandActivity,
+  onSeeOnMap,
 }: DaySectionProps) {
-  const hasActivities = day.activities.length > 0;
+  const hasActivities = day.activities.length > 0
 
   return (
     <div className="bg-white rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.07)] overflow-hidden">
-
       {/* ── Day header ── */}
       <div className="flex items-center gap-3 px-5 py-3 border-b border-gray-50">
         <span
@@ -48,10 +51,12 @@ export function DaySection({
               key={activity.id}
               activity={activity}
               onDelete={onDeleteActivity}
+              onExpand={onExpandActivity}
+              onSeeOnMap={onSeeOnMap}
             />
           ))
         ) : (
-          <div className="h-16 rounded-xl bg-linear-to-r from-gray-50 to-gray-100 flex items-center justify-center">
+          <div className="h-16 rounded-xl bg-gradient-to-r from-gray-50 to-gray-100 flex items-center justify-center">
             <span className="text-xs text-gray-400">
               No activities yet — add one below
             </span>
@@ -70,5 +75,5 @@ export function DaySection({
         </button>
       </div>
     </div>
-  );
+  )
 }

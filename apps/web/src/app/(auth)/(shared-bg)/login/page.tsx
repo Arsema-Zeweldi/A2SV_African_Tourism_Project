@@ -10,9 +10,14 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { userLoginInfo } from '@/types/auth'
 import { login } from '@/services/authService'
+import { setAuthCookie } from '@/actions/auth_actions'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { AxiosError } from 'axios'
+import { useSearchParams } from 'next/navigation'
+import { useEffect } from 'react'
+import { toast } from 'sonner'
+import { signIn } from 'next-auth/react'
 
 interface LoginFormData {
   email: string
@@ -21,12 +26,30 @@ interface LoginFormData {
 
 const LoginPage = () => {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [apiError, setApiError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const message = searchParams.get('message')
+
+    if (message === 'check_email') {
+      toast.success('Verify your email', {
+        description: 'We sent a confirmation link to your inbox.',
+        // duration: 6000,
+      })
+
+      const url = new URL(window.location.href)
+      url.searchParams.delete('message')
+      window.history.replaceState({}, '', url.pathname)
+    }
+  }, [searchParams])
+
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm<LoginFormData>({ mode: 'onTouched' })
+
   const onSubmit = async (data: LoginFormData) => {
     setApiError(null)
 
@@ -36,24 +59,32 @@ const LoginPage = () => {
         password: data.password,
       }
 
-      console.log('Sending Payload:', payload)
+      const response = await login(payload)
 
-      await login(payload)
-
-      router.push('/home')
+      if (response.token) {
+        await setAuthCookie(response.token)
+        window.dispatchEvent(new Event('auth-status-change'))
+        router.refresh()
+        console.log('Login successful, redirecting to home...')
+        router.push('/home')
+      }
     } catch (err) {
       const error = err as AxiosError<{ error: string }>
 
       const message =
-        error.response?.data?.error || 'Registration failed. Please try again.'
+        error.response?.data?.error || 'Login failed. Please try again.'
       setApiError(message)
 
-      console.error(
-        'Login Error Details:',
-        error.response?.status,
-        error.message
-      )
+      toast.error(message)
+
+      console.error('Login Error Details:', error.response?.status, apiError)
     }
+  }
+
+  const handleGoogleSignIn = async () => {
+    await signIn('google', {
+      callbackUrl: '/home',
+    })
   }
 
   return (
@@ -72,6 +103,11 @@ const LoginPage = () => {
                 Log in to continue your journey across the continent.
               </p>
             </div>
+            {apiError && (
+              <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">
+                {apiError}
+              </p>
+            )}
             <form
               onSubmit={handleSubmit(onSubmit)}
               className="space-y-6"
@@ -199,7 +235,11 @@ const LoginPage = () => {
               </div>
             </div>
             <div className="flex justify-center">
-              <Button className="flex items-center justify-center gap-3 w-full py-4 input-glass rounded-full bg-white hover:bg-white/40 transition-colors">
+              <Button
+                type="button"
+                className="flex items-center justify-center gap-3 w-full py-4 input-glass rounded-full bg-white hover:bg-white/40 transition-colors"
+                onClick={handleGoogleSignIn}
+              >
                 <FcGoogle size={24} />
                 <span className="text-sm font-bold">Sign in with Google</span>
               </Button>

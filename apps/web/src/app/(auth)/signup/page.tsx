@@ -7,10 +7,11 @@ import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { userSignupInfo } from '@/types/auth'
-import { signup } from '@/services/authService'
+import { signup, resendVerification } from '@/services/authService'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { AxiosError } from 'axios'
+import { signIn } from 'next-auth/react'
 
 interface SignUpFormData {
   name: string
@@ -27,6 +28,12 @@ const SignUpPage = () => {
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm<SignUpFormData>({ mode: 'onTouched' })
+
+  const handleGoogleSignup = () => {
+    signIn('google', {
+      callbackUrl: '/home',
+    })
+  }
 
   const onSubmit = async (data: SignUpFormData) => {
     setApiError(null)
@@ -47,19 +54,27 @@ const SignUpPage = () => {
 
       await signup(payload)
 
-      router.push('/login')
+      try {
+        await resendVerification(data.email)
+        console.log('Verification email triggered successfully')
+      } catch (resendErr) {
+        console.error('Could not trigger verification email:', resendErr)
+      }
+
+      router.push('/login?message=check_email')
     } catch (err) {
       const error = err as AxiosError<{ error: string }>
 
-      const message =
-        error.response?.data?.error || 'Registration failed. Please try again.'
-      setApiError(message)
+      if (error.response?.status === 409) {
+        setApiError(
+          'This email address is already registered. Please try logging in.'
+        )
+      } else {
+        const message = error.response?.data?.error || 'Registration failed.'
+        setApiError(message)
+      }
 
-      console.error(
-        'Signup Error Details:',
-        error.response?.status,
-        error.message
-      )
+      console.error('Signup Error:', error.response?.status, error.message)
     }
   }
 
@@ -283,7 +298,11 @@ const SignUpPage = () => {
               </div>
             </div>
             <div className="flex justify-center">
-              <button className="flex items-center justify-center gap-3 w-full py-4 input-glass rounded-full bg-white hover:bg-white/40 transition-colors">
+              <button
+                type="button"
+                className="flex items-center justify-center gap-3 w-full py-4 input-glass rounded-full bg-white hover:bg-white/40 transition-colors"
+                onClick={handleGoogleSignup}
+              >
                 <FcGoogle size={24} />
                 <span className="text-sm text-black font-bold">
                   Sign in with Google

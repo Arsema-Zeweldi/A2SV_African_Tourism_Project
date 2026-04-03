@@ -19,8 +19,21 @@ class MyPackagesCard extends StatelessWidget {
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(12),
-            child: Image.asset(package.imagePath,
-                width: 100, height: 100, fit: BoxFit.cover),
+            child: package.imageUrl != null && package.imageUrl!.isNotEmpty
+                ? Image.network(
+                    package.imageUrl!,
+                    width: 100,
+                    height: 100,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Image.asset(
+                      package.imagePath,
+                      width: 100,
+                      height: 100,
+                      fit: BoxFit.cover,
+                    ),
+                  )
+                : Image.asset(package.imagePath,
+                    width: 100, height: 100, fit: BoxFit.cover),
           ),
           const SizedBox(width: 16),
           Expanded(

@@ -70,6 +70,13 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         },
       );
 
+      // Save the JWT token from the response so subsequent
+      // API calls include it in the Authorization header.
+      final token = response.data['token'];
+      if (token != null) {
+        await apiClient.sharedPreferences.setString('AUTH_TOKEN', token);
+      }
+
       if (response.data['user'] != null) {
         return UserModel.fromJson(response.data['user']);
       } else if (response.data['data'] != null) {
@@ -102,14 +109,20 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       print('Logout network error: ${e.message}');
     } catch (e) {
       print('Logout unexpected error: $e');
+    } finally {
+      // Always clear the local token on logout attempt.
+      await apiClient.sharedPreferences.remove('AUTH_TOKEN');
+      await apiClient.sharedPreferences.remove('CACHED_USER');
     }
   }
 
   @override
   Future<void> sendPasswordResetEmail({required String email}) async {
     try {
+      // FIX: Use /auth/forgot-password (sends the email)
+      // NOT /auth/reset-password (which actually resets with a token).
       await apiClient.post(
-        ApiEndpoints.resetPassword,
+        ApiEndpoints.forgotPassword,
         data: {'email': email},
       );
     } on UnauthorizedException {
@@ -130,6 +143,11 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   Future<UserModel> signInWithGoogle() async {
     try {
       final response = await apiClient.post(ApiEndpoints.googleSignIn);
+
+      final token = response.data['token'];
+      if (token != null) {
+        await apiClient.sharedPreferences.setString('AUTH_TOKEN', token);
+      }
 
       if (response.data['user'] != null) {
         return UserModel.fromJson(response.data['user']);
@@ -160,11 +178,17 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       final response = await apiClient.post(
         ApiEndpoints.signUp,
         data: {
-          'fullName': fullName,
+          'name': fullName, // Backend expects 'name', not 'fullName'
           'email': email,
           'password': password,
         },
       );
+
+      // Save the JWT token so the user is authenticated immediately.
+      final token = response.data['token'];
+      if (token != null) {
+        await apiClient.sharedPreferences.setString('AUTH_TOKEN', token);
+      }
 
       if (response.data['user'] != null) {
         return UserModel.fromJson(response.data['user']);

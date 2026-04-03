@@ -18,6 +18,8 @@ export interface Activity {
   type: ActivityType;
   imageUrl?: string;
   aiPick?: boolean;
+  latitude?: number;
+  longitude?: number;
 }
 
 export interface Day {

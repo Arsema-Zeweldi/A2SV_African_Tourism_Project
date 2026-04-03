@@ -15,14 +15,54 @@ class UserModel extends User {
           profilePictureUrl: profilePictureUrl,
         );
 
+  /// Parses a user from JSON.
+  ///
+  /// Handles two backend response shapes:
+  ///   1. Auth response (minimal): { "id": "...", "email": "..." }
+  ///   2. Profile response (full):  { "user_id": "...", "first_name": "...", "avatar_url": "...", ... }
   factory UserModel.fromJson(Map<String, dynamic> json) {
+    // The backend uses 'user_id' in profile responses, 'id' in auth responses.
+    final id = json['id']?.toString() ??
+        json['user_id']?.toString() ??
+        '';
+
+    // Build full name from available fields.
+    final fullName = json['fullName'] ??
+        _buildFullName(json['first_name'], json['last_name']) ??
+        json['name'] ??
+        '';
+
+    final email = json['email'] ?? '';
+
+    // Parse createdAt if present, otherwise default to now.
+    DateTime createdAt;
+    if (json['createdAt'] != null) {
+      createdAt = DateTime.parse(json['createdAt']);
+    } else if (json['created_at'] != null) {
+      createdAt = DateTime.tryParse(json['created_at'].toString()) ?? DateTime.now();
+    } else {
+      createdAt = DateTime.now();
+    }
+
+    // Backend profile response uses 'avatar_url' (see dto.go UserProfileResponse).
+    final profilePictureUrl =
+        json['profilePictureUrl'] ??
+        json['avatar_url'] ??
+        json['profile_image_url'];
+
     return UserModel(
-      id: json['id'],
-      fullName: json['fullName'],
-      email: json['email'],
-      createdAt: DateTime.parse(json['createdAt']),
-      profilePictureUrl: json['profilePictureUrl'],
+      id: id,
+      fullName: fullName,
+      email: email,
+      createdAt: createdAt,
+      profilePictureUrl: profilePictureUrl,
     );
+  }
+
+  /// Helper to combine first + last name.
+  static String? _buildFullName(dynamic firstName, dynamic lastName) {
+    if (firstName == null && lastName == null) return null;
+    return '${firstName ?? ''} ${lastName ?? ''}'.trim();
   }
 
   Map<String, dynamic> toJson() {

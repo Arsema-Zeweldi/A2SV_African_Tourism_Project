@@ -150,3 +150,17 @@
   @apply ring-4 ring-[#F28A1E]/30;
 }
 
+@keyframes loading-slide {
+  0% {
+    transform: translateX(-100%);
+  }
+
+  50% {
+    transform: translateX(40%);
+  }
+
+  100% {
+    transform: translateX(180%);
+  }
+}
+

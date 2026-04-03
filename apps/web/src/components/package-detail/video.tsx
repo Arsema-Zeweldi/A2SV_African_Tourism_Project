@@ -6,6 +6,10 @@ interface PackageDetailsProps {
 }
 
 const Video = ({ props }: PackageDetailsProps) => {
+  if (!props?.thumbnail) {
+    return null
+  }
+
   return (
     <div className="relative rounded-2xl overflow-hidden border border-slate-100 cursor-pointer group">
         <img

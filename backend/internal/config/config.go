@@ -2,6 +2,7 @@ package config
 
 import (
 	"errors"
+	"fmt"
 	"log/slog"
 	"os"
 	"strings"
@@ -26,6 +27,8 @@ type Config struct {
 	EmailFrom       string
 	EmailFromName   string
 	FrontendURL     string
+	BackendURL      string
+	GeminiTimeout   int
 }
 
 // LoadConfig reads configuration from environment variables (and an optional .env file).
@@ -68,12 +71,24 @@ func LoadConfig() (*Config, error) {
 		EmailFrom:      getEnv("EMAIL_FROM", "noreply@amona.travel"),
 		EmailFromName:  getEnv("EMAIL_FROM_NAME", "Amona"),
 		FrontendURL:    getEnv("FRONTEND_URL", "http://localhost:3000"),
+		BackendURL:     getEnv("BACKEND_URL", "http://localhost:8080"),
+		GeminiTimeout:  getEnvInt("GEMINI_TIMEOUT_SEC", 120),
 	}, nil
 }
 
 func getEnv(key, fallback string) string {
 	if value, ok := os.LookupEnv(key); ok {
 		return value
+	}
+	return fallback
+}
+
+func getEnvInt(key string, fallback int) int {
+	if value, ok := os.LookupEnv(key); ok {
+		var i int
+		if _, err := fmt.Sscanf(value, "%d", &i); err == nil {
+			return i
+		}
 	}
 	return fallback
 }

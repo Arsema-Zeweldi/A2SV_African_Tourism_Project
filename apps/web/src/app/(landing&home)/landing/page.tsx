@@ -266,10 +266,10 @@ const LandingPage = () => {
 
             {/* CTA Button */}
             <a
-              href="/map-explorer"
+              href="/marketplace"
               className="inline-flex items-center justify-center bg-[#221810] hover:bg-[#2a1f12] text-white text-sm font-semibold px-8 py-3 rounded-full transition-colors"
             >
-              Launch Map Explorer
+              Explore Destinations
             </a>
           </div>
 

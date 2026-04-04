@@ -1,8 +1,13 @@
 'use server'
 import { cookies } from 'next/headers'
 
-const RAW_API_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8080'
+const RAW_API_URL = process.env.NEXT_PUBLIC_API_BASE_URL
+
+if (!RAW_API_URL) {
+  throw new Error(
+    'NEXT_PUBLIC_API_BASE_URL is not defined. Check your .env.local file.'
+  )
+}
 const API_URL = RAW_API_URL.endsWith('/api/v1')
   ? RAW_API_URL
   : `${RAW_API_URL.replace(/\/$/, '')}/api/v1`
@@ -60,9 +65,15 @@ export async function apiFetch<T>(
   })
 
   if (!res.ok) {
-    const err = await res.json().catch(() => ({}))
-    const message =
-      (err as { error?: string }).error ?? `API error ${res.status}`
+    let message = `API error ${res.status}`
+    try {
+      const err = await res.json()
+      if (err && typeof err.error === 'string') {
+        message = err.error
+      }
+    } catch {
+      // response body was not JSON — use the default status message
+    }
     throw new Error(message)
   }
 

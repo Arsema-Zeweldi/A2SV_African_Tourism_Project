@@ -122,8 +122,8 @@ export function MyTripsPage({
             </div>
           </main>
 
-          <aside className="w-full lg:w-[320px] bg-white px-4 sm:px-6 lg:px-8 py-10 lg:py-12 relative">
-            <div className="absolute inset-y-0 right-[-100vw] w-[100vw] bg-white hidden lg:block" />
+          <aside className="hidden lg:block w-[320px] bg-white px-8 py-12 relative">
+            <div className="absolute inset-y-0 right-[-100vw] w-[100vw] bg-white" />
             <div className="relative z-10">
               <TripSidebar
                 userName={sidebarUser.name}

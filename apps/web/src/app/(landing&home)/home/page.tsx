@@ -7,8 +7,10 @@ import { fetchRecentPosts, getTrending } from '@/services/homeService'
 import Link from 'next/link'
 
 export default async function HomePage() {
-  const posts = await fetchRecentPosts()
-  const trendingPackages = await getTrending()
+  const [posts, trendingPackages] = await Promise.all([
+    fetchRecentPosts().catch(() => []),
+    getTrending().catch(() => []),
+  ])
 
   return (
     <>

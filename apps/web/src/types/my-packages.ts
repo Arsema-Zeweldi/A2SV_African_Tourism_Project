@@ -63,13 +63,13 @@ export const myPackagesPageData: MyPackagesPageData = {
   description: "Manage your upcoming African adventures and itineraries.",
   sidebar: {
     dashboardItems: [
-      { label: "Current Packages", icon: "package", active: true },
-      { label: "Saved for Later", icon: "bookmark" },
-      { label: "Past Trips", icon: "history" },
+      { label: "Current Packages", icon: "package", active: true, href: "/my-packages" },
+      { label: "Saved for Later", icon: "bookmark", href: "/my-packages/saved-for-later" },
+      { label: "Past Trips", icon: "history", href: "/my-packages/past-trips" },
     ],
     preferenceItems: [
-      { label: "Account Settings", icon: "settings" },
-      { label: "Support Center", icon: "support" },
+      { label: "Account Settings", icon: "settings", href: "/profile" },
+      { label: "Support Center", icon: "support", href: "/my-packages/support-center" },
     ],
     tipCard: {
       title: "Travel Tip",

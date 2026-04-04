@@ -71,8 +71,12 @@ function MarketplaceContent() {
 
     getPackagesFeedAction(params)
       .then((res) => {
-        setPackages(res.data)
-        setTotal(res.meta.total)
+        if (!res.success) {
+          setError(res.error)
+          return
+        }
+        setPackages(res.data.data)
+        setTotal(res.data.meta.total)
       })
       .catch(() => setError('Failed to load packages. Please try again.'))
       .finally(() => setLoading(false))

@@ -49,7 +49,7 @@ export default function HeroSection() {
                 </h1>
 
                 {/* Subtitle */}
-                <p className="mb-9 max-w-[35rem] font-sans text-base font-light leading-relaxed text-white/95 drop-shadow-lg sm:text-[1.1rem] pr-32">
+                <p className="mb-9 max-w-[35rem] font-sans text-base font-light leading-relaxed text-white/95 drop-shadow-lg sm:text-[1.1rem] sm:pr-32">
                     Join a community of explorers and book curated adventures through the world&apos;s most breathtaking landscapes.
                 </p>
 

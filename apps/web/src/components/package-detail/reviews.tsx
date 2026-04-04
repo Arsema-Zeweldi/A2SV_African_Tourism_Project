@@ -46,7 +46,7 @@ const Reviews = ({
           </h3>
           <div className="flex items-end gap-2.5">
             <span className="text-[38px] font-black text-slate-900 leading-none">
-              {liveRatingAvg.toFixed(1)}
+              {(liveRatingAvg ?? 0).toFixed(1)}
             </span>
             <div className="pb-1">
               <div className="flex text-[#F97316] gap-0.5 mb-0.5">

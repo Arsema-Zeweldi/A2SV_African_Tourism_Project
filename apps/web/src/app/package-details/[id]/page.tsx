@@ -20,6 +20,7 @@ import Video from '@/components/package-detail/video'
 import { getPackageDetailsPageData } from '@/lib/package-data'
 import Navbar from '@/components/navbar'
 import FooterSimple from '@/components/footerSimple'
+import { ShareButton, SaveButton } from './action-buttons'
 
 interface PackageDetailsPageProps {
   params: {
@@ -139,12 +140,8 @@ const PackageDetailsPage = async ({ params }: PackageDetailsPageProps) => {
             <RefreshCcw size={13} /> Last updated {details.updatedAt}
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            <button className="flex items-center gap-2 px-4 py-2 border border-slate-200 rounded-xl bg-white hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-700">
-              <Share2 size={14} /> Share
-            </button>
-            <button className="flex items-center gap-2 px-4 py-2 border border-slate-200 rounded-xl bg-white hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-700">
-              <Heart size={14} /> Save
-            </button>
+            <ShareButton name={details.name} />
+            <SaveButton />
             <button className="flex items-center gap-2 px-5 py-2 bg-primary hover:bg-orange-600 text-white rounded-xl text-xs font-bold transition-colors">
               <Navigation size={13} /> Follow this Path
             </button>

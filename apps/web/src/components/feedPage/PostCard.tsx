@@ -253,7 +253,7 @@ const PostCard = ({ post }: PostCardProps) => {
                   await navigator.share({ title: post.user_name + "'s post", text: post.content, url })
                 } else {
                   await navigator.clipboard.writeText(url)
-                  alert('Link copied!')
+                  toast.success('Link copied!')
                 }
               } catch { /* user cancelled */ }
             }}
@@ -329,9 +329,6 @@ const PostCard = ({ post }: PostCardProps) => {
                         <p className="text-sm text-text-main dark:text-gray-300">
                           {comment.text}
                         </p>
-                        <button className="text-[10px] font-bold text-text-muted hover:text-primary w-fit mt-1">
-                          Reply
-                        </button>
                       </div>
                     </div>
                   )

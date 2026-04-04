@@ -52,14 +52,18 @@ export function mapPackageChatMessage(
 export async function fetchPackageChatHistory(
   packageId: string
 ): Promise<PackageChatHistoryResponse> {
-  return fetchPackageChatHistoryAction(packageId)
+  const result = await fetchPackageChatHistoryAction(packageId)
+  if (!result.success) throw new Error(result.error)
+  return result.data
 }
 
 export async function sendPackageChatMessage(
   packageId: string,
   message: string
 ): Promise<PackageChatResponse> {
-  return sendPackageChatMessageAction(packageId, message)
+  const result = await sendPackageChatMessageAction(packageId, message)
+  if (!result.success) throw new Error(result.error)
+  return result.data
 }
 
 interface UsePackageChatOptions {

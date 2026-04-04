@@ -6,6 +6,7 @@ import Image from 'next/image'
 import { ApiPackage } from '../../services/packagesService'
 import { useMarketplace } from '../../context/marketplace-context'
 import { Heart, MapPin, Clock } from 'lucide-react'
+import { getFallbackImage } from '@/lib/fallback-images'
 
 interface PackageCardProps {
   pkg: ApiPackage
@@ -25,7 +26,8 @@ export function PackageCard({ pkg }: PackageCardProps) {
   const { toggleWishlist, isInWishlist } = useMarketplace()
   const inWishlist = isInWishlist(pkg.package_id)
 
-  const [imgSrc, setImgSrc] = useState(pkg.image_url || '/images/lion.png')
+  const fallbackImg = getFallbackImage(pkg.package_id || pkg.title)
+  const [imgSrc, setImgSrc] = useState(pkg.image_url || fallbackImg)
   const location = pkg.location || pkg.country || 'Africa'
   const duration = pkg.duration_days ? `${pkg.duration_days} Days` : null
   const badge = pkg.category ? (CATEGORY_LABELS[pkg.category] || pkg.category.toUpperCase()) : null
@@ -37,7 +39,7 @@ export function PackageCard({ pkg }: PackageCardProps) {
         <Image
           src={imgSrc}
           alt={pkg.title}
-          onError={() => setImgSrc('/images/lion.png')}
+          onError={() => setImgSrc(fallbackImg)}
           fill
           className="object-cover transition-transform duration-500 group-hover:scale-105"
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"

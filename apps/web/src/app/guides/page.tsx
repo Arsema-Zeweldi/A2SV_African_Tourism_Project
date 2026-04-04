@@ -201,10 +201,10 @@ export default function GuidesPage() {
           ))}
         </div>
 
-        {/* More coming soon */}
+        {/* Note */}
         <div className="mt-12 text-center">
           <p className="text-sm text-gray-400">
-            More destinations coming soon — Ethiopia, Tanzania, Ghana, Senegal & more.
+            Covering 8 African destinations. More guides are added regularly.
           </p>
         </div>
       </section>

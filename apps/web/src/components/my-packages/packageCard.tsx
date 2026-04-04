@@ -1,6 +1,10 @@
-import React from "react";
+'use client'
+
+import React, { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Clock3, Heart } from "lucide-react";
+import { getFallbackImage } from "@/lib/fallback-images";
 import type {
   PackageAction,
   PackageCard as MyPackageCard,
@@ -27,6 +31,22 @@ interface PackageCardProps {
   onAction?: (action: PackageAction, item: MyPackageCard) => void;
 }
 
+function CardImage({ src, alt, seed }: { src: string; alt: string; seed: string }) {
+  const fallback = getFallbackImage(seed)
+  const [imgSrc, setImgSrc] = useState(src || fallback)
+
+  return (
+    <Image
+      src={imgSrc}
+      alt={alt}
+      fill
+      className="object-cover"
+      unoptimized
+      onError={() => setImgSrc(fallback)}
+    />
+  )
+}
+
 const PackageCard = ({
   item,
   viewMode = "grid",
@@ -41,7 +61,7 @@ const PackageCard = ({
       }`}
     >
       <div className={`relative overflow-hidden ${isListView ? "h-[220px] lg:h-full" : "h-[224px]"}`}>
-        <img src={item.image} alt={item.title} className="h-full w-full object-cover" />
+        <CardImage src={item.image} alt={item.title} seed={item.id || item.title} />
         <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/15 to-transparent" />
 
         <div className="absolute left-4 right-4 top-4 flex items-start justify-between">

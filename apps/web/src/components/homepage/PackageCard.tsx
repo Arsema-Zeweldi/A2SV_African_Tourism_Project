@@ -3,6 +3,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import type { Package } from '@/types/feed'
 import { Star, Clock, Users, MapPin, Trees } from 'lucide-react'
+import { getFallbackImage } from '@/lib/fallback-images'
 
 interface PackageCardProps {
   package_: Package
@@ -20,7 +21,7 @@ const CATEGORY_STYLE: Record<string, string> = {
 export default function PackageCard({ package_: pkg }: PackageCardProps) {
   const [imgError, setImgError] = useState(false)
   const categoryStyle = CATEGORY_STYLE[pkg.category?.toLowerCase()] || 'bg-white/90 text-gray-800'
-  const fallback = '/images/African-Safari-Sunset.png'
+  const fallback = getFallbackImage(pkg.package_id || pkg.title)
 
   return (
     <Link

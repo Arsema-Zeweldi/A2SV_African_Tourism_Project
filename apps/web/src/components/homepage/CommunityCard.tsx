@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { CommunityPostData } from "@/types/homepage";
+import { getFallbackImage } from "@/lib/fallback-images";
 
 interface CommunityCardProps {
     post: CommunityPostData;
@@ -20,11 +21,12 @@ export default function CommunityCard({ post }: CommunityCardProps) {
             {/* Post Image */}
             <div className="relative aspect-square w-full overflow-hidden">
                 <Image
-                    src={post.image}
+                    src={post.image || getFallbackImage(post.author.name)}
                     alt={`Post by ${post.author.name}`}
                     fill
                     className="object-cover"
                     sizes="(max-width: 768px) 100vw, 33vw"
+                    unoptimized
                 />
             </div>
 
@@ -33,11 +35,12 @@ export default function CommunityCard({ post }: CommunityCardProps) {
                 <div className="flex items-center gap-3 mb-4">
                     <div className="relative h-10 w-10 overflow-hidden rounded-full">
                         <Image
-                            src={post.author.avatar}
+                            src={post.author.avatar || '/images/user-icon.png'}
                             alt={post.author.name}
                             fill
                             className="object-cover"
                             sizes="40px"
+                            unoptimized
                         />
                     </div>
                     <div className="flex flex-col">

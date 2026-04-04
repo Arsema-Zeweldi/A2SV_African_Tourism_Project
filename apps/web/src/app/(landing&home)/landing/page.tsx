@@ -185,10 +185,10 @@ const LandingPage = () => {
       <section className="bg-primary py-10 md:py-14 px-6">
         <div className="max-w-[1000px] mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
           {[
-            { value: '50+', label: 'Countries' },
-            { value: '12k', label: 'Experiences' },
-            { value: '85k', label: 'Explorers' },
-            { value: '4.9/5', label: 'Rating' },
+            { value: '4+', label: 'Countries' },
+            { value: '30+', label: 'Packages' },
+            { value: '100+', label: 'Itineraries' },
+            { value: 'AI', label: 'Powered Planning' },
           ].map((stat) => (
             <div key={stat.label} className="flex flex-col items-center">
               <span className="text-4xl md:text-5xl font-bold text-white leading-none mb-2">

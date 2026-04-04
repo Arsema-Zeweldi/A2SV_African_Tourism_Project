@@ -3,6 +3,7 @@ import Image from 'next/image'
 import { Package } from '@/types/feed'
 import { FaStar } from 'react-icons/fa'
 import { getTrending } from '@/services/feedServices'
+import { getFallbackImage } from '@/lib/fallback-images'
 
 const TrendingNow = () => {
   const [trendingPackages, setTrendingPackages] = useState<Package[]>([])
@@ -58,7 +59,7 @@ const TrendingNow = () => {
           >
             <div className="relative size-12 rounded-lg overflow-hidden shrink-0 group-hover:brightness-110 transition-all shadow-sm">
               <Image
-                src={pkg.image_url || '/images/placeholder-package.png'}
+                src={pkg.image_url || getFallbackImage(pkg.package_id || pkg.title)}
                 alt={pkg.title}
                 fill
                 className="object-cover"

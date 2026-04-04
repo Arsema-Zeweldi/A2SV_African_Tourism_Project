@@ -18,13 +18,13 @@ const VisaCard = ({ destination }: VisaCardProps) => {
       </div>
       <h3 className="text-sm font-black text-slate-800 mb-2">Need a Visa?</h3>
       <p className="text-[11px] text-slate-500 leading-relaxed mb-4 px-2">
-        Get your {place} transit visa processed in 24 hours.
+        Check visa requirements, safety tips, and travel info for {place}.
       </p>
       <Link
         href="/guides"
         className="text-primary text-xs font-bold flex items-center justify-center gap-1 mx-auto hover:underline"
       >
-        Check Eligibility &rarr;
+        View Travel Guide &rarr;
       </Link>
     </div>
   )

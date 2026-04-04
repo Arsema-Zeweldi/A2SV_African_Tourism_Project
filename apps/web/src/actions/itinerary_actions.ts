@@ -3,8 +3,11 @@
 import { apiFetch } from "@/lib/api"
 import type {
   ActionResult,
+  CreateItineraryRequest,
   ItineraryActivityResponse,
   ItineraryListResponse,
+  ItineraryResponse,
+  PackageResponse,
 } from "@/types/api"
 import type { Activity } from "@/types/new-package"
 
@@ -114,6 +117,60 @@ export async function syncDeleteActivity(
     return {
       success: false,
       error: e instanceof Error ? e.message : "Failed to sync delete",
+    }
+  }
+}
+
+/**
+ * Clones a package's itinerary into the current user's trips.
+ * Fetches the package, reads its itinerary, and creates a new one.
+ */
+export async function clonePackageItinerary(
+  packageId: string,
+): Promise<ActionResult<{ itinerary_id: string }>> {
+  try {
+    const pkg = await apiFetch<PackageResponse>(`/packages/${packageId}`)
+    const srcItinerary = pkg.itinerary
+
+    if (!srcItinerary) {
+      return { success: false, error: "This package has no itinerary to follow." }
+    }
+
+    const activities = (srcItinerary.activities ?? []).map((a) => ({
+      day_number: a.day_number,
+      order_index: a.order_index,
+      title: a.title,
+      description: a.description,
+      time_label: a.time_label,
+      duration_label: a.duration_label,
+      cost_label: a.cost_label,
+      location: a.location,
+      activity_type: a.activity_type,
+      image_url: a.image_url ?? "",
+      ai_pick: a.ai_pick ?? false,
+      requirement: a.requirement ?? "",
+      latitude: a.latitude ?? 0,
+      longitude: a.longitude ?? 0,
+    }))
+
+    const body: CreateItineraryRequest = {
+      title: `${pkg.title} (My Trip)`,
+      description: pkg.description || pkg.summary || "",
+      days_count: srcItinerary.days_count ?? activities.length,
+      nights_count: srcItinerary.nights_count ?? Math.max(0, (srcItinerary.days_count ?? 1) - 1),
+      activities,
+    }
+
+    const created = await apiFetch<ItineraryResponse>("/itineraries", {
+      method: "POST",
+      body,
+    })
+
+    return { success: true, data: { itinerary_id: created.itinerary_id } }
+  } catch (e) {
+    return {
+      success: false,
+      error: e instanceof Error ? e.message : "Failed to copy itinerary",
     }
   }
 }

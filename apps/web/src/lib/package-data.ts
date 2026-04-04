@@ -16,6 +16,8 @@ import type {
   RouteStop,
 } from "@/types/package-details"
 
+import { getFallbackImage } from "@/lib/fallback-images"
+
 const FALLBACK_PACKAGE_IMAGE = "/images/African-Safari-Sunset.png"
 const FALLBACK_AVATAR = "/images/profile.png"
 
@@ -139,7 +141,7 @@ function mapPackageDetails(
       rating: review.rating,
     })),
     description: pkg.description || pkg.summary || "No description available yet.",
-    image: pkg.image_url || FALLBACK_PACKAGE_IMAGE,
+    image: pkg.image_url || getFallbackImage(pkg.package_id),
     viralMoment: pkg.image_url
       ? {
           thumbnail: pkg.image_url,
@@ -188,7 +190,7 @@ function mapMyPackageCard(pkg: PackageResponse): MyPackageCard {
     id: pkg.package_id,
     title: pkg.title,
     location: [pkg.location, pkg.country].filter(Boolean).join(", "),
-    image: pkg.image_url || FALLBACK_PACKAGE_IMAGE,
+    image: pkg.image_url || getFallbackImage(pkg.package_id),
     createdAt: pkg.created_at,
     priceAmount: pkg.price,
     status: statusMap[pkg.status],
@@ -230,23 +232,29 @@ export async function getPackageDetailsPageData(id: string) {
 
 export async function getMyPackagesPageData(): Promise<MyPackagesPageData> {
   const response = await apiFetch<PackagesFeedResponse>("/packages/me")
-  const recommendations: RecommendationCard[] = [
-    {
-      title: "Zanzibar Shores",
-      image: "/images/ocean.png",
-      price: "Starting $899",
+
+  // Fetch top-rated public packages as recommendations
+  const recResponse = await apiFetch<PackagesFeedResponse>("/packages", {
+    params: {
+      sort_by: "rating_avg",
+      order: "desc",
+      page_size: 3,
+      status: "public",
     },
-    {
-      title: "Namibia Desert Tour",
-      image: "/images/desert.png",
-      price: "Starting $1,250",
-    },
-    {
-      title: "Victoria Falls Adventure",
-      image: "/images/waterfall.png",
-      price: "Starting $780",
-    },
-  ]
+  }).catch(() => null)
+
+  const myPackageIds = new Set(
+    (response.data ?? []).map((p) => p.package_id)
+  )
+
+  const recommendations: RecommendationCard[] = (recResponse?.data ?? [])
+    .filter((p) => !myPackageIds.has(p.package_id))
+    .slice(0, 3)
+    .map((p) => ({
+      title: p.title,
+      image: p.image_url || getFallbackImage(p.package_id || p.title),
+      price: `${p.currency || "USD"} ${p.price}`,
+    }))
 
   return {
     title: "My Packages",

@@ -20,7 +20,7 @@ import Video from '@/components/package-detail/video'
 import { getPackageDetailsPageData } from '@/lib/package-data'
 import Navbar from '@/components/navbar'
 import FooterSimple from '@/components/footerSimple'
-import { ShareButton, SaveButton } from './action-buttons'
+import { ShareButton, SaveButton, FollowPathButton } from './action-buttons'
 
 interface PackageDetailsPageProps {
   params: {
@@ -142,9 +142,7 @@ const PackageDetailsPage = async ({ params }: PackageDetailsPageProps) => {
           <div className="flex items-center gap-2 flex-wrap">
             <ShareButton name={details.name} />
             <SaveButton />
-            <button className="flex items-center gap-2 px-5 py-2 bg-primary hover:bg-orange-600 text-white rounded-xl text-xs font-bold transition-colors">
-              <Navigation size={13} /> Follow this Path
-            </button>
+            <FollowPathButton packageId={id} />
           </div>
         </div>
 

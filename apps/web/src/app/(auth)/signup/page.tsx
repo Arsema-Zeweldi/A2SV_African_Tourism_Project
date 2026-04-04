@@ -231,14 +231,16 @@ const SignUpPage = () => {
                   I agree to the{' '}
                   <a
                     className="text-primary hover:underline font-bold"
-                    href="#"
+                    href="/terms"
+                    target="_blank"
                   >
                     Terms of Service
                   </a>{' '}
                   and{' '}
                   <a
                     className="text-primary hover:underline font-bold"
-                    href="#"
+                    href="/privacy"
+                    target="_blank"
                   >
                     Privacy Policy
                   </a>

@@ -119,7 +119,7 @@ export function PackageCard({ pkg }: PackageCardProps) {
               Per Person
             </p>
             <p className="text-xl font-bold text-primary leading-tight">
-              ${pkg.price.toLocaleString()}
+              {pkg.currency || 'USD'} {pkg.price?.toLocaleString()}
             </p>
           </div>
           <Link

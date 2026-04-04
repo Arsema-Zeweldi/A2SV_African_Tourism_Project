@@ -1,6 +1,6 @@
 import { Info } from "lucide-react"
 
-export default function Desclaimer() {
+export default function Disclaimer() {
   return (
     <div className="flex items-center justify-center mb-5">
         <div className="flex gap-2 items-center rounded-2xl text-sm bg-amber-50 p-4 text-amber-700">

@@ -97,12 +97,13 @@ export function ItineraryHeader({ data, onAddTag }: ItineraryHeaderProps) {
           </button>
         )}
 
-        <button
-          aria-label="Info"
-          className="w-6 h-6 rounded-full border border-gray-200 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors ml-auto"
+        <span
+          aria-hidden="true"
+          title="AI-generated itinerary — verify details before traveling"
+          className="w-6 h-6 rounded-full border border-gray-200 flex items-center justify-center text-gray-400 ml-auto cursor-help"
         >
           <Info size={11} />
-        </button>
+        </span>
       </div>
     </div>
   )

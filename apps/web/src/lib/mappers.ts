@@ -145,12 +145,14 @@ function sanitizeImageUrl(url: string | undefined): string | undefined {
   try {
     const parsed = new URL(url)
     // Reject known AI-hallucinated placeholder domains
-    if (
-      parsed.hostname === 'images.example.com' ||
-      parsed.hostname === 'example.com' ||
-      parsed.hostname === 'placeholder.com' ||
-      parsed.hostname.includes('example')
-    ) {
+    const blocked = new Set([
+      'example.com',
+      'images.example.com',
+      'www.example.com',
+      'placeholder.com',
+      'via.placeholder.com',
+    ])
+    if (blocked.has(parsed.hostname)) {
       return undefined
     }
     return url

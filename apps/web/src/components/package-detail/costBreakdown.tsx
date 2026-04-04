@@ -116,8 +116,7 @@ const CostBreakdown = ({
         <div className="bg-red-50/60 border border-red-100 rounded-xl px-3.5 py-2.5 flex items-start gap-2 text-[11px] text-red-800 leading-relaxed">
           <AlertCircle size={13} className="shrink-0 mt-0.5" />
           <p>
-            Prices are subject to exchange rate fluctuations. Last verified by AI
-            agents on {updatedAt}.
+            Prices are subject to exchange rate fluctuations. Last updated: {updatedAt}.
           </p>
         </div>
       </div>

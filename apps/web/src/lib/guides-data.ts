@@ -179,7 +179,7 @@ export const COUNTRY_GUIDES: CountryGuide[] = [
     id: 'ethiopia',
     country: 'Ethiopia',
     flag: '🇪🇹',
-    image: '/plan_trip/gem-addis.jpg',
+    image: '/images/laibela.jpeg',
     tagline: 'Cradle of humanity & ancient kingdoms',
     visa: {
       summary:
@@ -217,7 +217,7 @@ export const COUNTRY_GUIDES: CountryGuide[] = [
     id: 'tanzania',
     country: 'Tanzania',
     flag: '🇹🇿',
-    image: '/plan_trip/gem-serengeti.jpg',
+    image: '/images/elephant.png',
     tagline: 'Serengeti plains & Zanzibar shores',
     visa: {
       summary:
@@ -255,7 +255,7 @@ export const COUNTRY_GUIDES: CountryGuide[] = [
     id: 'ghana',
     country: 'Ghana',
     flag: '🇬🇭',
-    image: '/plan_trip/gem-accra.jpg',
+    image: '/images/village.png',
     tagline: 'West Africa\'s gateway & vibrant culture',
     visa: {
       summary:
@@ -293,7 +293,7 @@ export const COUNTRY_GUIDES: CountryGuide[] = [
     id: 'senegal',
     country: 'Senegal',
     flag: '🇸🇳',
-    image: '/plan_trip/gem-dakar.jpg',
+    image: '/images/ocean.png',
     tagline: 'Teranga hospitality & Saharan crossroads',
     visa: {
       summary:

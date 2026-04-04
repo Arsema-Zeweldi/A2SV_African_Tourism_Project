@@ -6,7 +6,7 @@ import { fetchUserItineraries } from '@/actions/itinerary_actions'
 import { Clock, MapPin, CalendarCheck } from 'lucide-react'
 import type { MyPackagesPageData } from '@/types/my-packages'
 
-function buildPageData(tripCount: number): MyPackagesPageData {
+function buildPageData(): MyPackagesPageData {
   return {
     title: 'Past Trips',
     description:
@@ -50,11 +50,18 @@ const PastTripsPage = async () => {
   const allItineraries = result.success ? (result.data.data ?? []) : []
 
   const now = new Date()
-  const pastTrips = allItineraries.filter(
-    (i) => !i.start_date || new Date(i.start_date) <= now
-  )
+  const pastTrips = allItineraries.filter((i) => {
+    if (i.end_date) return new Date(i.end_date) <= now
+    if (i.start_date && i.days_count) {
+      const end = new Date(i.start_date)
+      end.setDate(end.getDate() + i.days_count - 1)
+      return end <= now
+    }
+    // No dates set — treat as planned/unscheduled, show here
+    return !i.start_date
+  })
 
-  const pageData = buildPageData(pastTrips.length)
+  const pageData = buildPageData()
 
   return (
     <div className="min-h-screen bg-[#faf8f5] font-sans text-slate-900">

@@ -74,6 +74,15 @@ export async function apiFetch<T>(
     } catch {
       // response body was not JSON — use the default status message
     }
+
+    // Token expired or invalid — clear stale cookies so middleware
+    // redirects to login on the next navigation instead of looping.
+    if (res.status === 401) {
+      const cookieStore = await cookies()
+      cookieStore.delete('auth_token')
+      cookieStore.delete('auth_status')
+    }
+
     throw new Error(message)
   }
 

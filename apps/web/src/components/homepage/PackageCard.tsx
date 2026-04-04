@@ -96,7 +96,7 @@ export default function PackageCard({ package_: pkg }: PackageCardProps) {
               From
             </span>
             <span className="text-lg font-bold text-primary sm:text-xl">
-              ${pkg.price?.toLocaleString()}
+              {pkg.currency || 'USD'} {pkg.price?.toLocaleString()}
             </span>
           </div>
         </div>

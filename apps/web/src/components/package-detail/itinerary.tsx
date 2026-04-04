@@ -50,7 +50,7 @@ const TimelineItem = ({
   </div>
 )
 
-const Itenerary = ({ props }: ItineraryProps) => {
+const Itinerary = ({ props }: ItineraryProps) => {
   if (props.length === 0) {
     return (
       <div>
@@ -87,4 +87,4 @@ const Itenerary = ({ props }: ItineraryProps) => {
   )
 }
 
-export default Itenerary
+export default Itinerary

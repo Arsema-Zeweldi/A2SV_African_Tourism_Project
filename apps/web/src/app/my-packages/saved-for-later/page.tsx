@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import Navbar from '@/components/navbar'
 import FooterSimple from '@/components/footerSimple'
 import MyPackagesPageShell from '@/components/my-packages/page-shell'

@@ -12,7 +12,7 @@ import {
 import Link from 'next/link'
 import CommunityChat from '@/components/package-detail/communityChat'
 import Reviews from '@/components/package-detail/reviews'
-import Itenerary from '@/components/package-detail/itenerary'
+import Itinerary from '@/components/package-detail/itinerary'
 import CostBreakdown from '@/components/package-detail/costBreakdown'
 import VisaCard from '@/components/package-detail/visaCard'
 import Map from '@/components/package-detail/map'
@@ -164,7 +164,7 @@ const PackageDetailsPage = async ({ params }: PackageDetailsPageProps) => {
               <Map stops={details.routeStops} />
 
               {/* Itinerary */}
-              <Itenerary props={details.itinerary} />
+              <Itinerary props={details.itinerary} />
             </div>
 
             {/* Cost Breakdown */}

@@ -71,7 +71,13 @@ export function StepDestination({
                         Let our experts pick a curated experience based on your vibe.
                     </p>
                 </div>
-                <button className="mr-1 shrink-0 rounded-full bg-[#F28A1E] px-6 py-2.5 text-sm font-semibold text-white shadow-md transition-colors hover:bg-[#E97D12] active:scale-[0.97]">
+                <button
+                    onClick={() => {
+                        const random = POPULAR_GEMS[Math.floor(Math.random() * POPULAR_GEMS.length)]
+                        onDestinationChange(random.name)
+                    }}
+                    className="mr-1 shrink-0 rounded-full bg-[#F28A1E] px-6 py-2.5 text-sm font-semibold text-white shadow-md transition-colors hover:bg-[#E97D12] active:scale-[0.97]"
+                >
                     Surprise Me
                 </button>
             </div>

@@ -1,28 +1,62 @@
 "use client";
 
 import React, { useState } from "react";
+import Image from "next/image";
+import { toast } from "sonner";
 
 const Footer = () => {
   const [email, setEmail] = useState("");
+  const [isSubscribing, setIsSubscribing] = useState(false);
 
-  const handleSubmit = (e: { preventDefault: () => void; }) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Subscribe:", email);
+    if (!email.trim()) return;
+
+    setIsSubscribing(true);
+    // Simulate subscription (no backend endpoint yet)
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    toast.success("You're on the list!", {
+      description: "We'll send curated travel deals to your inbox.",
+    });
     setEmail("");
+    setIsSubscribing(false);
+  };
+
+  const handleShare = async () => {
+    const shareData = {
+      title: "AMONA — African Tourism Platform",
+      text: "Discover authentic African travel experiences!",
+      url: window.location.origin,
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        await navigator.clipboard.writeText(window.location.origin);
+        toast.success("Link copied to clipboard!");
+      }
+    } catch {
+      // User cancelled share — ignore
+    }
   };
 
   return (
     <footer className="relative bg-[#221810] text-[#d4c5a9] overflow-hidden pt-12 md:pt-20">
       {/* Decorative Animals */}
-      <img
+      <Image
         src="/images/rhino.png"
         alt=""
+        width={280}
+        height={280}
         className="absolute bottom-0 left-0 h-[130px] md:h-[180px] lg:h-[280px] w-auto object-contain opacity-30 lg:opacity-55 pointer-events-none z-0"
         aria-hidden="true"
       />
-      <img
+      <Image
         src="/images/giraffe.png"
         alt=""
+        width={380}
+        height={380}
         className="absolute bottom-0 right-0 h-[180px] md:h-[250px] lg:h-[380px] w-auto object-contain opacity-30 lg:opacity-55 pointer-events-none z-0"
         aria-hidden="true"
       />
@@ -34,9 +68,11 @@ const Footer = () => {
           {/* Brand Column */}
           <div className="flex flex-col gap-5">
             <a href="/" className="inline-flex items-center">
-              <img
+              <Image
                 src="/images/logo&name.png"
-                alt="Amọnà"
+                alt="Amona"
+                width={168}
+                height={42}
                 className="h-10 md:h-[42px] w-auto object-contain"
               />
             </a>
@@ -70,15 +106,15 @@ const Footer = () => {
                 </svg>
               </a>
               {/* Share */}
-              <a
-                href="#share"
-                className="flex items-center justify-center w-10 h-10 rounded-full border-[1.5px] border-[#a89878]/50 text-[#d4c5a9] hover:border-[#f0a030] hover:text-[#f0a030] hover:bg-[#f0a030]/[0.08] transition-all"
-                aria-label="Share"
+              <button
+                onClick={handleShare}
+                className="flex items-center justify-center w-10 h-10 rounded-full border-[1.5px] border-[#a89878]/50 text-[#d4c5a9] hover:border-[#f0a030] hover:text-[#f0a030] hover:bg-[#f0a030]/[0.08] transition-all cursor-pointer"
+                aria-label="Share this site"
               >
                 <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor">
                   <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z" />
                 </svg>
-              </a>
+              </button>
             </div>
           </div>
 
@@ -90,34 +126,34 @@ const Footer = () => {
             <ul className="flex flex-col gap-3.5 list-none p-0 m-0">
               <li>
                 <a
-                  href="/safari-packages"
+                  href="/marketplace"
                   className="text-[15px] text-[#a89878] hover:text-[#f0a030] transition-colors"
                 >
-                  Safari Packages
+                  Marketplace
                 </a>
               </li>
               <li>
                 <a
-                  href="/coastal-retreats"
+                  href="/feed"
                   className="text-[15px] text-[#a89878] hover:text-[#f0a030] transition-colors"
                 >
-                  Coastal Retreats
+                  Community Feed
                 </a>
               </li>
               <li>
                 <a
-                  href="/mountain-treks"
+                  href="/guides"
                   className="text-[15px] text-[#a89878] hover:text-[#f0a030] transition-colors"
                 >
-                  Mountain Treks
+                  Travel Guides
                 </a>
               </li>
               <li>
                 <a
-                  href="/cultural-tours"
+                  href="/plan-your-trip"
                   className="text-[15px] text-[#a89878] hover:text-[#f0a030] transition-colors"
                 >
-                  Cultural Tours
+                  Plan Your Trip
                 </a>
               </li>
             </ul>
@@ -145,9 +181,10 @@ const Footer = () => {
               />
               <button
                 type="submit"
-                className="bg-primary hover:bg-[#f48c25] text-white rounded-full px-6 py-2.5 text-sm font-bold tracking-widest whitespace-nowrap transition-colors cursor-pointer"
+                disabled={isSubscribing}
+                className="bg-primary hover:bg-[#f48c25] disabled:opacity-60 text-white rounded-full px-6 py-2.5 text-sm font-bold tracking-widest whitespace-nowrap transition-colors cursor-pointer"
               >
-                JOIN
+                {isSubscribing ? "..." : "JOIN"}
               </button>
             </form>
           </div>
@@ -165,7 +202,7 @@ const Footer = () => {
         {/* Bottom Section */}
         <div className="flex flex-col items-center gap-2.5 pt-7 text-center">
           <p className="text-sm text-[#7a6e58]">
-            &copy; 2026 Amọnà. All rights reserved.
+            &copy; {new Date().getFullYear()} Amona. All rights reserved.
           </p>
           <div className="flex flex-wrap items-center justify-center gap-4 md:gap-8">
             <a

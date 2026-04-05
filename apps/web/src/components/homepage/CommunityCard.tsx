@@ -1,5 +1,7 @@
 import Image from "next/image";
+import Link from "next/link";
 import { CommunityPostData } from "@/types/homepage";
+import { getFallbackImage } from "@/lib/fallback-images";
 
 interface CommunityCardProps {
     post: CommunityPostData;
@@ -19,11 +21,12 @@ export default function CommunityCard({ post }: CommunityCardProps) {
             {/* Post Image */}
             <div className="relative aspect-square w-full overflow-hidden">
                 <Image
-                    src={post.image}
+                    src={post.image || getFallbackImage(post.author.name)}
                     alt={`Post by ${post.author.name}`}
                     fill
                     className="object-cover"
                     sizes="(max-width: 768px) 100vw, 33vw"
+                    unoptimized
                 />
             </div>
 
@@ -32,11 +35,12 @@ export default function CommunityCard({ post }: CommunityCardProps) {
                 <div className="flex items-center gap-3 mb-4">
                     <div className="relative h-10 w-10 overflow-hidden rounded-full">
                         <Image
-                            src={post.author.avatar}
+                            src={post.author.avatar || '/images/user-icon.png'}
                             alt={post.author.name}
                             fill
                             className="object-cover"
                             sizes="40px"
+                            unoptimized
                         />
                     </div>
                     <div className="flex flex-col">
@@ -57,9 +61,9 @@ export default function CommunityCard({ post }: CommunityCardProps) {
                 </div>
 
                 {/* Engagement Bar */}
-                <div className="flex items-center gap-6 mt-auto pt-2">
+                <Link href="/feed" className="flex items-center gap-6 mt-auto pt-2">
                     {/* Likes */}
-                    <button className="flex items-center gap-2 text-[#ec6d13] transition-colors hover:text-[#d56211]">
+                    <span className="flex items-center gap-2 text-[#ec6d13]">
                         <svg
                             xmlns="http://www.w3.org/2000/svg"
                             width="18"
@@ -74,10 +78,10 @@ export default function CommunityCard({ post }: CommunityCardProps) {
                             <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
                         </svg>
                         <span className="text-[13px] font-semibold">{formatNumber(post.likes)}</span>
-                    </button>
+                    </span>
 
                     {/* Comments */}
-                    <button className="flex items-center gap-2 text-gray-400 transition-colors hover:text-gray-600">
+                    <span className="flex items-center gap-2 text-gray-400">
                         <svg
                             xmlns="http://www.w3.org/2000/svg"
                             width="18"
@@ -92,10 +96,10 @@ export default function CommunityCard({ post }: CommunityCardProps) {
                             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                         </svg>
                         <span className="text-[13px] font-semibold">{formatNumber(post.comments)}</span>
-                    </button>
+                    </span>
 
-                    {/* Share */}
-                    <button className="ml-auto text-gray-400 transition-colors hover:text-gray-600">
+                    {/* Share icon */}
+                    <span className="ml-auto text-gray-400">
                         <svg
                             xmlns="http://www.w3.org/2000/svg"
                             width="18"
@@ -113,8 +117,8 @@ export default function CommunityCard({ post }: CommunityCardProps) {
                             <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
                             <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
                         </svg>
-                    </button>
-                </div>
+                    </span>
+                </Link>
             </div>
         </div>
     );

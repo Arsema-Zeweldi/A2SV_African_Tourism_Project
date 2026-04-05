@@ -35,20 +35,23 @@ export const fetchRecentPosts = async (): Promise<Post[]> => {
     })
 
     return response.data
-  } catch (error) {
-    console.error('Error fetching community posts:', error)
-    throw error
+  } catch {
+    return []
   }
 }
 export const getTrending = async (): Promise<Package[]> => {
-  const response = await api<PackagesResponse>('/packages', {
-    params: {
-      sort_by: 'views_count',
-      order: 'desc',
-      page_size: 3,
-      status: 'public',
-    },
-  })
+  try {
+    const response = await api<PackagesResponse>('/packages', {
+      params: {
+        sort_by: 'views_count',
+        order: 'desc',
+        page_size: 3,
+        status: 'public',
+      },
+    })
 
-  return response.data
+    return response.data
+  } catch {
+    return []
+  }
 }

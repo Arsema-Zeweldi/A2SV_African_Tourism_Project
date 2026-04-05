@@ -150,6 +150,12 @@
   @apply ring-4 ring-[#F28A1E]/30;
 }
 
+/* Prevent Leaflet map from overlapping sticky navbar (z-50) */
+.leaflet-container {
+  isolation: isolate;
+  z-index: 0 !important;
+}
+
 @keyframes loading-slide {
   0% {
     transform: translateX(-100%);

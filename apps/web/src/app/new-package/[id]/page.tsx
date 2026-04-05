@@ -4,7 +4,7 @@ import type { ItineraryResponse } from "@/types/api"
 import { ItineraryPage } from "@/components/new-package-details/ItineraryPage"
 import Navbar from "@/components/navbar"
 import FooterSimple from "@/components/footerSimple"
-import Desclaimer from "@/components/Desclaimer"
+import Disclaimer from "@/components/Disclaimer"
 
 interface PageProps {
   params: Promise<{ id: string }>
@@ -43,7 +43,7 @@ export default async function Page({ params }: PageProps) {
     <div className="min-h-screen">
       <Navbar />
       <ItineraryPage data={itineraryData} itineraryId={id} />
-      <Desclaimer />
+      <Disclaimer />
       <FooterSimple />
     </div>
   )

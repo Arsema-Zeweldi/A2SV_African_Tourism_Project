@@ -41,10 +41,11 @@ export function usePackageReviews({
     setIsSubmitting(true)
 
     try {
-      await submitPackageReviewAction(packageId, {
+      const reviewResult = await submitPackageReviewAction(packageId, {
         rating,
         comment: trimmedComment,
       })
+      if (!reviewResult.success) throw new Error(reviewResult.error)
 
       const profile = await fetchProfile()
       const authorName =

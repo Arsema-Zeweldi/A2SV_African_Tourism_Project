@@ -49,7 +49,7 @@ export default function HeroSection() {
                 </h1>
 
                 {/* Subtitle */}
-                <p className="mb-9 max-w-[35rem] font-sans text-base font-light leading-relaxed text-white/95 drop-shadow-lg sm:text-[1.1rem] pr-32">
+                <p className="mb-9 max-w-[35rem] font-sans text-base font-light leading-relaxed text-white/95 drop-shadow-lg sm:text-[1.1rem] sm:pr-32">
                     Join a community of explorers and book curated adventures through the world&apos;s most breathtaking landscapes.
                 </p>
 
@@ -72,9 +72,12 @@ export default function HeroSection() {
                         variant="ghost"
                         size="lg"
                         className="group h-12 min-w-[160px] gap-2.5 rounded-full border border-white/40 bg-white/10 px-6 text-sm font-semibold text-white backdrop-blur-md transition-all hover:border-white/60 hover:bg-white/20 hover:text-white hover:shadow-lg"
+                        asChild
                     >
-                        Start Exploring
-                        <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                        <Link href="/marketplace">
+                            Start Exploring
+                            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                        </Link>
                     </Button>
                 </div>
             </div>

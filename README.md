@@ -1,56 +1,134 @@
-# 🌍 Africa Tourism Intelligence Platform
+# Africa Tourism Intelligence Platform
 
-> **Africa-First • Budget-Aware • AI-Assisted • Community-Driven**
+> **Africa-First | Budget-Aware | AI-Assisted | Community-Driven**
 
-Welcome to the official monorepo for the **Africa Tourism Intelligence Platform**. This project is designed to bridge the gap in intra-African tourism by providing trusted intelligence, AI-powered planning, and a community-driven marketplace for authentic travel experiences.
+A full-stack platform bridging the gap in intra-African tourism by providing trusted intelligence, AI-powered planning, and a community-driven marketplace for authentic travel experiences.
 
----
+## Live Demo
 
-## 🏗 Project Architecture
+| App | URL |
+|-----|-----|
+| **Web** | [a2-sv-african-tourism-project-five.vercel.app](https://a2-sv-african-tourism-project-five.vercel.app/) |
+| **Backend API** | [africa-tourism-backend.onrender.com](https://africa-tourism-backend.onrender.com) |
+| **API Docs** | [Swagger UI](https://africa-tourism-backend.onrender.com/docs/index.html) |
 
-This is a professional monorepo structured for scalability and team collaboration.
+## Project Architecture
 
-*   **`apps/mobile`**: 📱 Flutter mobile application (Android/iOS focus).
-*   **`apps/web`**: 🌐 Next.js/React web dashboard and portal.
-*   **`backend`**: ⚙️ High-performance Go backend (Modular Monolith).
-*   **`libs`**: 📦 Shared logic and business domains.
-*   **`docs`**: 📖 Project documentation, PRDs, and design specs.
-*   **`scripts`**: 🛠 Automation and utility scripts.
+This is a monorepo structured for scalability and team collaboration.
 
----
-
-## 🚀 Getting Started
-
-Quickly set up your development environment:
-
-### 1. Prerequisites
-Ensure you have the following installed:
-- **Go** (v1.21+)
-- **Flutter** (v3.x)
-- **Node.js** (v20+)
-- **Make** (standard on Linux/macOS)
-
-### 2. Initialization
-Run the bootstrap script to verify your environment and install dependencies:
-```bash
-./scripts/bootstrap.sh
+```
+├── apps/
+│   ├── web/          Next.js 16 + React 19 web application
+│   └── mobile/       Flutter mobile application (Android/iOS)
+├── backend/          Go (Gin + GORM) REST API
+├── docs/             PRD, design specs, documentation
+├── libs/             Shared logic and business domains
+└── scripts/          Automation and utility scripts
 ```
 
-### 3. Development Commands
-Use the `Makefile` for consistent commands across the team:
-- `make setup` - Install all dependencies.
-- `make dev-backend` - Start the Go API server.
-- `make dev-web` - Spin up the Next.js dev server.
-- `make dev-mobile` - Launch the Flutter app.
+### Deployment Diagram
 
----
+```
+                      ┌───────────────┐
+                      │   Vercel CDN   │
+                      │  (Next.js SSR) │
+                      └───────┬───────┘
+                              │ HTTPS
+                              ▼
+┌──────────┐          ┌───────────────┐          ┌──────────────┐
+│  Client  │◄────────►│  Render.com   │◄────────►│ PostgreSQL   │
+│ (Browser)│          │  (Go API)     │          │ (Render DB)  │
+└──────────┘          └───────┬───────┘          └──────────────┘
+                              │
+                     ┌────────┴────────┐
+                     │                 │
+               ┌─────▼─────┐   ┌──────▼──────┐
+               │   Redis    │   │  Cloudinary  │
+               │  (Cache)   │   │  (Images)    │
+               └───────────┘   └─────────────┘
+```
 
-## 🤝 Contribution Guidelines
+### Tech Stack
 
-1. Create a feature branch: `feature/your-cool-feature`.
-2. Ensure your code follows the `.editorconfig` rules.
-3. Keep the monorepo clean by utilizing the `.gitignore` patterns.
+| Layer | Technology |
+|-------|-----------|
+| **Frontend** | Next.js 16, React 19, TypeScript, Tailwind CSS v4, shadcn/ui |
+| **Backend** | Go 1.25, Gin, GORM, PostgreSQL 16, Redis |
+| **AI** | Google Gemini API (itinerary generation) |
+| **Auth** | NextAuth.js + JWT, Google OAuth |
+| **Maps** | Leaflet.js + react-leaflet |
+| **Email** | Brevo (transactional email) |
+| **Storage** | Cloudinary (image uploads) |
+| **Hosting** | Vercel (web), Render (API + DB) |
 
----
+## Getting Started
 
-*“Built for Africans, by Africans, to explore Africa.”* 🌍✨
+### Prerequisites
+
+- **Go** v1.21+
+- **Node.js** v20+
+- **Flutter** v3.x (for mobile)
+- **Make** (standard on Linux/macOS)
+
+### Quick Start
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/A2SV/A2SV_African_Tourism_Project.git
+cd A2SV_African_Tourism_Project
+
+# 2. Install dependencies
+make setup
+
+# 3. Set up environment variables
+cp backend/.env.example backend/.env
+# Edit backend/.env with your credentials
+
+# For the web app:
+# Create apps/web/.env.local with:
+#   NEXT_PUBLIC_API_BASE_URL=http://localhost:8080
+#   GOOGLE_CLIENT_ID=<your-google-client-id>
+#   GOOGLE_CLIENT_SECRET=<your-google-client-secret>
+#   NEXTAUTH_SECRET=<random-secret>
+#   NEXTAUTH_URL=http://localhost:3000
+```
+
+### Development Commands
+
+```bash
+make dev-backend    # Start the Go API server (port 8080)
+make dev-web        # Start the Next.js dev server (port 3000)
+make dev-mobile     # Launch the Flutter app
+make lint           # Run linters across all packages
+```
+
+### Web App Environment Variables
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `NEXT_PUBLIC_API_BASE_URL` | Yes | Backend API URL (e.g. `https://africa-tourism-backend.onrender.com`) |
+| `GOOGLE_CLIENT_ID` | Yes | Google OAuth client ID |
+| `GOOGLE_CLIENT_SECRET` | Yes | Google OAuth client secret |
+| `NEXTAUTH_SECRET` | Yes | Random string for session encryption |
+| `NEXTAUTH_URL` | Yes | Canonical URL of the app (e.g. `http://localhost:3000`) |
+
+## Key Features
+
+- **Destination Discovery** — Browse and filter curated African travel packages by category, price, and rating
+- **AI Itinerary Generator** — 5-step wizard that generates personalized trip plans using Google Gemini
+- **Community Feed** — Share travel experiences with photos, likes, and comments
+- **Travel Guides** — Country-specific visa, safety, culture, currency, and transport information
+- **Interactive Maps** — Leaflet-powered maps showing activity routes and destinations
+- **Package Marketplace** — Publish, browse, and save travel packages with budget filtering
+- **Profile & Preferences** — Manage travel preferences, vibes, and account settings
+
+## Contribution Guidelines
+
+1. Create a feature branch from `dev`: `features/{team}/{feature-name}`
+2. Follow conventional commits: `feat:`, `fix:`, `docs:`, etc.
+3. Open a PR to `dev` — never push directly to `main`
+4. See [CONTRIBUTING.md](./CONTRIBUTING.md) for full details
+
+## Team
+
+Built by the A2SV Africa Tourism team.

@@ -1,9 +1,30 @@
-import React from "react";
+'use client'
+
+import React, { useState } from "react";
+import Link from "next/link";
+import Image from "next/image";
 import { CirclePlus, Sparkles } from "lucide-react";
+import { getFallbackImage } from "@/lib/fallback-images";
 import type { RecommendationCard } from "@/types/my-packages";
 
 interface RecommendationsProps {
   items: RecommendationCard[];
+}
+
+function RecImage({ item }: { item: RecommendationCard }) {
+  const fallback = getFallbackImage(item.title)
+  const [src, setSrc] = useState(item.image || fallback)
+
+  return (
+    <Image
+      src={src}
+      alt={item.title}
+      fill
+      className="object-cover"
+      unoptimized
+      onError={() => setSrc(fallback)}
+    />
+  )
 }
 
 const Recommendations = ({ items }: RecommendationsProps) => {
@@ -14,16 +35,19 @@ const Recommendations = ({ items }: RecommendationsProps) => {
           <Sparkles size={18} className="text-primary" />
           Recommended for You
         </h2>
-        <button className="inline-flex h-10 items-center justify-center rounded-xl px-3 text-[14px] font-semibold text-primary transition-colors hover:bg-orange-50">
+        <Link
+          href="/marketplace"
+          className="inline-flex h-10 items-center justify-center rounded-xl px-3 text-[14px] font-semibold text-primary transition-colors hover:bg-orange-50"
+        >
           See all recommendations
-        </button>
+        </Link>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
         {items.map((item) => (
           <article key={item.title}>
             <div className="relative h-[124px] overflow-hidden rounded-2xl">
-              <img src={item.image} alt={item.title} className="h-full w-full object-cover" />
+              <RecImage item={item} />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
               <p className="absolute bottom-3 left-3 text-white">{item.title}</p>
             </div>
@@ -33,12 +57,15 @@ const Recommendations = ({ items }: RecommendationsProps) => {
           </article>
         ))}
 
-        <button className="flex h-[125px] flex-col items-center justify-center rounded-2xl border border-dashed border-[#DDD2CA] bg-[#FBF8F5] text-[#B7ADA7] transition-colors hover:bg-white">
+        <Link
+          href="/marketplace"
+          className="flex h-[125px] flex-col items-center justify-center rounded-2xl border border-dashed border-[#DDD2CA] bg-[#FBF8F5] text-[#B7ADA7] transition-colors hover:bg-white"
+        >
           <CirclePlus size={26} />
           <span className="mt-4 text-[13px] font-bold uppercase tracking-[0.08em]">
             Explore More
           </span>
-        </button>
+        </Link>
       </div>
     </section>
   );

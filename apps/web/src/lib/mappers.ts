@@ -139,6 +139,29 @@ function deriveTimeLabel(orderIndex: number): string {
   return times[orderIndex] ?? `${9 + orderIndex * 2}:00 AM`
 }
 
+/** Returns undefined for placeholder/fake image URLs that will 500 */
+function sanitizeImageUrl(url: string | undefined): string | undefined {
+  if (!url) return undefined
+  try {
+    const parsed = new URL(url)
+    // Reject known AI-hallucinated placeholder domains
+    const blocked = new Set([
+      'example.com',
+      'images.example.com',
+      'www.example.com',
+      'placeholder.com',
+      'via.placeholder.com',
+    ])
+    if (blocked.has(parsed.hostname)) {
+      return undefined
+    }
+    return url
+  } catch {
+    // Not a valid URL (relative path or garbage) — keep if it starts with /
+    return url.startsWith('/') ? url : undefined
+  }
+}
+
 function mapActivityResponse(a: ItineraryActivityResponse, index: number): Activity {
   return {
     id: a.activity_id,
@@ -149,7 +172,7 @@ function mapActivityResponse(a: ItineraryActivityResponse, index: number): Activ
     cost: a.cost_label || "Free",
     location: a.location || "See map",
     type: ACTIVITY_TYPE_MAP[a.activity_type] ?? "tour",
-    imageUrl: a.image_url || undefined,
+    imageUrl: sanitizeImageUrl(a.image_url),
     aiPick: a.ai_pick,
     latitude: a.latitude || undefined,
     longitude: a.longitude || undefined,

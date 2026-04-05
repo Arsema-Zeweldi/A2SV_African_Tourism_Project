@@ -65,7 +65,6 @@ const LoginPage = () => {
         await setAuthCookie(response.token)
         window.dispatchEvent(new Event('auth-status-change'))
         router.refresh()
-        console.log('Login successful, redirecting to home...')
         router.push('/home')
       }
     } catch (err) {
@@ -77,7 +76,7 @@ const LoginPage = () => {
 
       toast.error(message)
 
-      console.error('Login Error Details:', error.response?.status, apiError)
+      // Error already shown via toast and apiError state
     }
   }
 

@@ -7,6 +7,7 @@ import {
 } from 'react-icons/md'
 import { Post } from '@/types/feed'
 import { newPost } from '@/services/feedServices'
+import { toast } from 'sonner'
 import {
   Select,
   SelectContent,
@@ -14,11 +15,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-
-interface LocationData {
-  lat: number
-  lng: number
-}
 
 interface PackageOption {
   package_id: string
@@ -31,7 +27,7 @@ const NewPost = () => {
 
   const [file, setFile] = useState<File | null>(null)
   const [mediaType, setMediaType] = useState<MediaType>(null)
-  const [location, setLocation] = useState<LocationData | null>(null)
+  const [locationName, setLocationName] = useState('')
   const [packages, setPackages] = useState<PackageOption[]>([])
   const [selectedPackage, setSelectedPackage] = useState('')
   const [isLoadingPackages, setIsLoadingPackages] = useState(true)
@@ -56,8 +52,8 @@ const NewPost = () => {
 
         const data = await response.json()
         setPackages(data.data ?? [])
-      } catch (error) {
-        console.error('Failed to fetch package options', error)
+      } catch {
+        // Non-critical — package dropdown will show "No packages available"
       } finally {
         setIsLoadingPackages(false)
       }
@@ -74,38 +70,44 @@ const NewPost = () => {
     if (selectedFile) {
       setFile(selectedFile)
       setMediaType(type)
-      console.log(`Uploaded a ${type}:`, selectedFile.name)
     }
   }
 
   const handleLocationClick = () => {
-    if ('geolocation' in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const { latitude, longitude } = position.coords
-          setLocation({ lat: latitude, lng: longitude })
-          alert(`Location captured: ${latitude}, ${longitude}`)
-        },
-        (error) => {
-          console.error('Error fetching location:', error)
-        }
-      )
-    } else {
-      alert('Geolocation is not supported by your browser.')
+    if (!('geolocation' in navigator)) {
+      toast.error('Geolocation is not supported by your browser.')
+      return
     }
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords
+        // Reverse geocode via free Nominatim API
+        try {
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&accept-language=en`
+          )
+          const data = await res.json()
+          const city = data.address?.city || data.address?.town || data.address?.village || ''
+          const country = data.address?.country || ''
+          const name = [city, country].filter(Boolean).join(', ') || `${latitude.toFixed(2)}, ${longitude.toFixed(2)}`
+          setLocationName(name)
+          toast.success(`Location: ${name}`)
+        } catch {
+          const name = `${latitude.toFixed(2)}, ${longitude.toFixed(2)}`
+          setLocationName(name)
+          toast.success(`Location pinned: ${name}`)
+        }
+      },
+      () => {
+        toast.error('Could not get your location. Check browser permissions.')
+      }
+    )
   }
 
   const handlePost = async () => {
     try {
       setIsPosting(true)
-
-      // 2. Placeholder for Reverse Geocoding (Simulated)
-      // Convert {lat, lng} -> "Cape Town, South Africa"
-      let locationString = ''
-      if (location) {
-        // locationString = await getCityName(location.lat, location.lng);
-        locationString = 'Cape Town, South Africa'
-      }
 
       const postData = new FormData()
       postData.append('content', content)
@@ -115,26 +117,26 @@ const NewPost = () => {
         postData.append('media_type', mediaType)
       }
 
-      if (locationString) {
-        postData.append('location', locationString)
+      if (locationName) {
+        postData.append('location', locationName)
       }
 
       if (file) {
         postData.append('media', file)
       }
 
-      console.log('Sending to API:', postData)
       await newPost(postData)
 
+      toast.success('Post shared!')
       setContent('')
       setFile(null)
       setMediaType(null)
-      setLocation(null)
+      setLocationName('')
       setSelectedPackage('')
       if (fileInputRef.current) fileInputRef.current.value = ''
       if (videoInputRef.current) videoInputRef.current.value = ''
-    } catch (error) {
-      console.error('Post failed', error)
+    } catch {
+      toast.error('Failed to create post. Please try again.')
     } finally {
       setIsPosting(false)
     }
@@ -201,10 +203,10 @@ const NewPost = () => {
           ></textarea>
 
           {/* Preview of selected items */}
-          {(file || location) && (
-            <div className="text-xs text-primary font-medium flex gap-2">
+          {(file || locationName) && (
+            <div className="text-xs text-primary font-medium flex gap-2 flex-wrap">
               {file && <span>📎 {file.name}</span>}
-              {location && <span>📍 Location pinned</span>}
+              {locationName && <span>📍 {locationName}</span>}
             </div>
           )}
 

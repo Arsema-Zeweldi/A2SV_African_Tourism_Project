@@ -52,14 +52,18 @@ export function mapPackageChatMessage(
 export async function fetchPackageChatHistory(
   packageId: string
 ): Promise<PackageChatHistoryResponse> {
-  return fetchPackageChatHistoryAction(packageId)
+  const result = await fetchPackageChatHistoryAction(packageId)
+  if (!result.success) throw new Error(result.error)
+  return result.data
 }
 
 export async function sendPackageChatMessage(
   packageId: string,
   message: string
 ): Promise<PackageChatResponse> {
-  return sendPackageChatMessageAction(packageId, message)
+  const result = await sendPackageChatMessageAction(packageId, message)
+  if (!result.success) throw new Error(result.error)
+  return result.data
 }
 
 interface UsePackageChatOptions {
@@ -107,8 +111,8 @@ export function usePackageChat({
           name,
           avatar: result.data.avatar_url || FALLBACK_AVATAR,
         })
-      } catch (error) {
-        console.error(error)
+      } catch {
+        // Profile fetch failed — chat still works without user identity
       }
     }
 
@@ -126,8 +130,8 @@ export function usePackageChat({
             .reverse()
             .map((chat) => mapPackageChatMessage(chat, currentUserId, currentUser))
         )
-      } catch (error) {
-        console.error(error)
+      } catch {
+        // Message load failed — keep existing messages
       } finally {
         setIsLoading(false)
       }

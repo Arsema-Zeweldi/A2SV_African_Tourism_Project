@@ -9,7 +9,7 @@ import { createPackage, publishPackage } from "@/actions/package_actions"
 import { ItineraryHeader } from "./Itineraryheader"
 import { DaySection } from "./DaySection"
 import { MapSidebar } from "./MapSideBar"
-import { BudgetSidebar } from "./BudegtSideBar"
+import { BudgetSidebar } from "./BudgetSideBar"
 import { ActionsSidebar } from "./ActionSideBar"
 import { AddActivityModal, type AddActivityFormData } from "./AddActivityModal"
 import { ActivityDetailModal } from "./ActivityDetailModal"
@@ -175,10 +175,7 @@ export function ItineraryPage({ data, itineraryId }: ItineraryPageProps) {
   }
 
   return (
-    <div
-      className="min-h-screen bg-[#f5f5f3]"
-      style={{ fontFamily: "'DM Sans', 'Segoe UI', sans-serif" }}
-    >
+    <div className="min-h-screen bg-[#faf8f5]">
       <div className="mx-auto px-4 py-6">
         <div className="flex flex-col lg:flex-row gap-4">
           {/* ── Left column ── */}
@@ -207,6 +204,8 @@ export function ItineraryPage({ data, itineraryId }: ItineraryPageProps) {
               <MapSidebar
                 activities={allActivities}
                 focusedActivityId={focusedActivityId}
+                routeLabel={data.map?.routeLabel}
+                routeDistance={data.map?.routeDistance}
               />
             </div>
             <BudgetSidebar budget={data.budget} />

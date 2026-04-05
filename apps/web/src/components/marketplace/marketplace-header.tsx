@@ -18,7 +18,7 @@ export function MarketplaceHeader({
 }: MarketplaceHeaderProps) {
 
   return (
-    <div className="bg-gray-50 py-6 md:py-10">
+    <div className="bg-[#faf8f5] py-6 md:py-10">
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center">
           {/* Left Section */}

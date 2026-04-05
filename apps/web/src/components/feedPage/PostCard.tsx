@@ -1,7 +1,9 @@
 'use client'
 import React, { useRef, useState } from 'react'
-import { FaPlay, FaHeart, FaRegHeart, FaShareAlt } from 'react-icons/fa'
+import { FaPlay, FaHeart, FaRegHeart } from 'react-icons/fa'
+import { FiShare2 } from 'react-icons/fi'
 import { IoSend } from 'react-icons/io5'
+import { toast } from 'sonner'
 import { MdRestaurant } from 'react-icons/md'
 import { IoChatbubbleSharp } from 'react-icons/io5'
 import { HiDotsHorizontal } from 'react-icons/hi'
@@ -48,8 +50,8 @@ const PostCard = ({ post }: PostCardProps) => {
         return currentCount + 1
       })
       setNewCommentText('')
-    } catch (error) {
-      console.error('Comment failed:', error)
+    } catch {
+      toast.error('Comment failed. Please try again.')
     } finally {
       setIsSubmitting(false)
     }
@@ -62,8 +64,8 @@ const PostCard = ({ post }: PostCardProps) => {
         try {
           const data = await getComments(post.post_id)
           setComments(data)
-        } catch (error: unknown) {
-          console.error('Failed to load comments:', error)
+        } catch {
+          // Comments failed to load — non-critical
         } finally {
           setIsLoadingComments(false)
         }
@@ -132,11 +134,11 @@ const PostCard = ({ post }: PostCardProps) => {
       const response = await toggleLike(post.post_id)
 
       setIsLiked(response.liked)
-    } catch (error) {
-      console.error('Failed to sync like:', error)
+    } catch (err) {
       setIsLiked(previousIsLiked)
       setLikesCount(previousLikesCount)
-      alert('Could not update like. Please check your connection.')
+      const msg = err instanceof Error ? err.message : 'Unknown error'
+      toast.error(`Could not update like: ${msg}`)
     } finally {
       setIsLikePending(false)
     }
@@ -243,8 +245,21 @@ const PostCard = ({ post }: PostCardProps) => {
             <IoChatbubbleSharp className="text-primary cursor-pointer" />
             <span className="text-sm font-medium">{commentCount}</span>
           </button>
-          <button className="flex items-center gap-2 text-text-muted hover:text-text-main dark:hover:text-white transition-colors ml-auto">
-            <FaShareAlt className="text-primary/70" size={20} />
+          <button
+            onClick={async () => {
+              const url = `${window.location.origin}/feed`
+              try {
+                if (navigator.share) {
+                  await navigator.share({ title: post.user_name + "'s post", text: post.content, url })
+                } else {
+                  await navigator.clipboard.writeText(url)
+                  toast.success('Link copied!')
+                }
+              } catch { /* user cancelled */ }
+            }}
+            className="flex items-center gap-2 text-text-muted hover:text-primary transition-colors ml-auto"
+          >
+            <FiShare2 className="text-primary/70" size={18} />
           </button>
         </div>
 
@@ -314,9 +329,6 @@ const PostCard = ({ post }: PostCardProps) => {
                         <p className="text-sm text-text-main dark:text-gray-300">
                           {comment.text}
                         </p>
-                        <button className="text-[10px] font-bold text-text-muted hover:text-primary w-fit mt-1">
-                          Reply
-                        </button>
                       </div>
                     </div>
                   )

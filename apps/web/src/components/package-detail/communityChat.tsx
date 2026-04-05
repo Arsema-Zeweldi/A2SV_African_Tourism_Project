@@ -16,7 +16,7 @@ const ChatBubble = ({
   user: string; time: string; msg: string; avatar: string; isHost?: boolean;
 }) => (
   <div className={`flex gap-2 ${isHost ? 'flex-row-reverse' : 'flex-row'}`}>
-    <img src={avatar} alt={user} className="w-6 h-6 rounded-full object-cover shrink-0 mt-0.5" />
+    <img src={avatar || '/images/user-icon.png'} alt={user} className="w-6 h-6 rounded-full object-cover shrink-0 mt-0.5" />
     <div className={`flex flex-col ${isHost ? 'items-end' : 'items-start'} max-w-[86%]`}>
       <div className={`flex items-center gap-1.5 mb-1 ${isHost ? 'flex-row-reverse' : ''}`}>
         <span className="text-[10px] font-bold text-slate-700">{user}</span>

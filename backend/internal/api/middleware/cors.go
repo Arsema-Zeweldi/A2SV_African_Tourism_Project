@@ -6,10 +6,19 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+func normalizeOrigin(value string) string {
+	value = strings.TrimSpace(value)
+	if value == "*" {
+		return value
+	}
+
+	return strings.TrimRight(value, "/")
+}
+
 // CORSMiddleware handles Cross-Origin Resource Sharing.
 func CORSMiddleware(origins []string) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		origin := c.Request.Header.Get("Origin")
+		origin := normalizeOrigin(c.Request.Header.Get("Origin"))
 		if origin == "" {
 			c.Next()
 			return
@@ -17,7 +26,8 @@ func CORSMiddleware(origins []string) gin.HandlerFunc {
 
 		allowed := false
 		for _, o := range origins {
-			if strings.TrimSpace(o) == "*" || strings.TrimSpace(o) == origin {
+			normalizedAllowedOrigin := normalizeOrigin(o)
+			if normalizedAllowedOrigin == "*" || normalizedAllowedOrigin == origin {
 				allowed = true
 				break
 			}

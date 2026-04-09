@@ -38,6 +38,15 @@ func NewGormPackageRepository(db *gorm.DB) *GormPackageRepository {
 	return &GormPackageRepository{db: db}
 }
 
+func resolveUserDisplay(user models.User) (string, string) {
+	name := strings.TrimSpace(fmt.Sprintf("%s %s", user.FirstName, user.LastName))
+	if name == "" {
+		name = user.Email
+	}
+
+	return name, user.AvatarURL
+}
+
 func (r *GormPackageRepository) GetFeed(ctx context.Context, params Pagination, filters map[string]interface{}) ([]models.Package, int64, error) {
 	q := r.db.WithContext(ctx).Model(&models.Package{})
 
@@ -99,10 +108,15 @@ func (r *GormPackageRepository) GetFeed(ctx context.Context, params Pagination, 
 
 	var packages []models.Package
 	if err := q.Order(orderClause).
+		Preload("Creator").
 		Limit(pageSize).
 		Offset(offset).
 		Find(&packages).Error; err != nil {
 		return nil, 0, err
+	}
+
+	for i := range packages {
+		packages[i].CreatorName, packages[i].CreatorAvatar = resolveUserDisplay(packages[i].Creator)
 	}
 
 	return packages, total, nil
@@ -111,11 +125,15 @@ func (r *GormPackageRepository) GetFeed(ctx context.Context, params Pagination, 
 func (r *GormPackageRepository) GetByID(ctx context.Context, id uuid.UUID) (*models.Package, error) {
 	var pkg models.Package
 	if err := r.db.WithContext(ctx).
+		Preload("Creator").
 		Preload("Itinerary").
 		Preload("Itinerary.Activities").
 		First(&pkg, "package_id = ?", id).Error; err != nil {
 		return nil, err
 	}
+
+	pkg.CreatorName, pkg.CreatorAvatar = resolveUserDisplay(pkg.Creator)
+
 	return &pkg, nil
 }
 
@@ -240,10 +258,15 @@ func (r *GormPackageRepository) GetChatHistory(ctx context.Context, packageID uu
 
 	var chats []models.PackageChat
 	if err := q.Order("created_at DESC").
+		Preload("User").
 		Limit(pageSize).
 		Offset(offset).
 		Find(&chats).Error; err != nil {
 		return nil, 0, err
+	}
+
+	for i := range chats {
+		chats[i].UserName, chats[i].UserAvatar = resolveUserDisplay(chats[i].User)
 	}
 
 	return chats, total, nil

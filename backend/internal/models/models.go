@@ -101,6 +101,8 @@ type ItineraryActivity struct {
 type Package struct {
 	PackageID           uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"package_id"`
 	CreatorID           uuid.UUID `gorm:"type:uuid;not null" json:"creator_id"`
+	CreatorName         string    `gorm:"-" json:"creator_name,omitempty"`
+	CreatorAvatar       string    `gorm:"-" json:"creator_avatar,omitempty"`
 	ItineraryID         uuid.UUID `gorm:"type:uuid;not null" json:"itinerary_id"`
 	Title               string    `gorm:"size:255;not null" json:"title"`
 	Summary             string    `gorm:"text" json:"summary"`
@@ -121,6 +123,7 @@ type Package struct {
 	UpdatedAt           time.Time `gorm:"default:now()" json:"updated_at"`
 
 	Itinerary *Itinerary `gorm:"foreignKey:ItineraryID;references:ItineraryID" json:"itinerary,omitempty"`
+	Creator   User       `gorm:"foreignKey:CreatorID;references:UserID" json:"-"`
 }
 
 type PackageReview struct {
@@ -136,8 +139,11 @@ type PackageChat struct {
 	ChatID    uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"chat_id"`
 	PackageID uuid.UUID `gorm:"type:uuid;not null" json:"package_id"`
 	UserID    uuid.UUID `gorm:"type:uuid;not null" json:"user_id"`
+	UserName  string    `gorm:"-" json:"user_name,omitempty"`
+	UserAvatar string   `gorm:"-" json:"user_avatar,omitempty"`
 	Message   string    `gorm:"text;not null" json:"message"`
 	CreatedAt time.Time `gorm:"default:now()" json:"created_at"`
+	User      User      `gorm:"foreignKey:UserID;references:UserID" json:"-"`
 }
 
 // ✅ Community Feed

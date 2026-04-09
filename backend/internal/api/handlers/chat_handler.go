@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/Arsema-Zeweldi/africa-tourism-platform/backend/internal/models"
 	"github.com/Arsema-Zeweldi/africa-tourism-platform/backend/internal/service/packages"
@@ -46,6 +47,17 @@ func (h *PackagesHandler) PostChatMessage(c *gin.Context) {
 	if err := h.PackageService.PostChat(c.Request.Context(), &chatMsg); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to post message"})
 		return
+	}
+
+	if h.DB != nil {
+		var user models.User
+		if err := h.DB.First(&user, "user_id = ?", userID).Error; err == nil {
+			chatMsg.UserName = strings.TrimSpace(user.FirstName + " " + user.LastName)
+			if chatMsg.UserName == "" {
+				chatMsg.UserName = user.Email
+			}
+			chatMsg.UserAvatar = user.AvatarURL
+		}
 	}
 
 	c.JSON(http.StatusCreated, chatMsg)

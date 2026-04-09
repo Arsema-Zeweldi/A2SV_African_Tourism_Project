@@ -6,6 +6,8 @@ interface CommunityFeedProps {
 }
 
 export default function CommunityFeed({ posts }: CommunityFeedProps) {
+  const postsWithMedia = posts.filter((post) => Boolean(post.media_url?.trim()))
+
   return (
     <section className="mx-auto max-w-7xl px-6 py-16 lg:px-8 lg:py-24">
       <div className="mb-10">
@@ -17,7 +19,7 @@ export default function CommunityFeed({ posts }: CommunityFeedProps) {
         </p>
       </div>
 
-      {posts.length === 0 ? (
+      {postsWithMedia.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gray-100">
             <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-gray-400">
@@ -34,7 +36,7 @@ export default function CommunityFeed({ posts }: CommunityFeedProps) {
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-          {posts.map((post) => (
+          {postsWithMedia.map((post) => (
             <PostCard key={post.post_id} post={post} />
           ))}
         </div>

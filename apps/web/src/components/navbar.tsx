@@ -14,8 +14,8 @@ import LogoutConfirmationModal from '@/components/logout-confirmation-modal'
 const navLinks = [
   { name: 'Home', href: '/home' },
   { name: 'Marketplace', href: '/marketplace' },
-  { name: 'My Packages', href: '/my-packages' },
-  { name: 'My Trips', href: '/my-trips' },
+  { name: 'Packages', href: '/my-packages' },
+  { name: 'Trips', href: '/my-trips' },
   { name: 'Feed', href: '/feed' },
 ]
 

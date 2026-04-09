@@ -16,7 +16,7 @@ import type {
   RouteStop,
 } from "@/types/package-details"
 
-import { getFallbackImage } from "@/lib/fallback-images"
+import { getFallbackImage, getTripImage, safeImageUrl } from "@/lib/fallback-images"
 
 const FALLBACK_PACKAGE_IMAGE = "/images/African-Safari-Sunset.png"
 const FALLBACK_AVATAR = "/images/profile.png"
@@ -106,6 +106,10 @@ function mapPackageDetails(
   reviews: PackageReviewsResponse["data"],
   chatMessages: PackageChatHistoryResponse["data"],
 ): PackageDetailsPageData {
+  const packageSeed = pkg.package_id || pkg.title
+  const packageImage = pkg.image_url?.trim()
+    ? safeImageUrl(pkg.image_url, packageSeed)
+    : getTripImage(packageSeed)
   const location = [pkg.location, pkg.country].filter(Boolean).join(", ")
   const itineraryActivities = (pkg.itinerary?.activities ?? [])
     .slice()
@@ -141,10 +145,10 @@ function mapPackageDetails(
       rating: review.rating,
     })),
     description: pkg.description || pkg.summary || "No description available yet.",
-    image: pkg.image_url || getFallbackImage(pkg.package_id),
-    viralMoment: pkg.image_url
+    image: packageImage,
+    viralMoment: pkg.image_url?.trim()
       ? {
-          thumbnail: pkg.image_url,
+          thumbnail: packageImage,
           description: pkg.summary || "Highlights from this package.",
         }
       : undefined,

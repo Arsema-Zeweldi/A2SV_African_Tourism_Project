@@ -1,5 +1,15 @@
 import React from 'react'
-import { AlertCircle, Bus, Utensils, Bed, Ticket, MapPin, ShoppingBag } from 'lucide-react'
+import {
+  AlertCircle,
+  Bus,
+  Utensils,
+  Bed,
+  Ticket,
+  MapPin,
+  ShoppingBag,
+  Music4,
+  PawPrint,
+} from 'lucide-react'
 import type { CostBreakdowns as PackageDetailsCostBreakdownItem } from '@/types/package-details'
 
 interface CostBreakdownsProps {
@@ -16,6 +26,8 @@ const CATEGORY_ICONS: Record<string, { icon: React.ElementType; color: string }>
   'food & drink': { icon: Utensils, color: 'text-orange-500' },
   activity: { icon: Ticket, color: 'text-emerald-500' },
   tour: { icon: MapPin, color: 'text-primary' },
+  party: { icon: Music4, color: 'text-fuchsia-500' },
+  wildlife: { icon: PawPrint, color: 'text-green-600' },
   shopping: { icon: ShoppingBag, color: 'text-pink-500' },
 }
 

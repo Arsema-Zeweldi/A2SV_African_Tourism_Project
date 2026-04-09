@@ -69,13 +69,10 @@ const PackageDetailsPage = async ({ params }: PackageDetailsPageProps) => {
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-5 mb-0">
           {/* Hero */}
           <section className="relative h-[300px] sm:h-[400px] lg:h-[500px] rounded-2xl overflow-hidden shadow-sm bg-slate-200">
-            <Image
+            <img
               src={details.image}
               alt={details.name}
-              fill
-              className="object-cover"
-              priority
-              unoptimized
+              className="absolute inset-0 h-full w-full object-cover"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent flex flex-col justify-end p-5 sm:p-8">
               <div className="flex flex-wrap gap-2 mb-3">

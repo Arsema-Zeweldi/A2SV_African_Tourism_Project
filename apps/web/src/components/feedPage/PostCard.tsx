@@ -20,6 +20,10 @@ interface PostCardProps {
 const PostCard = ({ post }: PostCardProps) => {
   const { avatar: currentUserAvatar, handleAvatarError } =
     useCurrentUserAvatar()
+  const mediaUrl = post.media_url?.trim()
+  const hasImageMedia = post.media_type === 'image' && Boolean(mediaUrl)
+  const hasVideoMedia = post.media_type === 'video' && Boolean(mediaUrl)
+  const hasRenderableMedia = hasImageMedia || hasVideoMedia
   const [isLiked, setIsLiked] = useState(post.liked || false)
   const [likesCount, setLikesCount] = useState(post.likes_count)
   const [commentCount, setCommentCount] = useState(post.comments_count)
@@ -174,53 +178,55 @@ const PostCard = ({ post }: PostCardProps) => {
           <HiDotsHorizontal className="text-primary/70" size={20} />
         </button>
       </div>
-      <div className="relative w-full aspect-4/3 sm:aspect-video bg-gray-100 dark:bg-gray-800 group cursor-pointer">
-        <div className="relative w-full h-full overflow-hidden">
-          {post.media_type === 'image' && post.media_url && (
-            <Image
-              src={post.media_url}
-              alt="User Post"
-              fill
-              className="object-cover"
-              unoptimized
-            />
-          )}
-          {post.media_type === 'video' && (
-            <video
-              ref={videoRef}
-              src={post.media_url}
-              muted
-              playsInline
-              onEnded={() => setIsPlaying(false)}
-              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-            />
-          )}
-        </div>
-        {post.media_type === 'video' && (
-          <div
-            onClick={handlePlayToggle}
-            className={`absolute inset-0 flex items-center justify-center transition-colors ${
-              isPlaying
-                ? 'bg-transparent'
-                : 'bg-black/20 group-hover:bg-black/10'
-            }`}
-          >
-            {!isPlaying && (
-              <div className="size-14 rounded-full bg-white/30 backdrop-blur-md flex items-center justify-center border border-white/50 text-white shadow-lg group-hover:scale-110 transition-transform">
-                <FaPlay size={23} className="ml-1" />{' '}
-              </div>
+      {hasRenderableMedia && (
+        <div className="relative w-full aspect-4/3 sm:aspect-video bg-gray-100 dark:bg-gray-800 group cursor-pointer">
+          <div className="relative w-full h-full overflow-hidden">
+            {hasImageMedia && (
+              <Image
+                src={mediaUrl!}
+                alt="User Post"
+                fill
+                className="object-cover"
+                unoptimized
+              />
+            )}
+            {hasVideoMedia && (
+              <video
+                ref={videoRef}
+                src={mediaUrl}
+                muted
+                playsInline
+                onEnded={() => setIsPlaying(false)}
+                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+              />
             )}
           </div>
-        )}
+          {hasVideoMedia && (
+            <div
+              onClick={handlePlayToggle}
+              className={`absolute inset-0 flex items-center justify-center transition-colors ${
+                isPlaying
+                  ? 'bg-transparent'
+                  : 'bg-black/20 group-hover:bg-black/10'
+              }`}
+            >
+              {!isPlaying && (
+                <div className="size-14 rounded-full bg-white/30 backdrop-blur-md flex items-center justify-center border border-white/50 text-white shadow-lg group-hover:scale-110 transition-transform">
+                  <FaPlay size={23} className="ml-1" />{' '}
+                </div>
+              )}
+            </div>
+          )}
 
-        <a
-          className="absolute bottom-4 left-4 bg-black/60 hover:bg-black/80 backdrop-blur-sm text-white px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-1 transition-colors border border-white/10"
-          href="#"
-        >
-          <MdRestaurant size={16} className="text-primary" />
-          Linked to: {post.package_name}
-        </a>
-      </div>
+          <a
+            className="absolute bottom-4 left-4 bg-black/60 hover:bg-black/80 backdrop-blur-sm text-white px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-1 transition-colors border border-white/10"
+            href="#"
+          >
+            <MdRestaurant size={16} className="text-primary" />
+            Linked to: {post.package_name}
+          </a>
+        </div>
+      )}
       <div className="p-4">
         <p className="text-text-main dark:text-gray-300 leading-relaxed mb-4">
           {post.content}

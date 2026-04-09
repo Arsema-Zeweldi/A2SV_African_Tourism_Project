@@ -1,12 +1,11 @@
 'use client'
 import React, { useRef, useState } from 'react'
-import { FaPlay, FaHeart, FaRegHeart } from 'react-icons/fa'
+import { FaPlay, FaHeart, FaRegHeart, FaRegComment } from 'react-icons/fa'
 import { FiShare2 } from 'react-icons/fi'
 import { IoSend } from 'react-icons/io5'
 import { toast } from 'sonner'
 import { MdRestaurant } from 'react-icons/md'
 import { IoChatbubbleSharp } from 'react-icons/io5'
-import { HiDotsHorizontal } from 'react-icons/hi'
 import { Post, Comment as PostComment } from '@/types/feed'
 import { getComments, toggleLike, postComment } from '@/services/feedServices'
 import { useCurrentUserAvatar } from '@/hooks/useCurrentUserAvatar'
@@ -174,9 +173,6 @@ const PostCard = ({ post }: PostCardProps) => {
             </span>
           </div>
         </div>
-        <button className="text-text-muted hover:text-text-main dark:hover:text-white">
-          <HiDotsHorizontal className="text-primary/70" size={20} />
-        </button>
       </div>
       {hasRenderableMedia && (
         <div className="relative w-full aspect-4/3 sm:aspect-video bg-gray-100 dark:bg-gray-800 group cursor-pointer">
@@ -248,7 +244,11 @@ const PostCard = ({ post }: PostCardProps) => {
             onClick={() => setShowComments(!showComments)}
             className="flex items-center gap-2 text-text-muted hover:text-text-main dark:hover:text-white transition-colors group/btn"
           >
-            <IoChatbubbleSharp className="text-primary cursor-pointer" />
+            {showComments ? (
+              <IoChatbubbleSharp className="text-primary cursor-pointer" />
+            ) : (
+              <FaRegComment className="text-primary cursor-pointer" />
+            )}
             <span className="text-sm font-medium">{commentCount}</span>
           </button>
           <button
@@ -256,12 +256,18 @@ const PostCard = ({ post }: PostCardProps) => {
               const url = `${window.location.origin}/feed`
               try {
                 if (navigator.share) {
-                  await navigator.share({ title: post.user_name + "'s post", text: post.content, url })
+                  await navigator.share({
+                    title: post.user_name + "'s post",
+                    text: post.content,
+                    url,
+                  })
                 } else {
                   await navigator.clipboard.writeText(url)
                   toast.success('Link copied!')
                 }
-              } catch { /* user cancelled */ }
+              } catch {
+                /* user cancelled */
+              }
             }}
             className="flex items-center gap-2 text-text-muted hover:text-primary transition-colors ml-auto"
           >

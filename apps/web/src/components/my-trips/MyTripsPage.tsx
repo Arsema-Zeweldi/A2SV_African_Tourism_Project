@@ -48,8 +48,8 @@ export function MyTripsPage({
     (i) => !i.start_date || new Date(i.start_date) <= now
   )
 
-  const totalDays = items.reduce((sum, i) => sum + (i.days_count ?? 0), 0)
-  const totalNights = items.reduce((sum, i) => sum + (i.nights_count ?? 0), 0)
+  const totalDays = filtered.reduce((sum, i) => sum + (i.days_count ?? 0), 0)
+  const totalNights = filtered.reduce((sum, i) => sum + (i.nights_count ?? 0), 0)
 
   const handleDeleteRequest = (trip: ItineraryResponse) => {
     setTripPendingDelete(trip)
@@ -97,7 +97,7 @@ export function MyTripsPage({
 
           <div className="mt-10 flex min-w-0 flex-col gap-10">
             <TripsOverview
-              total={items.length}
+              savedCount={saved.length}
               totalDays={totalDays}
               totalNights={totalNights}
             />

@@ -2,7 +2,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { CalendarRange, Moon, MapPinned } from "lucide-react"
 
 interface TripsOverviewProps {
-  total: number
+  savedCount: number
   totalDays: number
   totalNights: number
 }
@@ -14,7 +14,7 @@ const toneStyles: Record<string, string> = {
 }
 
 export function TripsOverview({
-  total,
+  savedCount,
   totalDays,
   totalNights,
 }: TripsOverviewProps) {
@@ -22,8 +22,8 @@ export function TripsOverview({
     {
       id: "trips",
       label: "Saved Itineraries",
-      value: String(total),
-      suffix: total === 1 ? "Adventure" : "Adventures",
+      value: String(savedCount),
+      suffix: savedCount === 1 ? "Adventure" : "Adventures",
       Icon: MapPinned,
       tone: "neutral",
     },

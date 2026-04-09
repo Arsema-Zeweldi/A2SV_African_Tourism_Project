@@ -21,6 +21,8 @@ interface SignUpFormData {
   terms: boolean
 }
 
+const FULL_NAME_PATTERN = /^[A-Za-z]+(?: [A-Za-z]+)+$/
+
 const SignUpPage = () => {
   const router = useRouter()
   const [apiError, setApiError] = useState<string | null>(null)
@@ -40,7 +42,8 @@ const SignUpPage = () => {
     setApiError(null)
 
     try {
-      const nameParts = data.name.trim().split(/\s+/)
+      const normalizedName = data.name.trim().replace(/\s+/g, ' ')
+      const nameParts = normalizedName.split(' ')
       const firstName = nameParts[0] || ''
       const lastName = nameParts.slice(1).join(' ')
 
@@ -71,8 +74,6 @@ const SignUpPage = () => {
         const message = error.response?.data?.error || 'Registration failed.'
         setApiError(message)
       }
-
-      // Error already displayed via apiError state
     }
   }
 
@@ -93,7 +94,7 @@ const SignUpPage = () => {
         <div className="hidden lg:flex lg:w-1/2 relative z-10 flex-col justify-between p-16">
           <div className="hidden md:fixed md:top-80 md:bottom-0 md:left-0 md:flex md:w-2/5 lg:w-1/2 flex-col justify-center pb-12 lg:pb-20 text-white pr-12 md:pl-12">
             <h1 className="text-4xl lg:text-7xl font-bold leading-tight mb-6">
-              Begin Your <span className="text-primary">Adventure</span>
+              Begin Your <br /> <span className="text-primary">Adventure</span>
             </h1>
             <p className="text-lg lg:text-xl text-slate-200 max-w-lg">
               Discover curated African experiences and connect with fellow
@@ -140,7 +141,16 @@ const SignUpPage = () => {
                     <User size={16} />
                   </span>
                   <Input
-                    {...register('name', { required: 'Full name is required' })}
+                    {...register('name', {
+                      required: 'Full name is required',
+                      validate: (value) => {
+                        const normalizedValue = value.trim().replace(/\s+/g, ' ')
+                        if (!FULL_NAME_PATTERN.test(normalizedValue)) {
+                          return 'Enter your full name using letters only'
+                        }
+                        return true
+                      },
+                    })}
                     className="block w-full pl-11 pr-4 py-3.5 bg-white/50 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white rounded-full focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200 outline-none backdrop-blur-sm"
                     id="name"
                     placeholder="John Doe"

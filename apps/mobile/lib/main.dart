@@ -57,6 +57,20 @@ class MyApp extends StatelessWidget {
             routerConfig: router,
             theme: ThemeData(
               scaffoldBackgroundColor: AppColors.scaffoldBackground,
+              colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+              useMaterial3: true,
+              textButtonTheme: TextButtonThemeData(
+                style: TextButton.styleFrom(enableFeedback: false),
+              ),
+              elevatedButtonTheme: ElevatedButtonThemeData(
+                style: ElevatedButton.styleFrom(enableFeedback: false),
+              ),
+              outlinedButtonTheme: OutlinedButtonThemeData(
+                style: OutlinedButton.styleFrom(enableFeedback: false),
+              ),
+              iconButtonTheme: IconButtonThemeData(
+                style: IconButton.styleFrom(enableFeedback: false),
+              ),
             ),
             debugShowCheckedModeBanner: false,
           );

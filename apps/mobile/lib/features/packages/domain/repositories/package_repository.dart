@@ -28,4 +28,13 @@ abstract class PackageRepository {
   });
 
   Future<Either<Failure, void>> updatePackageStatus(String packageId, String status);
+
+  Future<Either<Failure, TravelPackage>> savePackage({
+    required String itineraryId,
+    required String title,
+    required String description,
+    required int durationDays,
+    required double totalCost,
+    required String status,
+  });
 }

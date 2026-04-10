@@ -1,3 +1,4 @@
+import 'package:mobile/core/constants/app_colors.dart';
 import 'package:mobile/core/widgets/malak/orange_button.dart';
 import 'package:flutter/material.dart';
 
@@ -6,7 +7,14 @@ import 'summary_screen.dart' show PlanTripSummaryScreen;
 import 'trip_screen.dart';
 
 class PlanTripStep4Screen extends StatefulWidget {
-  const PlanTripStep4Screen({super.key});
+   final String destinations;
+  final bool multiCountry;
+  final String? climate;
+  final List<String> vibes;
+  final double budget;
+  final int durationDays;
+  final bool flexibleDates;
+  const PlanTripStep4Screen({super.key, required this.destinations, required this.multiCountry, required this.climate, required this.vibes, required this.budget, required this.durationDays, required this.flexibleDates});
 
   @override
   State<PlanTripStep4Screen> createState() => _PlanTripStep4ScreenState();
@@ -25,7 +33,7 @@ class _PlanTripStep4ScreenState extends State<PlanTripStep4Screen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.scaffoldBackground,
       body: SafeArea(
         child: Column(
           children: [
@@ -168,8 +176,14 @@ class _PlanTripStep4ScreenState extends State<PlanTripStep4Screen> {
                       label: 'Complete',
                       onTap: () => Navigator.push(
                         context,
-                        MaterialPageRoute(
-                            builder: (_) => const PlanTripSummaryScreen()),
+                        MaterialPageRoute(builder: (_) => PlanTripSummaryScreen(
+                          destination: widget.destinations,
+                          climatePref: widget.climate,
+                          durationDays: widget.durationDays,
+                          vibeTags: widget.vibes,
+                          budget: widget.budget,
+                          notes: _notes.text.isNotEmpty ? _notes.text : null,
+                        )),
                       ),
                       showArrow: false,
                     ),

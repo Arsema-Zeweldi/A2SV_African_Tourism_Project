@@ -72,3 +72,24 @@ class UpdatePackageStatus extends PackageEvent {
   @override
   List<Object?> get props => [packageId, status];
 }
+
+class SavePackageRequested extends PackageEvent {
+  final String itineraryId;
+  final String title;
+  final String description;
+  final int durationDays;
+  final double totalCost;
+   final String status;
+
+  const SavePackageRequested({
+    required this.itineraryId,
+    required this.title,
+    required this.description,
+    required this.durationDays,
+    required this.totalCost,
+    required this.status,
+  });
+
+  @override
+  List<Object?> get props => [itineraryId, title, description, durationDays, totalCost, status];
+}

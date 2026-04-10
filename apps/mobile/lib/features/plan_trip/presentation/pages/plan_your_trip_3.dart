@@ -1,3 +1,4 @@
+import 'package:mobile/core/constants/app_colors.dart';
 import 'package:mobile/features/plan_trip/presentation/pages/plan_your_trip_4.dart';
 import 'package:mobile/features/plan_trip/presentation/pages/trip_screen.dart';
 import 'package:flutter/material.dart';
@@ -5,7 +6,12 @@ import 'package:flutter/material.dart';
 import 'package:mobile/core/widgets/malak/orange_button.dart';
 import 'package:mobile/core/widgets/malak/trip_bottom_nav.dart';
 class PlanTripStep3Screen extends StatefulWidget {
-  const PlanTripStep3Screen({super.key});
+  final String destinations;
+  final bool multiCountry;
+  final String? climate;
+  final List<String> vibes;
+  final double budget;
+  const PlanTripStep3Screen({super.key, required this.destinations, required this.multiCountry, required this.climate, required this.vibes, required this.budget});
 
   @override
   State<PlanTripStep3Screen> createState() => _PlanTripStep3ScreenState();
@@ -18,7 +24,7 @@ class _PlanTripStep3ScreenState extends State<PlanTripStep3Screen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.scaffoldBackground,
       body: SafeArea(
         child: Column(
           children: [
@@ -186,8 +192,15 @@ class _PlanTripStep3ScreenState extends State<PlanTripStep3Screen> {
                       label: 'Continue',
                       onTap: () => Navigator.push(
                         context,
-                        MaterialPageRoute(
-                            builder: (_) => const PlanTripStep4Screen()),
+                        MaterialPageRoute(builder: (_) => PlanTripStep4Screen(
+                          destinations: widget.destinations,
+                          multiCountry: widget.multiCountry,
+                          climate: widget.climate,
+                          vibes: widget.vibes,
+                          budget: widget.budget,
+                          durationDays: _days,
+                          flexibleDates: _flexibleDates,
+                        )),
                       ),
                     ),
                     const SizedBox(height: 8),

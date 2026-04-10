@@ -10,7 +10,6 @@ import 'package:mobile/features/my_packages/presentation/widgets/toggle_switch.d
 import 'package:mobile/features/packages/presentation/bloc/package_bloc.dart';
 import 'package:mobile/features/packages/presentation/bloc/package_event.dart';
 import 'package:mobile/features/packages/presentation/bloc/package_state.dart';
-import 'package:mobile/features/my_packages/domain/entities/user_packages.dart';
 import 'package:mobile/injection_container.dart' as di;
 
 class MyPackages extends StatefulWidget {
@@ -52,97 +51,115 @@ class _MyPackagesState extends State<MyPackages> {
             const LogoHeader(),
             const SizedBox(height: 28),
             Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'My Packages',
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
+              child: RefreshIndicator(
+                onRefresh: () async {
+                  _myPackagesBloc.add(const LoadMyPackages());
+                  return Future.delayed(const Duration(seconds: 1));
+                },
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'My Packages',
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    const MyPackageSearchBar(),
-                    const SizedBox(height: 16),
-                    ToggleSwitch(
-                      isCurrentSelected: isCurrentSelected,
-                      onToggle: (val) => setState(() => isCurrentSelected = val),
-                    ),
-                    const SizedBox(height: 20),
-                    if (isCurrentSelected)
-                      BlocBuilder<PackageBloc, PackageState>(
-                        builder: (context, state) {
-                          if (state is PackageLoading) {
-                            return const Center(child: CircularProgressIndicator(color: AppColors.primaryOrange));
-                          }
-
-                          if (state is PackageError) {
-                            return Center(
-                              child: Column(
-                                children: [
-                                  Text(state.message, style: const TextStyle(color: Colors.red)),
-                                  TextButton(
-                                    onPressed: () => _myPackagesBloc.add(const LoadMyPackages()),
-                                    child: const Text('Retry'),
-                                  ),
-                                ],
-                              ),
-                            );
-                          }
-
-                          if (state is MyPackagesLoaded) {
-                            if (state.packages.isEmpty) {
+                      const SizedBox(height: 16),
+                      const MyPackageSearchBar(),
+                      const SizedBox(height: 16),
+                      ToggleSwitch(
+                        isCurrentSelected: isCurrentSelected,
+                        onToggle: (val) =>
+                            setState(() => isCurrentSelected = val),
+                      ),
+                      const SizedBox(height: 20),
+                      if (isCurrentSelected)
+                        BlocBuilder<PackageBloc, PackageState>(
+                          builder: (context, state) {
+                            if (state is PackageLoading) {
                               return const Center(
+                                  child: CircularProgressIndicator(
+                                      color: AppColors.primaryOrange));
+                            }
+
+                            if (state is PackageError) {
+                              return Center(
                                 child: Column(
                                   children: [
-                                    Icon(Icons.inbox, size: 80, color: Colors.grey),
-                                    SizedBox(height: 12),
-                                    Text("No packages yet", style: TextStyle(fontSize: 16, color: Colors.grey)),
+                                    Text(state.message,
+                                        style:
+                                            const TextStyle(color: Colors.red)),
+                                    TextButton(
+                                      onPressed: () => _myPackagesBloc
+                                          .add(const LoadMyPackages()),
+                                      child: const Text('Retry'),
+                                    ),
                                   ],
                                 ),
                               );
                             }
 
-                            return Column(
-                              children: state.packages.map((pkg) {
-                                final isPublic = pkg.status == 'public';
-                                final isCompleted = pkg.status == 'archived';
-                                return MyPackagesCard(
-                                  package: UserPackage(
-                                    title: pkg.title,
-                                    duration: '${pkg.durationDays} Days',
-                                    dateRange: isCompleted ? 'Completed' : pkg.status.toUpperCase(),
-                                    imagePath: 'assets/images/top_rated1.png',
-                                    status: isCompleted ? PackageStatus.completed : PackageStatus.upcoming,
-                                    isPublic: isPublic,
-                                    rating: pkg.ratingAvg > 0 ? pkg.ratingAvg : null,
-                                    imageUrl: pkg.imageUrl,
+                            if (state is MyPackagesLoaded) {
+                              // Filter packages based on toggle
+                              final packages = state.packages.where((pkg) {
+                                if (isCurrentSelected) {
+                                  // "Current" = not archived (status != 'archived')
+                                  return pkg.status != 'archived';
+                                } else {
+                                  // "Saved" = archived/completed
+                                  return pkg.status == 'archived';
+                                }
+                              }).toList();
+
+                              if (packages.isEmpty) {
+                                return Center(
+                                  child: Column(
+                                    children: [
+                                      const Icon(Icons.inbox,
+                                          size: 80, color: Colors.grey),
+                                      const SizedBox(height: 12),
+                                      Text(
+                                        isCurrentSelected
+                                            ? "No active packages"
+                                            : "No saved packages",
+                                        style: const TextStyle(
+                                            fontSize: 16, color: Colors.grey),
+                                      ),
+                                    ],
                                   ),
                                 );
-                              }).toList(),
-                            );
-                          }
+                              }
 
-                          return const SizedBox.shrink();
-                        },
-                      )
-                    else
-                      const Center(
-                        child: Column(
-                          children: [
-                            Icon(Icons.inbox, size: 80, color: Colors.grey),
-                            SizedBox(height: 12),
-                            Text(
-                              "No saved packages yet",
-                              style: TextStyle(fontSize: 16, color: Colors.grey),
-                            ),
-                          ],
+                              return Column(
+                                children: packages.map((pkg) {
+                                  return MyPackagesCard(package: pkg);
+                                }).toList(),
+                              );
+                            }
+
+                            return const SizedBox.shrink();
+                          },
+                        )
+                      else
+                        const Center(
+                          child: Column(
+                            children: [
+                              Icon(Icons.inbox, size: 80, color: Colors.grey),
+                              SizedBox(height: 12),
+                              Text(
+                                "No saved packages yet",
+                                style:
+                                    TextStyle(fontSize: 16, color: Colors.grey),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             )

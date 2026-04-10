@@ -66,3 +66,9 @@ class PackageError extends PackageState {
   @override
   List<Object?> get props => [message];
 }
+
+class PackageSaved extends PackageState {
+  final dynamic package;
+  const PackageSaved(this.package);
+  @override List<Object?> get props => [package];
+}

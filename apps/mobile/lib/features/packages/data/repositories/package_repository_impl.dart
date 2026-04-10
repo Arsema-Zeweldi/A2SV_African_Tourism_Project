@@ -139,4 +139,28 @@ class PackageRepositoryImpl implements PackageRepository {
       return Left(ServerFailure('An unexpected error occurred. Please try again.'));
     }
   }
+
+  @override
+  Future<Either<Failure, TravelPackage>> savePackage({
+    required String itineraryId,
+    required String title,
+    required String description,
+    required int durationDays,
+    required double totalCost,
+    required String status,
+  }) async {
+    try {
+      final package = await remoteDataSource.savePackage(
+        itineraryId: itineraryId,
+        title: title,
+        description: description,
+        durationDays: durationDays,
+        totalCost: totalCost,
+        status: status,
+      );
+      return Right(package);
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
 }

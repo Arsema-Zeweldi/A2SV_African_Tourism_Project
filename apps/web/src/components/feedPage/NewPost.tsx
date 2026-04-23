@@ -22,7 +22,11 @@ interface PackageOption {
   title: string
 }
 
-const NewPost = () => {
+interface NewPostProps {
+  onPostCreated?: () => void | Promise<void>
+}
+
+const NewPost = ({ onPostCreated }: NewPostProps) => {
   const [content, setContent] = useState('')
   type MediaType = 'image' | 'video' | null
 
@@ -142,6 +146,7 @@ const NewPost = () => {
       setSelectedPackage('')
       if (fileInputRef.current) fileInputRef.current.value = ''
       if (videoInputRef.current) videoInputRef.current.value = ''
+      await onPostCreated?.()
     } catch {
       toast.error('Failed to create post. Please try again.')
     } finally {

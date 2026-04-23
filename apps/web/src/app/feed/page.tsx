@@ -83,7 +83,7 @@ export default function FeedPage() {
             </p>
           </header>
 
-          <NewPost />
+          <NewPost onPostCreated={fetchPosts} />
 
           <div className="space-y-5">
             {posts.length === 0 ? (

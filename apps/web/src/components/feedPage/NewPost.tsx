@@ -5,6 +5,7 @@ import {
   MdOutlineVideoCameraBack,
   MdLocationOn,
 } from 'react-icons/md'
+import { getPackagesFeedAction } from '@/actions/marketplace_actions'
 import { Post } from '@/types/feed'
 import { newPost } from '@/services/feedServices'
 import { toast } from 'sonner'
@@ -39,21 +40,21 @@ const NewPost = () => {
   useEffect(() => {
     const fetchPackages = async () => {
       try {
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/packages?status=public&page=1&page_size=50&sort_by=rating_avg&order=desc`,
-          {
-            credentials: 'include',
-          }
-        )
+        const response = await getPackagesFeedAction({
+          status: 'public',
+          page: 1,
+          page_size: 50,
+          sort_by: 'rating_avg',
+          order: 'desc',
+        })
 
-        if (!response.ok) {
+        if (!response.success) {
           throw new Error('Failed to load packages')
         }
 
-        const data = await response.json()
-        setPackages(data.data ?? [])
+        setPackages(response.data.data ?? [])
       } catch {
-        // Non-critical — package dropdown will show "No packages available"
+        // Non-critical - package dropdown will show "No packages available"
       } finally {
         setIsLoadingPackages(false)
       }
@@ -88,9 +89,15 @@ const NewPost = () => {
             `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&accept-language=en`
           )
           const data = await res.json()
-          const city = data.address?.city || data.address?.town || data.address?.village || ''
+          const city =
+            data.address?.city ||
+            data.address?.town ||
+            data.address?.village ||
+            ''
           const country = data.address?.country || ''
-          const name = [city, country].filter(Boolean).join(', ') || `${latitude.toFixed(2)}, ${longitude.toFixed(2)}`
+          const name =
+            [city, country].filter(Boolean).join(', ') ||
+            `${latitude.toFixed(2)}, ${longitude.toFixed(2)}`
           setLocationName(name)
           toast.success(`Location: ${name}`)
         } catch {
